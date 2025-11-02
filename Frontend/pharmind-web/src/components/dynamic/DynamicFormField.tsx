@@ -3,20 +3,39 @@ import { useState, useEffect } from 'react';
 interface SchemaField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'email' | 'tel' | 'date' | 'textarea' | 'select' | 'multiselect' | 'checkbox' | 'fieldset' | 'repeater' | 'address';
-  required: boolean;
+  type: 'text' | 'number' | 'email' | 'tel' | 'date' | 'datetime-local' | 'time' | 'url' | 'color' |
+        'textarea' | 'select' | 'multiselect' | 'checkbox' | 'radio' | 'file' | 'rating' | 'slider' |
+        'fieldset' | 'repeater' | 'address' | 'section';
+  required?: boolean;
   placeholder?: string;
-  options?: string[];
+  options?: string[] | { label: string; value: string }[];
   dataSource?: {
     type: 'static' | 'sql';
     tableName?: string;
     valueField?: string;
     labelField?: string;
   };
-  defaultValue?: string;
+  defaultValue?: any;
   layout?: {
     column?: 'left' | 'right' | 'full';
     width?: 'half' | 'full';
+  };
+  // Grid layout properties from FormDesigner
+  position?: { row: number; col: number };
+  span?: { cols: 1 | 2 | 3 | 4 };
+  // For repeater fields
+  repeaterConfig?: {
+    fields: RepeaterField[];
+    minItems?: number;
+    maxItems?: number;
+    addButtonText?: string;
+    removeButtonText?: string;
+    itemLabelTemplate?: string;
+    layout?: {
+      displayMode: 'card' | 'inline' | 'table';
+      columns: 1 | 2 | 3 | 4;
+      spacing?: 'compact' | 'normal' | 'spacious';
+    };
   };
   fields?: SchemaField[];
   collapsible?: boolean;
@@ -25,6 +44,21 @@ interface SchemaField {
   addButtonLabel?: string;
   removeButtonLabel?: string;
   enableGeolocation?: boolean;
+  helpText?: string;
+  icon?: string;
+}
+
+interface RepeaterField {
+  type: string;
+  label: string;
+  name: string;
+  placeholder?: string;
+  required?: boolean;
+  options?: string[] | { label: string; value: string }[];
+  validation?: any;
+  position?: { row: number; col: number };
+  span?: { cols: 1 | 2 | 3 | 4 };
+  icon?: string;
 }
 
 interface DynamicFormFieldProps {
@@ -106,11 +140,16 @@ const DynamicFormField = ({ field, value, onChange }: DynamicFormFieldProps) => 
         return (
           <select {...baseProps}>
             <option value="">Seleccione una opción</option>
-            {field.options?.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
+            {field.options?.map((option) => {
+              // Manejar tanto strings como objetos {label, value}
+              const optValue = typeof option === 'string' ? option : option.value;
+              const optLabel = typeof option === 'string' ? option : option.label;
+              return (
+                <option key={optValue} value={optValue}>
+                  {optLabel}
+                </option>
+              );
+            })}
           </select>
         );
 
@@ -158,55 +197,141 @@ const DynamicFormField = ({ field, value, onChange }: DynamicFormFieldProps) => 
 
       case 'repeater':
         const items = value || [];
-        const minItems = field.minItems || 0;
-        const maxItems = field.maxItems || 10;
+        const repeaterConfig = field.repeaterConfig;
+        const minItems = repeaterConfig?.minItems || 0;
+        const maxItems = repeaterConfig?.maxItems || 10;
+        const displayMode = repeaterConfig?.layout?.displayMode || 'card';
+        const columns = repeaterConfig?.layout?.columns || 2;
+        const spacing = repeaterConfig?.layout?.spacing || 'normal';
+
+        const renderRepeaterField = (repeaterField: RepeaterField, itemValue: any, onItemChange: (name: string, val: any) => void) => {
+          // For repeater fields, we use a simplified rendering
+          const inputProps = {
+            id: `${field.name}_${repeaterField.name}`,
+            name: repeaterField.name,
+            placeholder: repeaterField.placeholder,
+            value: itemValue || '',
+            onChange: (e: any) => {
+              const newValue = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+              onItemChange(repeaterField.name, newValue);
+            }
+          };
+
+          let inputElement;
+          if (repeaterField.type === 'textarea') {
+            inputElement = <textarea {...inputProps} rows={3} />;
+          } else if (repeaterField.type === 'select') {
+            const options = Array.isArray(repeaterField.options) ? repeaterField.options : [];
+            inputElement = (
+              <select {...inputProps}>
+                <option value="">Seleccione...</option>
+                {options.map((opt: any) => {
+                  const optValue = typeof opt === 'string' ? opt : opt.value;
+                  const optLabel = typeof opt === 'string' ? opt : opt.label;
+                  return <option key={optValue} value={optValue}>{optLabel}</option>;
+                })}
+              </select>
+            );
+          } else if (repeaterField.type === 'checkbox') {
+            inputElement = (
+              <div className="checkbox-wrapper">
+                <input
+                  {...inputProps}
+                  type="checkbox"
+                  checked={itemValue || false}
+                  onChange={(e) => onItemChange(repeaterField.name, e.target.checked)}
+                />
+                <label htmlFor={inputProps.id}>{repeaterField.label}</label>
+              </div>
+            );
+          } else {
+            inputElement = <input {...inputProps} type={repeaterField.type} />;
+          }
+
+          return (
+            <div
+              key={repeaterField.name}
+              className="repeater-field-item"
+              style={{
+                gridColumn: repeaterField.span?.cols ? `span ${repeaterField.span.cols}` : 'span 2'
+              }}
+            >
+              {repeaterField.type !== 'checkbox' && (
+                <label htmlFor={inputProps.id}>
+                  {repeaterField.label}
+                  {repeaterField.required && <span className="required"> *</span>}
+                </label>
+              )}
+              {inputElement}
+            </div>
+          );
+        };
 
         return (
-          <div className="dynamic-repeater">
-            {items.map((item: any, index: number) => (
-              <div key={index} className="repeater-item">
-                <div className="repeater-item-header">
-                  <span>Item {index + 1}</span>
-                  {items.length > minItems && (
-                    <button
-                      type="button"
-                      className="btn-icon btn-delete"
-                      onClick={() => {
-                        const newItems = items.filter((_: any, i: number) => i !== index);
-                        onChange(field.name, newItems);
-                      }}
-                      title={field.removeButtonLabel || 'Eliminar'}
-                    >
-                      <span className="material-icons">delete</span>
-                    </button>
-                  )}
+          <div className={`dynamic-repeater dynamic-repeater--${displayMode}`}>
+            {items.map((item: any, index: number) => {
+              const itemLabel = repeaterConfig?.itemLabelTemplate
+                ? repeaterConfig.itemLabelTemplate.replace('{index}', String(index + 1))
+                : `Item ${index + 1}`;
+
+              return (
+                <div
+                  key={index}
+                  className={`repeater-item repeater-item--${displayMode}`}
+                >
+                  <div className="repeater-item-header">
+                    <span className="repeater-item-title">
+                      <span className="material-icons">{field.icon || 'article'}</span>
+                      {itemLabel}
+                    </span>
+                    {items.length > minItems && (
+                      <button
+                        type="button"
+                        className="btn-icon btn-delete"
+                        onClick={() => {
+                          const newItems = items.filter((_: any, i: number) => i !== index);
+                          onChange(field.name, newItems);
+                        }}
+                        title={repeaterConfig?.removeButtonText || 'Eliminar'}
+                      >
+                        <span className="material-icons">delete</span>
+                      </button>
+                    )}
+                  </div>
+                  <div
+                    className="repeater-item-fields"
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                      gap: spacing === 'compact' ? '0.75rem' :
+                           spacing === 'spacious' ? '1.5rem' : '1rem'
+                    }}
+                  >
+                    {repeaterConfig?.fields?.map((repeaterField) =>
+                      renderRepeaterField(
+                        repeaterField,
+                        item?.[repeaterField.name],
+                        (subName, subValue) => {
+                          const newItems = [...items];
+                          newItems[index] = { ...newItems[index], [subName]: subValue };
+                          onChange(field.name, newItems);
+                        }
+                      )
+                    )}
+                  </div>
                 </div>
-                <div className="repeater-item-fields">
-                  {field.fields?.map((subField) => (
-                    <DynamicFormField
-                      key={subField.name}
-                      field={subField}
-                      value={item?.[subField.name]}
-                      onChange={(subName, subValue) => {
-                        const newItems = [...items];
-                        newItems[index] = { ...newItems[index], [subName]: subValue };
-                        onChange(field.name, newItems);
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {items.length < maxItems && (
               <button
                 type="button"
-                className="btn-secondary"
+                className="btn-add-repeater"
                 onClick={() => {
                   onChange(field.name, [...items, {}]);
                 }}
               >
                 <span className="material-icons">add</span>
-                {field.addButtonLabel || 'Agregar Item'}
+                {repeaterConfig?.addButtonText || 'Agregar Item'}
               </button>
             )}
           </div>
@@ -391,31 +516,140 @@ const DynamicFormField = ({ field, value, onChange }: DynamicFormFieldProps) => 
           </div>
         );
 
+      case 'radio':
+        return (
+          <div className="radio-group">
+            {field.options?.map((option) => {
+              const optValue = typeof option === 'string' ? option : option.value;
+              const optLabel = typeof option === 'string' ? option : option.label;
+              const radioId = `${field.name}_${optValue}`;
+              return (
+                <div key={optValue} className="radio-wrapper">
+                  <input
+                    type="radio"
+                    id={radioId}
+                    name={field.name}
+                    value={optValue}
+                    checked={value === optValue}
+                    onChange={(e) => onChange(field.name, e.target.value)}
+                    required={field.required}
+                  />
+                  <label htmlFor={radioId}>{optLabel}</label>
+                </div>
+              );
+            })}
+          </div>
+        );
+
+      case 'rating':
+        const maxRating = 5;
+        return (
+          <div className="rating-wrapper">
+            {[...Array(maxRating)].map((_, index) => {
+              const ratingValue = index + 1;
+              return (
+                <span
+                  key={ratingValue}
+                  className={`rating-star ${value >= ratingValue ? 'rating-star--active' : ''}`}
+                  onClick={() => onChange(field.name, ratingValue)}
+                  style={{ cursor: 'pointer', fontSize: '1.5rem', color: value >= ratingValue ? '#fbbf24' : '#d1d5db' }}
+                >
+                  ★
+                </span>
+              );
+            })}
+          </div>
+        );
+
+      case 'slider':
+        return (
+          <div className="slider-wrapper">
+            <input
+              type="range"
+              id={field.name}
+              name={field.name}
+              min="0"
+              max="100"
+              value={value || 0}
+              onChange={(e) => onChange(field.name, parseInt(e.target.value))}
+              required={field.required}
+              style={{ width: '100%' }}
+            />
+            <span className="slider-value">{value || 0}</span>
+          </div>
+        );
+
+      case 'file':
+        return (
+          <input
+            type="file"
+            id={field.name}
+            name={field.name}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                onChange(field.name, file.name);
+              }
+            }}
+            required={field.required}
+          />
+        );
+
       default:
         return <input {...baseProps} type={field.type} />;
     }
   };
 
-  // Fieldset y Repeater tienen su propio wrapper
+  // Handle section separator
+  if (field.type === 'section') {
+    return (
+      <div
+        className="dynamic-section-separator"
+        style={{
+          gridColumn: '1 / -1'
+        }}
+      >
+        <div className="section-line"></div>
+        <div className="section-title">{field.label}</div>
+        <div className="section-line"></div>
+      </div>
+    );
+  }
+
+  // Grid positioning styles based on position and span from FormDesigner
+  const gridStyle: React.CSSProperties = {};
+  if (field.span?.cols) {
+    gridStyle.gridColumn = `span ${field.span.cols}`;
+  }
+
+  // Fieldset, Repeater and Address have their own wrapper
   if (field.type === 'fieldset' || field.type === 'repeater' || field.type === 'address') {
-    return <div className="form-group">{renderField()}</div>;
+    return (
+      <div className="form-group form-group--full" style={gridStyle}>
+        {renderField()}
+      </div>
+    );
   }
 
   if (field.type === 'checkbox') {
-    return <div className="form-group">{renderField()}</div>;
+    return (
+      <div className="form-group" style={gridStyle}>
+        {renderField()}
+      </div>
+    );
   }
 
-  // Aplicar clases de layout si están definidas
-  const layoutClass = field.layout?.column ? `field-column-${field.layout.column}` : '';
-  const widthClass = field.layout?.width ? `field-width-${field.layout.width}` : '';
-
+  // Regular fields with label
   return (
-    <div className={`form-group ${layoutClass} ${widthClass}`.trim()}>
+    <div className="form-group" style={gridStyle}>
       <label htmlFor={field.name}>
         {field.label}
         {field.required && <span className="required"> *</span>}
       </label>
       {renderField()}
+      {field.helpText && (
+        <small className="field-help-text">{field.helpText}</small>
+      )}
     </div>
   );
 };

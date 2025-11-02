@@ -97,6 +97,10 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
         order: field.order !== undefined ? field.order : index,
         // CRITICAL: Preserve repeaterConfig when loading from database
         ...(field.repeaterConfig && { repeaterConfig: field.repeaterConfig }),
+        // CRITICAL: Preserve dataSource when loading from database
+        ...(field.dataSource && { dataSource: field.dataSource }),
+        // Preserve icon and helpText
+        ...(field.icon && { icon: field.icon }),
       }));
 
       return {
@@ -127,6 +131,11 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
         order: field.order,
         // CRITICAL: Preserve repeaterConfig for repeater fields
         ...(field.repeaterConfig && { repeaterConfig: field.repeaterConfig }),
+        // CRITICAL: Preserve dataSource for fields with SQL data sources
+        ...(field.dataSource && { dataSource: field.dataSource }),
+        // Preserve icon and helpText
+        ...(field.icon && { icon: field.icon }),
+        ...(field.helpText && { helpText: field.helpText }),
       })),
       layout: formSchema.layout,
       version: formSchema.version

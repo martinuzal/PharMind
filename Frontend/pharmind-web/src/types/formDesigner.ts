@@ -99,6 +99,14 @@ export interface FieldSchema {
   validation?: ValidationRules;
   helpText?: string;
 
+  // Data source configuration for select fields
+  dataSource?: {
+    type: 'static' | 'sql';
+    tableName?: string;
+    valueField?: string;
+    labelField?: string;
+  };
+
   // Layout properties
   position: FieldPosition;
   span: FieldSpan;

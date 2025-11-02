@@ -334,8 +334,8 @@
 .modal-content {
   background: var(--bg-primary);
   border-radius: 1rem;
-  max-width: 95%;
-  width: 95%;
+  max-width: 60%;
+  width: 60%;
   max-height: 95vh;
   height: 95vh;
   overflow-y: auto;

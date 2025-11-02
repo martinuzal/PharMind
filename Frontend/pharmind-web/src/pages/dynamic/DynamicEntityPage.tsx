@@ -42,6 +42,11 @@ const DynamicEntityPage = () => {
   const [activeTab, setActiveTab] = useState<'form' | 'json'>('form');
   const [jsonText, setJsonText] = useState<string>('{}');
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    // Load view preference from localStorage
+    const saved = localStorage.getItem('entitiesViewMode');
+    return (saved === 'list' || saved === 'grid') ? saved : 'grid';
+  });
 
   // Always show tabs for all users
   const showTabs = true;
@@ -49,6 +54,11 @@ const DynamicEntityPage = () => {
   useEffect(() => {
     fetchEsquema();
   }, [tipo, subtipo]);
+
+  // Save view mode preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('entitiesViewMode', viewMode);
+  }, [viewMode]);
 
   useEffect(() => {
     if (esquema) {
@@ -292,9 +302,31 @@ const DynamicEntityPage = () => {
   const getSchemaFields = () => {
     try {
       const schema = JSON.parse(esquema!.schema);
-      return schema.fields || [];
+      const fields = schema.fields || [];
+      // Ordenar campos por posición (row, col) para respetar el diseño visual
+      return fields.sort((a: any, b: any) => {
+        const rowA = a.position?.row ?? 0;
+        const rowB = b.position?.row ?? 0;
+        const colA = a.position?.col ?? 0;
+        const colB = b.position?.col ?? 0;
+
+        // Primero ordenar por fila, luego por columna
+        if (rowA !== rowB) {
+          return rowA - rowB;
+        }
+        return colA - colB;
+      });
     } catch {
       return [];
+    }
+  };
+
+  const getFormLayout = () => {
+    try {
+      const schema = JSON.parse(esquema!.schema);
+      return schema.layout || { columns: 4, spacing: 'normal', style: 'modern' };
+    } catch {
+      return { columns: 4, spacing: 'normal', style: 'modern' };
     }
   };
 
@@ -333,67 +365,146 @@ const DynamicEntityPage = () => {
             <p className="page-subtitle">{esquema.descripcion || `Gestión de ${esquema.nombre}`}</p>
           </div>
         </div>
-        <button className="btn-primary" onClick={handleCreate}>
-          <span className="material-icons">add</span>
-          Nuevo Registro
-        </button>
-      </div>
-
-      <div className="entities-grid">
-        {entidades.map((entidad) => {
-          const datos = JSON.parse(entidad.datos);
-          return (
-            <div key={entidad.id} className="entity-card">
-              <div className="entity-body">
-                {entidad.fullDescription && (
-                  <div className="entity-title">
-                    <h3>{entidad.fullDescription}</h3>
-                  </div>
-                )}
-                <div className="entity-details">
-                  {Object.entries(datos).slice(0, 3).map(([key, value]) => (
-                    <div key={key} className="entity-field">
-                      <span className="field-label">{key}:</span>
-                      <span className="field-value">{String(value)}</span>
-                    </div>
-                  ))}
-                  {Object.keys(datos).length > 3 && (
-                    <span className="more-fields">+{Object.keys(datos).length - 3} más...</span>
-                  )}
-                </div>
-              </div>
-              <div className="entity-actions">
-                <button
-                  className="btn-icon"
-                  onClick={() => handleEdit(entidad)}
-                  title="Editar"
-                >
-                  <span className="material-icons">edit</span>
-                </button>
-                <button
-                  className="btn-icon btn-delete"
-                  onClick={() => handleDelete(entidad.id!)}
-                  title="Eliminar"
-                >
-                  <span className="material-icons">delete</span>
-                </button>
-              </div>
-            </div>
-          );
-        })}
-
-        {entidades.length === 0 && (
-          <div className="empty-state">
-            <span className="material-icons">inbox</span>
-            <h3>No hay registros</h3>
-            <p>Crea tu primer registro para comenzar</p>
-            <button className="btn-primary" onClick={handleCreate}>
-              <span className="material-icons">add</span>
-              Crear Registro
+        <div className="header-actions">
+          <div className="view-toggle">
+            <button
+              className={`btn-view ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title="Vista de mosaico"
+            >
+              <span className="material-icons">grid_view</span>
+            </button>
+            <button
+              className={`btn-view ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="Vista de lista"
+            >
+              <span className="material-icons">view_list</span>
             </button>
           </div>
-        )}
+          <button className="btn-primary" onClick={handleCreate}>
+            <span className="material-icons">add</span>
+            Nuevo Registro
+          </button>
+        </div>
       </div>
+
+      {viewMode === 'grid' ? (
+        <div className="entities-grid">
+          {entidades.map((entidad) => {
+            const datos = JSON.parse(entidad.datos);
+            return (
+              <div key={entidad.id} className="entity-card">
+                <div className="entity-body">
+                  {entidad.fullDescription && (
+                    <div className="entity-title">
+                      <h3>{entidad.fullDescription}</h3>
+                    </div>
+                  )}
+                  <div className="entity-details">
+                    {Object.entries(datos).slice(0, 3).map(([key, value]) => (
+                      <div key={key} className="entity-field">
+                        <span className="field-label">{key}:</span>
+                        <span className="field-value">{String(value)}</span>
+                      </div>
+                    ))}
+                    {Object.keys(datos).length > 3 && (
+                      <span className="more-fields">+{Object.keys(datos).length - 3} más...</span>
+                    )}
+                  </div>
+                </div>
+                <div className="entity-actions">
+                  <button
+                    className="btn-icon"
+                    onClick={() => handleEdit(entidad)}
+                    title="Editar"
+                  >
+                    <span className="material-icons">edit</span>
+                  </button>
+                  <button
+                    className="btn-icon btn-delete"
+                    onClick={() => handleDelete(entidad.id!)}
+                    title="Eliminar"
+                  >
+                    <span className="material-icons">delete</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {entidades.length === 0 && (
+            <div className="empty-state">
+              <span className="material-icons">inbox</span>
+              <h3>No hay registros</h3>
+              <p>Crea tu primer registro para comenzar</p>
+              <button className="btn-primary" onClick={handleCreate}>
+                <span className="material-icons">add</span>
+                Crear Registro
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="entities-list">
+          {entidades.length === 0 ? (
+            <div className="empty-state">
+              <span className="material-icons">inbox</span>
+              <h3>No hay registros</h3>
+              <p>Crea tu primer registro para comenzar</p>
+              <button className="btn-primary" onClick={handleCreate}>
+                <span className="material-icons">add</span>
+                Crear Registro
+              </button>
+            </div>
+          ) : (
+            <div className="list-table">
+              <div className="list-header">
+                <div className="list-cell header-cell">Descripción</div>
+                {getSchemaFields().slice(0, 4).map((field: any) => (
+                  <div key={field.name} className="list-cell header-cell">
+                    {field.label}
+                  </div>
+                ))}
+                <div className="list-cell header-cell actions-header">Acciones</div>
+              </div>
+              <div className="list-body">
+                {entidades.map((entidad) => {
+                  const datos = JSON.parse(entidad.datos);
+                  return (
+                    <div key={entidad.id} className="list-row">
+                      <div className="list-cell">
+                        <strong>{entidad.fullDescription || 'Sin descripción'}</strong>
+                      </div>
+                      {getSchemaFields().slice(0, 4).map((field: any) => (
+                        <div key={field.name} className="list-cell">
+                          {datos[field.name] ? String(datos[field.name]) : '-'}
+                        </div>
+                      ))}
+                      <div className="list-cell list-actions">
+                        <button
+                          className="btn-icon"
+                          onClick={() => handleEdit(entidad)}
+                          title="Editar"
+                        >
+                          <span className="material-icons">edit</span>
+                        </button>
+                        <button
+                          className="btn-icon btn-delete"
+                          onClick={() => handleDelete(entidad.id!)}
+                          title="Eliminar"
+                        >
+                          <span className="material-icons">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
@@ -430,14 +541,23 @@ const DynamicEntityPage = () => {
               {activeTab === 'form' ? (
                 <div className="form-section">
                   {getSchemaFields().length > 0 ? (
-                    getSchemaFields().map((field: any) => (
-                      <DynamicFormField
-                        key={field.name}
-                        field={field}
-                        value={formData[field.name]}
-                        onChange={handleFieldChange}
-                      />
-                    ))
+                    <div
+                      className="dynamic-form-grid"
+                      style={{
+                        gridTemplateColumns: `repeat(${getFormLayout().columns || 4}, 1fr)`,
+                        gap: getFormLayout().spacing === 'compact' ? '0.75rem' :
+                             getFormLayout().spacing === 'spacious' ? '1.5rem' : '1rem'
+                      }}
+                    >
+                      {getSchemaFields().map((field: any) => (
+                        <DynamicFormField
+                          key={field.name}
+                          field={field}
+                          value={formData[field.name]}
+                          onChange={handleFieldChange}
+                        />
+                      ))}
+                    </div>
                   ) : (
                     <p className="text-secondary">
                       No hay campos definidos en el esquema. Ve a Gestión de Entidades para configurar los campos.

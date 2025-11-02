@@ -289,28 +289,113 @@ const PropertiesPanel = ({ field, onUpdate, onClose }: PropertiesPanelProps) => 
         {/* Options for select/radio */}
         {(field.type === 'select' || field.type === 'radio') && (
           <div className="property-section">
-            <h4>Opciones</h4>
+            <h4>Origen de Datos</h4>
+
             <div className="property-group">
-              <label>Opciones (una por línea)</label>
-              <textarea
-                value={
-                  Array.isArray(field.options)
-                    ? field.options.map(opt =>
-                        typeof opt === 'string' ? opt : opt.label
-                      ).join('\n')
-                    : ''
-                }
+              <label>Tipo de Origen</label>
+              <select
+                value={field.dataSource?.type || 'static'}
                 onChange={(e) => {
-                  const options = e.target.value
-                    .split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line);
-                  handleChange({ options });
+                  const sourceType = e.target.value as 'static' | 'sql';
+                  if (sourceType === 'static') {
+                    handleChange({
+                      dataSource: undefined,
+                      options: field.options || []
+                    });
+                  } else {
+                    handleChange({
+                      dataSource: {
+                        type: 'sql',
+                        tableName: '',
+                        valueField: '',
+                        labelField: ''
+                      },
+                      options: undefined
+                    });
+                  }
                 }}
-                rows={5}
-                placeholder="Opción 1&#10;Opción 2&#10;Opción 3"
-              />
+              >
+                <option value="static">Opciones Estáticas</option>
+                <option value="sql">Tabla Maestra (SQL)</option>
+              </select>
+              <small>Selecciona si las opciones son fijas o vienen de una tabla</small>
             </div>
+
+            {(!field.dataSource || field.dataSource.type === 'static') && (
+              <div className="property-group">
+                <label>Opciones (una por línea)</label>
+                <textarea
+                  value={
+                    Array.isArray(field.options)
+                      ? field.options.map(opt =>
+                          typeof opt === 'string' ? opt : opt.label
+                        ).join('\n')
+                      : ''
+                  }
+                  onChange={(e) => {
+                    const options = e.target.value
+                      .split('\n')
+                      .map(line => line.trim())
+                      .filter(line => line);
+                    handleChange({ options });
+                  }}
+                  rows={5}
+                  placeholder="Opción 1&#10;Opción 2&#10;Opción 3"
+                />
+              </div>
+            )}
+
+            {field.dataSource?.type === 'sql' && (
+              <>
+                <div className="property-group">
+                  <label>Nombre de la Tabla</label>
+                  <input
+                    type="text"
+                    value={field.dataSource.tableName || ''}
+                    onChange={(e) => handleChange({
+                      dataSource: {
+                        ...field.dataSource,
+                        tableName: e.target.value
+                      }
+                    })}
+                    placeholder="Ej: Usuarios, Productos, etc."
+                  />
+                  <small>Nombre de la tabla de la base de datos</small>
+                </div>
+
+                <div className="property-group">
+                  <label>Campo para Valor</label>
+                  <input
+                    type="text"
+                    value={field.dataSource.valueField || ''}
+                    onChange={(e) => handleChange({
+                      dataSource: {
+                        ...field.dataSource,
+                        valueField: e.target.value
+                      }
+                    })}
+                    placeholder="Ej: Id"
+                  />
+                  <small>Campo que se usará como valor del select</small>
+                </div>
+
+                <div className="property-group">
+                  <label>Campo para Etiqueta</label>
+                  <input
+                    type="text"
+                    value={field.dataSource.labelField || ''}
+                    onChange={(e) => handleChange({
+                      dataSource: {
+                        ...field.dataSource,
+                        labelField: e.target.value
+                      }
+                    })}
+                    placeholder="Ej: Nombre"
+                  />
+                  <small>Campo que se mostrará como texto visible</small>
+                </div>
+              </>
+            )}
           </div>
         )}
 
