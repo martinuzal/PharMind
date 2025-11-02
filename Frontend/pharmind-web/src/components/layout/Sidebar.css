@@ -1,0 +1,332 @@
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 260px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  z-index: 100;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+/* Header */
+.sidebar-header {
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 70px;
+}
+
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+}
+
+.sidebar-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.375rem;
+  border-radius: 0.375rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.sidebar-toggle:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.sidebar-toggle .material-icons {
+  font-size: 1.25rem;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+  position: absolute;
+  top: 1.25rem;
+  right: -12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}
+
+/* Usuario */
+.sidebar-user {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sidebar.collapsed .sidebar-user {
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.sidebar-user-avatar {
+  flex-shrink: 0;
+}
+
+.sidebar-user-avatar .material-icons {
+  font-size: 2.5rem;
+  color: var(--text-secondary);
+}
+
+.sidebar-user-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sidebar-user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-email {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Menú */
+.sidebar-menu {
+  flex: 1;
+  padding: 1rem 0.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+
+.sidebar.collapsed .sidebar-menu-item {
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.sidebar-menu-item .material-icons {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.sidebar-menu-item:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.sidebar-menu-item.active {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  color: #667eea;
+  font-weight: 600;
+}
+
+.sidebar-menu-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Footer */
+.sidebar-footer {
+  padding: 1rem 0.5rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-footer-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.sidebar.collapsed .sidebar-footer-button {
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.sidebar-footer-button .material-icons {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.sidebar-footer-button:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+/* Scrollbar */
+.sidebar-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Section Headers */
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+  border-radius: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.sidebar-section-header:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.sidebar-section-header .material-icons {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.sidebar-expand-icon {
+  margin-left: auto;
+  font-size: 1.125rem !important;
+}
+
+.sidebar.collapsed .sidebar-section-header {
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+/* Subsections */
+.sidebar-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding-left: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-submenu-item {
+  font-size: 0.8125rem;
+  padding-left: 2.5rem;
+  position: relative;
+}
+
+.sidebar-submenu-item::before {
+  content: '';
+  position: absolute;
+  left: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+}
+
+.sidebar-submenu-item:hover::before {
+  background: var(--text-secondary);
+}
+
+.sidebar-submenu-item.active::before {
+  background: #667eea;
+}
+
+/* Dark mode específico */
+[data-theme="dark"] .sidebar {
+  background: var(--bg-secondary);
+  border-right-color: var(--border-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px;
+  }
+
+  .sidebar-header {
+    justify-content: center;
+  }
+
+  .sidebar-user {
+    justify-content: center;
+    padding: 0.75rem;
+  }
+
+  .sidebar-menu-item {
+    justify-content: center;
+    padding: 0.75rem;
+  }
+
+  .sidebar-footer-button {
+    justify-content: center;
+    padding: 0.75rem;
+  }
+}

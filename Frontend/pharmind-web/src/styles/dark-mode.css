@@ -1,0 +1,42 @@
+/* Modo Oscuro */
+[data-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #242424;
+  --bg-tertiary: #2d2d2d;
+  --text-primary: #e5e5e5;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #707070;
+  --border-color: #3a3a3a;
+  --border-color-light: #2d2d2d;
+  --input-bg: #2d2d2d;
+  --input-border: #3a3a3a;
+  --hover-bg: #2d2d2d;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --accent-color: #60a5fa;
+}
+
+[data-theme="dark"] body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background: var(--hover-bg);
+  border-color: var(--accent-color);
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-tertiary);
+}
