@@ -11,10 +11,10 @@ class ApiService {
   // URL base - Para web (Chrome) y Windows usar localhost
   // Para emulador Android usar 10.0.2.2 que apunta al localhost del host
   // Para dispositivo físico, cambiar a la IP de la máquina en la red local
-  static const String baseUrl = 'http://localhost:5209';
+  // static const String baseUrl = 'http://localhost:5209';
 
   // Para emulador Android, usar:
-  // static const String baseUrl = 'http://10.0.2.2:5209';
+  static const String baseUrl = 'http://10.0.2.2:5209';
 
   // Para dispositivo físico, usar:
   // static const String baseUrl = 'http://192.168.1.X:5209'; // Reemplazar X con tu IP

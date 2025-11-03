@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/loading_indicator.dart';
+import '../services/sync_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -64,11 +65,18 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Login exitoso'),
+            content: Text('Login exitoso - Sincronizando datos...'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
           ),
         );
+
+        // Sincronizar datos en segundo plano después del login exitoso
+        final syncService = SyncService();
+        syncService.syncAll().catchError((error) {
+          print('Error en sincronización automática: $error');
+          // No mostrar error al usuario, la sincronización es en segundo plano
+        });
       }
 
       // Navegar a home

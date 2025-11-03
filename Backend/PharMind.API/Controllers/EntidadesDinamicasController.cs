@@ -158,6 +158,49 @@ public class EntidadesDinamicasController : ControllerBase
         return NoContent();
     }
 
+    // GET: api/EntidadesDinamicas/fieldOptions
+    [HttpGet("fieldOptions")]
+    public async Task<ActionResult<IEnumerable<object>>> GetFieldOptions(
+        [FromQuery] string tableName,
+        [FromQuery] string valueField,
+        [FromQuery] string labelField)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(tableName) || string.IsNullOrEmpty(valueField) || string.IsNullOrEmpty(labelField))
+            {
+                return BadRequest("tableName, valueField y labelField son requeridos");
+            }
+
+            // Query dinámico para obtener datos de la tabla maestra
+            var sql = $"SELECT {valueField} as value, {labelField} as label FROM {tableName} ORDER BY {labelField}";
+
+            var connection = _context.Database.GetDbConnection();
+            await connection.OpenAsync();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = sql;
+
+            var options = new List<object>();
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                options.Add(new
+                {
+                    value = reader["value"]?.ToString() ?? "",
+                    label = reader["label"]?.ToString() ?? ""
+                });
+            }
+
+            return Ok(options);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al obtener opciones: {ex.Message}");
+        }
+    }
+
     // PATCH: api/EntidadesDinamicas/{id}/estado
     [HttpPatch("{id}/estado")]
     public async Task<IActionResult> UpdateEstado(string id, [FromQuery] string estado)

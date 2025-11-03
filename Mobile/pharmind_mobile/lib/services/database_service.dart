@@ -26,7 +26,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Incrementado de 1 a 2 para incluir nuevas tablas
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -34,6 +34,7 @@ class DatabaseService {
 
   // Crear tablas
   Future<void> _onCreate(Database db, int version) async {
+    // Tabla usuarios
     await db.execute('''
       CREATE TABLE usuarios (
         id TEXT PRIMARY KEY,
@@ -47,14 +48,103 @@ class DatabaseService {
       )
     ''');
 
-    print('Tabla usuarios creada exitosamente');
+    // Tabla esquemas_personalizados
+    await db.execute('''
+      CREATE TABLE esquemas_personalizados (
+        id TEXT PRIMARY KEY,
+        nombreEntidad TEXT NOT NULL,
+        descripcion TEXT,
+        icono TEXT,
+        esquemaJson TEXT NOT NULL,
+        tipoEntidad TEXT,
+        activo INTEGER DEFAULT 1,
+        fechaCreacion TEXT,
+        isSynced INTEGER DEFAULT 1,
+        syncTimestamp TEXT
+      )
+    ''');
+
+    // Tabla entidades_dinamicas
+    await db.execute('''
+      CREATE TABLE entidades_dinamicas (
+        id TEXT PRIMARY KEY,
+        esquemaId TEXT NOT NULL,
+        datos TEXT NOT NULL,
+        fechaCreacion TEXT,
+        fechaActualizacion TEXT,
+        usuarioId TEXT,
+        nombreEntidad TEXT,
+        isSynced INTEGER DEFAULT 1,
+        syncTimestamp TEXT,
+        isDeleted INTEGER DEFAULT 0,
+        FOREIGN KEY (esquemaId) REFERENCES esquemas_personalizados (id)
+      )
+    ''');
+
+    // Tabla para tablas maestras (catálogos)
+    await db.execute('''
+      CREATE TABLE maestras (
+        tableName TEXT NOT NULL,
+        value TEXT NOT NULL,
+        label TEXT NOT NULL,
+        isSynced INTEGER DEFAULT 1,
+        syncTimestamp TEXT,
+        PRIMARY KEY (tableName, value)
+      )
+    ''');
+
+    print('Tablas creadas exitosamente: usuarios, esquemas_personalizados, entidades_dinamicas, maestras');
   }
 
   // Actualizar base de datos (para futuras versiones)
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < newVersion) {
-      // Aquí se pueden agregar migraciones futuras
-      print('Actualizando base de datos de versión $oldVersion a $newVersion');
+    print('Actualizando base de datos de versión $oldVersion a $newVersion');
+
+    if (oldVersion < 2) {
+      // Migración de versión 1 a 2: Agregar tablas para sincronización offline
+      await db.execute('''
+        CREATE TABLE esquemas_personalizados (
+          id TEXT PRIMARY KEY,
+          nombreEntidad TEXT NOT NULL,
+          descripcion TEXT,
+          icono TEXT,
+          esquemaJson TEXT NOT NULL,
+          tipoEntidad TEXT,
+          activo INTEGER DEFAULT 1,
+          fechaCreacion TEXT,
+          isSynced INTEGER DEFAULT 1,
+          syncTimestamp TEXT
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE entidades_dinamicas (
+          id TEXT PRIMARY KEY,
+          esquemaId TEXT NOT NULL,
+          datos TEXT NOT NULL,
+          fechaCreacion TEXT,
+          fechaActualizacion TEXT,
+          usuarioId TEXT,
+          nombreEntidad TEXT,
+          isSynced INTEGER DEFAULT 1,
+          syncTimestamp TEXT,
+          isDeleted INTEGER DEFAULT 0,
+          FOREIGN KEY (esquemaId) REFERENCES esquemas_personalizados (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE maestras (
+          tableName TEXT NOT NULL,
+          value TEXT NOT NULL,
+          label TEXT NOT NULL,
+          isSynced INTEGER DEFAULT 1,
+          syncTimestamp TEXT,
+          PRIMARY KEY (tableName, value)
+        )
+      ''');
+
+      print('Tablas de sincronización offline creadas exitosamente');
     }
   }
 
@@ -253,5 +343,226 @@ class DatabaseService {
     await databaseFactory.deleteDatabase(path);
     _database = null;
     print('Base de datos eliminada');
+  }
+
+  // ==================== ESQUEMAS PERSONALIZADOS ====================
+
+  Future<void> saveEsquema(Map<String, dynamic> esquema) async {
+    try {
+      final db = await database;
+      final timestamp = DateTime.now().toIso8601String();
+
+      final esquemaData = {
+        'id': esquema['id'],
+        'nombreEntidad': esquema['nombreEntidad'],
+        'descripcion': esquema['descripcion'],
+        'icono': esquema['icono'],
+        'esquemaJson': esquema['esquemaJson'],
+        'tipoEntidad': esquema['tipoEntidad'],
+        'activo': esquema['activo'] == true ? 1 : 0,
+        'fechaCreacion': esquema['fechaCreacion'],
+        'isSynced': 1,
+        'syncTimestamp': timestamp,
+      };
+
+      await db.insert(
+        'esquemas_personalizados',
+        esquemaData,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      print('Esquema guardado: ${esquema['nombreEntidad']}');
+    } catch (e) {
+      print('Error al guardar esquema: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllEsquemas() async {
+    try {
+      final db = await database;
+      final results = await db.query('esquemas_personalizados');
+      return results;
+    } catch (e) {
+      print('Error al obtener esquemas: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> getEsquemaById(String id) async {
+    try {
+      final db = await database;
+      final results = await db.query(
+        'esquemas_personalizados',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      return results.isNotEmpty ? results.first : null;
+    } catch (e) {
+      print('Error al obtener esquema: $e');
+      return null;
+    }
+  }
+
+  // ==================== ENTIDADES DINÁMICAS ====================
+
+  Future<void> saveEntidad(Map<String, dynamic> entidad) async {
+    try {
+      final db = await database;
+      final timestamp = DateTime.now().toIso8601String();
+
+      final entidadData = {
+        'id': entidad['id'],
+        'esquemaId': entidad['esquemaId'],
+        'datos': entidad['datos'],
+        'fechaCreacion': entidad['fechaCreacion'],
+        'fechaActualizacion': entidad['fechaActualizacion'],
+        'usuarioId': entidad['usuarioId'],
+        'nombreEntidad': entidad['nombreEntidad'],
+        'isSynced': entidad['isSynced'] ?? 1,
+        'syncTimestamp': timestamp,
+        'isDeleted': 0,
+      };
+
+      await db.insert(
+        'entidades_dinamicas',
+        entidadData,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      print('Entidad guardada: ${entidad['id']}');
+    } catch (e) {
+      print('Error al guardar entidad: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getEntidadesByEsquema(String esquemaId) async {
+    try {
+      final db = await database;
+      final results = await db.query(
+        'entidades_dinamicas',
+        where: 'esquemaId = ? AND isDeleted = ?',
+        whereArgs: [esquemaId, 0],
+      );
+      return results;
+    } catch (e) {
+      print('Error al obtener entidades: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> getEntidadById(String id) async {
+    try {
+      final db = await database;
+      final results = await db.query(
+        'entidades_dinamicas',
+        where: 'id = ? AND isDeleted = ?',
+        whereArgs: [id, 0],
+      );
+      return results.isNotEmpty ? results.first : null;
+    } catch (e) {
+      print('Error al obtener entidad: $e');
+      return null;
+    }
+  }
+
+  Future<void> markEntidadAsDeleted(String id) async {
+    try {
+      final db = await database;
+      await db.update(
+        'entidades_dinamicas',
+        {'isDeleted': 1, 'isSynced': 0},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      print('Entidad marcada como eliminada: $id');
+    } catch (e) {
+      print('Error al marcar entidad como eliminada: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getUnsyncedEntidades() async {
+    try {
+      final db = await database;
+      final results = await db.query(
+        'entidades_dinamicas',
+        where: 'isSynced = ?',
+        whereArgs: [0],
+      );
+      return results;
+    } catch (e) {
+      print('Error al obtener entidades no sincronizadas: $e');
+      return [];
+    }
+  }
+
+  Future<void> markEntidadAsSynced(String id) async {
+    try {
+      final db = await database;
+      final timestamp = DateTime.now().toIso8601String();
+      await db.update(
+        'entidades_dinamicas',
+        {'isSynced': 1, 'syncTimestamp': timestamp},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      print('Entidad marcada como sincronizada: $id');
+    } catch (e) {
+      print('Error al marcar entidad como sincronizada: $e');
+      rethrow;
+    }
+  }
+
+  // ==================== MAESTRAS (CATÁLOGOS) ====================
+
+  Future<void> saveMaestra(String tableName, String value, String label) async {
+    try {
+      final db = await database;
+      final timestamp = DateTime.now().toIso8601String();
+
+      await db.insert(
+        'maestras',
+        {
+          'tableName': tableName,
+          'value': value,
+          'label': label,
+          'isSynced': 1,
+          'syncTimestamp': timestamp,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      print('Error al guardar maestra: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getMaestrasByTable(String tableName) async {
+    try {
+      final db = await database;
+      final results = await db.query(
+        'maestras',
+        where: 'tableName = ?',
+        whereArgs: [tableName],
+      );
+      return results;
+    } catch (e) {
+      print('Error al obtener maestras: $e');
+      return [];
+    }
+  }
+
+  Future<void> clearMaestrasByTable(String tableName) async {
+    try {
+      final db = await database;
+      await db.delete(
+        'maestras',
+        where: 'tableName = ?',
+        whereArgs: [tableName],
+      );
+      print('Maestras eliminadas de tabla: $tableName');
+    } catch (e) {
+      print('Error al limpiar maestras: $e');
+    }
   }
 }

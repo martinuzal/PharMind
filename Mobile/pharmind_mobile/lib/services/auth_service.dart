@@ -1,10 +1,12 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/usuario.dart';
 import '../models/auth_response.dart';
 import 'api_service.dart';
 import 'database_service.dart';
+import 'dart:convert';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -83,6 +85,9 @@ class AuthService {
         // Guardar usuario en cache local para modo offline (solo en móvil, no en web)
         if (!kIsWeb) {
           await _dbService.saveUsuario(authResponse.usuario);
+        } else {
+          // En web, guardar usuario en SharedPreferences
+          await saveUserWeb(authResponse.usuario);
         }
 
         print('Login exitoso ONLINE: ${authResponse.usuario.nombre}');
@@ -142,7 +147,14 @@ class AuthService {
   // Guardar token
   Future<void> saveToken(String token) async {
     try {
-      await _storage.write(key: 'auth_token', value: token);
+      if (kIsWeb) {
+        // En web usar SharedPreferences (más confiable que FlutterSecureStorage)
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
+      } else {
+        // En móvil usar FlutterSecureStorage
+        await _storage.write(key: 'auth_token', value: token);
+      }
       print('Token guardado exitosamente');
     } catch (e) {
       print('Error al guardar token: $e');
@@ -153,12 +165,49 @@ class AuthService {
   // Obtener token almacenado
   Future<String?> getStoredToken() async {
     try {
-      final token = await _storage.read(key: 'auth_token');
-      return token;
+      if (kIsWeb) {
+        // En web usar SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
+        return token;
+      } else {
+        // En móvil usar FlutterSecureStorage
+        final token = await _storage.read(key: 'auth_token');
+        return token;
+      }
     } catch (e) {
       print('Error al obtener token: $e');
       return null;
     }
+  }
+
+  // Guardar usuario en web
+  Future<void> saveUserWeb(Usuario usuario) async {
+    if (kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('current_user', jsonEncode(usuario.toJson()));
+        print('Usuario guardado en web exitosamente');
+      } catch (e) {
+        print('Error al guardar usuario en web: $e');
+      }
+    }
+  }
+
+  // Obtener usuario de web
+  Future<Usuario?> getUserWeb() async {
+    if (kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final userJson = prefs.getString('current_user');
+        if (userJson != null && userJson.isNotEmpty) {
+          return Usuario.fromJson(jsonDecode(userJson));
+        }
+      } catch (e) {
+        print('Error al obtener usuario de web: $e');
+      }
+    }
+    return null;
   }
 
   // Obtener usuario actual - Con soporte offline/online
@@ -258,7 +307,13 @@ class AuthService {
       }
 
       // Limpiar token
-      await _storage.delete(key: 'auth_token');
+      if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('auth_token');
+        await prefs.remove('current_user');
+      } else {
+        await _storage.delete(key: 'auth_token');
+      }
 
       // Limpiar cache local (opcional - puedes mantener el cache para offline)
       // await _dbService.clearAllUsuarios();
