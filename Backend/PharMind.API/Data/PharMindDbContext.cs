@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PharMind.API.Models;
+using PharMind.API.Models.Analytics;
 
 namespace PharMind.API.Data;
 
@@ -23,6 +24,13 @@ public class PharMindDbContext : DbContext
     public DbSet<Estado> Estados { get; set; }
     public DbSet<Ciudad> Ciudades { get; set; }
     public DbSet<Calle> Calles { get; set; }
+
+    // Analytics DbSets
+    public DbSet<AnalyticsMedico> AnalyticsMedicos { get; set; }
+    public DbSet<AnalyticsRepresentante> AnalyticsRepresentantes { get; set; }
+    public DbSet<AnalyticsVisita> AnalyticsVisitas { get; set; }
+    public DbSet<AnalyticsProducto> AnalyticsProductos { get; set; }
+    public DbSet<AnalyticsObjetivo> AnalyticsObjetivos { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -11,6 +11,8 @@ import EmpresasPage from './pages/empresas/EmpresasPage';
 import EntidadesPage from './pages/admin/EntidadesPage';
 import TablasMaestrasPage from './pages/admin/TablasMaestrasPage';
 import DynamicEntityPage from './pages/dynamic/DynamicEntityPage';
+import ActividadVisitasPage from './pages/analytics/ActividadVisitasPage';
+import DesempenoRepresentantesPage from './pages/analytics/DesempenoRepresentantesPage';
 import './styles/App.css';
 import './styles/dark-mode.css';
 
@@ -111,6 +113,26 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <TablasMaestrasPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics/actividad-visitas"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <ActividadVisitasPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics/desempeno-representantes"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <DesempenoRepresentantesPage />
               </AppLayout>
             </ProtectedRoute>
           }

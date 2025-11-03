@@ -36,6 +36,7 @@ const Sidebar = () => {
   const [agentesExpanded, setAgentesExpanded] = useState(false);
   const [relacionesExpanded, setRelacionesExpanded] = useState(false);
   const [interaccionesExpanded, setInteraccionesExpanded] = useState(false);
+  const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
   const [adminExpanded, setAdminExpanded] = useState(false);
 
   const menuItems: MenuItem[] = [
@@ -44,6 +45,21 @@ const Sidebar = () => {
       label: 'Dashboard',
       icon: 'dashboard',
       path: '/dashboard'
+    }
+  ];
+
+  const analyticsMenuItems: MenuItem[] = [
+    {
+      id: 'actividad-visitas',
+      label: 'Actividad de Visitas',
+      icon: 'analytics',
+      path: '/analytics/actividad-visitas'
+    },
+    {
+      id: 'desempeno-representantes',
+      label: 'Desempeño de Representantes',
+      icon: 'leaderboard',
+      path: '/analytics/desempeno-representantes'
     }
   ];
 
@@ -167,6 +183,37 @@ const Sidebar = () => {
             </Link>
           );
         })}
+
+        {/* Analytics Section */}
+        <div
+          className="sidebar-section-header"
+          onClick={() => setAnalyticsExpanded(!analyticsExpanded)}
+        >
+          <span className="material-icons">bar_chart</span>
+          {!sidebarCollapsed && <span>Analytics</span>}
+          {!sidebarCollapsed && (
+            <span className="material-icons sidebar-expand-icon">
+              {analyticsExpanded ? 'expand_less' : 'expand_more'}
+            </span>
+          )}
+        </div>
+        {analyticsExpanded && !sidebarCollapsed && (
+          <div className="sidebar-subsection">
+            {analyticsMenuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.path}
+                  className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
+                >
+                  <span className="material-icons">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
         {/* Clientes Section */}
         {clientesEsquemas.length > 0 && (
