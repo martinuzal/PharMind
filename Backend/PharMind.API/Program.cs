@@ -18,6 +18,7 @@ builder.Services.AddDbContext<PharMindDbContext>(options =>
 
 // Services
 builder.Services.AddScoped<DynamicTableService>();
+builder.Services.AddHttpClient();
 
 // CORS
 builder.Services.AddCors(options =>
@@ -66,8 +67,13 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<PharMindDbContext>();
 
-        // Aplicar migraciones pendientes (esto creará la base de datos si no existe)
-        context.Database.Migrate();
+        // Asegurar que la base de datos existe (sin aplicar migraciones automáticas)
+        // Esto permite usar arquitectura híbrida: entidades dinámicas + tablas CRM fijas
+        //context.Database.Migrate(); // Comentado para arquitectura híbrida
+        if (!context.Database.CanConnect())
+        {
+            throw new Exception("No se puede conectar a la base de datos. Verifica tu connection string.");
+        }
 
         // Actualizar el hash del password del administrador si es necesario
         var adminEmail = "admin@pharmind.com";

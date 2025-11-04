@@ -196,7 +196,7 @@ const DynamicFormField = ({ field, value, onChange }: DynamicFormFieldProps) => 
         );
 
       case 'repeater':
-        const items = value || [];
+        const items = Array.isArray(value) ? value : [];
         const repeaterConfig = field.repeaterConfig;
         const minItems = repeaterConfig?.minItems || 0;
         const maxItems = repeaterConfig?.maxItems || 10;

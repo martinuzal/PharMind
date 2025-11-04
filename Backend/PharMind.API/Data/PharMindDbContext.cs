@@ -24,6 +24,24 @@ public class PharMindDbContext : DbContext
     public DbSet<Estado> Estados { get; set; }
     public DbSet<Ciudad> Ciudades { get; set; }
     public DbSet<Calle> Calles { get; set; }
+    public DbSet<TiempoUtilizado> TiempoUtilizado { get; set; }
+    public DbSet<TipoActividad> TiposActividad { get; set; }
+
+    // Agentes DbSets
+    public DbSet<LineaNegocio> LineasNegocio { get; set; }
+    public DbSet<Region> Regiones { get; set; }
+    public DbSet<Distrito> Distritos { get; set; }
+    public DbSet<Agente> Agentes { get; set; }
+    public DbSet<Manager> Managers { get; set; }
+    public DbSet<ManagerRegion> ManagerRegiones { get; set; }
+    public DbSet<ManagerDistrito> ManagerDistritos { get; set; }
+    public DbSet<ManagerLineaNegocio> ManagerLineasNegocio { get; set; }
+
+    // CRM DbSets
+    public DbSet<Cliente> Clientes { get; set; }
+    public DbSet<Relacion> Relaciones { get; set; }
+    public DbSet<Interaccion> Interacciones { get; set; }
+    public DbSet<AuditoriaAgente> AuditoriasAgentes { get; set; }
 
     // Analytics DbSets
     public DbSet<AnalyticsMedico> AnalyticsMedicos { get; set; }
@@ -78,6 +96,130 @@ public class PharMindDbContext : DbContext
             .HasOne(m => m.ModuloPadre)
             .WithMany(m => m.SubModulos)
             .HasForeignKey(m => m.ModuloPadreId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configuración de relaciones para Distritos
+        modelBuilder.Entity<Distrito>()
+            .HasOne(d => d.Region)
+            .WithMany(r => r.Distritos)
+            .HasForeignKey(d => d.RegionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Manager>()
+            .HasOne(m => m.Usuario)
+            .WithMany()
+            .HasForeignKey(m => m.UsuarioId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Relaciones muchos-a-muchos para Managers
+        modelBuilder.Entity<ManagerRegion>()
+            .HasOne(mr => mr.Manager)
+            .WithMany(m => m.ManagerRegiones)
+            .HasForeignKey(mr => mr.ManagerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ManagerRegion>()
+            .HasOne(mr => mr.Region)
+            .WithMany(r => r.ManagerRegiones)
+            .HasForeignKey(mr => mr.RegionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ManagerDistrito>()
+            .HasOne(md => md.Manager)
+            .WithMany(m => m.ManagerDistritos)
+            .HasForeignKey(md => md.ManagerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ManagerDistrito>()
+            .HasOne(md => md.Distrito)
+            .WithMany(d => d.ManagerDistritos)
+            .HasForeignKey(md => md.DistritoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ManagerLineaNegocio>()
+            .HasOne(mln => mln.Manager)
+            .WithMany(m => m.ManagerLineasNegocio)
+            .HasForeignKey(mln => mln.ManagerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ManagerLineaNegocio>()
+            .HasOne(mln => mln.LineaNegocio)
+            .WithMany(ln => ln.ManagerLineasNegocio)
+            .HasForeignKey(mln => mln.LineaNegocioId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configuración de relación TiempoUtilizado - TipoActividad
+        modelBuilder.Entity<TiempoUtilizado>()
+            .HasOne(tu => tu.TipoActividad)
+            .WithMany(ta => ta.TiemposUtilizados)
+            .HasForeignKey(tu => tu.TipoActividadId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configuración de relaciones CRM
+        modelBuilder.Entity<Cliente>()
+            .HasOne(c => c.Institucion)
+            .WithMany(i => i.MedicosAsociados)
+            .HasForeignKey(c => c.InstitucionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Cliente>()
+            .HasOne(c => c.Direccion)
+            .WithMany()
+            .HasForeignKey(c => c.DireccionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Relacion>()
+            .HasOne(r => r.Agente)
+            .WithMany(a => a.Relaciones)
+            .HasForeignKey(r => r.AgenteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Relacion>()
+            .HasOne(r => r.ClientePrincipal)
+            .WithMany()
+            .HasForeignKey(r => r.ClientePrincipalId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Relacion>()
+            .HasOne(r => r.ClienteSecundario1)
+            .WithMany()
+            .HasForeignKey(r => r.ClienteSecundario1Id)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Relacion>()
+            .HasOne(r => r.ClienteSecundario2)
+            .WithMany()
+            .HasForeignKey(r => r.ClienteSecundario2Id)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Interaccion>()
+            .HasOne(i => i.Relacion)
+            .WithMany(r => r.Interacciones)
+            .HasForeignKey(i => i.RelacionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Interaccion>()
+            .HasOne(i => i.Agente)
+            .WithMany(a => a.Interacciones)
+            .HasForeignKey(i => i.AgenteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Interaccion>()
+            .HasOne(i => i.Cliente)
+            .WithMany()
+            .HasForeignKey(i => i.ClienteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Interaccion>()
+            .HasOne(i => i.EntidadDinamica)
+            .WithMany()
+            .HasForeignKey(i => i.EntidadDinamicaId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AuditoriaAgente>()
+            .HasOne(aa => aa.Agente)
+            .WithMany(a => a.Auditorias)
+            .HasForeignKey(aa => aa.AgenteId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Seed data - IDs fijos para datos de prueba
