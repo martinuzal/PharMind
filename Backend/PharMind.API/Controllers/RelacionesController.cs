@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PharMind.API.Data;
 using PharMind.API.DTOs;
 using PharMind.API.Models;
+using System.Text.Json;
 
 namespace PharMind.API.Controllers;
 
@@ -32,6 +33,8 @@ public class RelacionesController : ControllerBase
         try
         {
             var query = _context.Relaciones
+                .Include(r => r.TipoRelacionEsquema)
+                .Include(r => r.DatosExtendidos)
                 .Include(r => r.Agente)
                 .Include(r => r.ClientePrincipal)
                 .Include(r => r.ClienteSecundario1)
@@ -49,31 +52,8 @@ public class RelacionesController : ControllerBase
                 .Take(pageSize)
                 .ToListAsync();
 
-            // Mapear a DTOs
-            var itemDtos = items.Select(r => new RelacionDto
-            {
-                Id = r.Id,
-                CodigoRelacion = r.CodigoRelacion,
-                AgenteId = r.AgenteId,
-                AgenteNombre = r.Agente?.Nombre ?? "N/A",
-                ClientePrincipalId = r.ClientePrincipalId,
-                ClientePrincipalNombre = r.ClientePrincipal?.RazonSocial ?? "N/A",
-                ClienteSecundario1Id = r.ClienteSecundario1Id,
-                ClienteSecundario1Nombre = r.ClienteSecundario1?.RazonSocial,
-                ClienteSecundario2Id = r.ClienteSecundario2Id,
-                ClienteSecundario2Nombre = r.ClienteSecundario2?.RazonSocial,
-                TipoRelacion = r.TipoRelacion,
-                FechaInicio = r.FechaInicio,
-                FechaFin = r.FechaFin,
-                Estado = r.Estado,
-                FrecuenciaVisitas = r.FrecuenciaVisitas,
-                Prioridad = r.Prioridad,
-                Observaciones = r.Observaciones,
-                FechaCreacion = r.FechaCreacion,
-                CreadoPor = r.CreadoPor,
-                FechaModificacion = r.FechaModificacion,
-                ModificadoPor = r.ModificadoPor
-            }).ToList();
+            // Mapear a DTOs usando MapToDto
+            var itemDtos = items.Select(r => MapToDto(r)).ToList();
 
             var response = new RelacionListResponse
             {
@@ -101,6 +81,8 @@ public class RelacionesController : ControllerBase
         try
         {
             var relacion = await _context.Relaciones
+                .Include(r => r.TipoRelacionEsquema)
+                .Include(r => r.DatosExtendidos)
                 .Include(r => r.Agente)
                 .Include(r => r.ClientePrincipal)
                 .Include(r => r.ClienteSecundario1)
@@ -112,30 +94,7 @@ public class RelacionesController : ControllerBase
                 return NotFound(new { message = "Relación no encontrada" });
             }
 
-            var dto = new RelacionDto
-            {
-                Id = relacion.Id,
-                CodigoRelacion = relacion.CodigoRelacion,
-                AgenteId = relacion.AgenteId,
-                AgenteNombre = relacion.Agente?.Nombre ?? "N/A",
-                ClientePrincipalId = relacion.ClientePrincipalId,
-                ClientePrincipalNombre = relacion.ClientePrincipal?.RazonSocial ?? "N/A",
-                ClienteSecundario1Id = relacion.ClienteSecundario1Id,
-                ClienteSecundario1Nombre = relacion.ClienteSecundario1?.RazonSocial,
-                ClienteSecundario2Id = relacion.ClienteSecundario2Id,
-                ClienteSecundario2Nombre = relacion.ClienteSecundario2?.RazonSocial,
-                TipoRelacion = relacion.TipoRelacion,
-                FechaInicio = relacion.FechaInicio,
-                FechaFin = relacion.FechaFin,
-                Estado = relacion.Estado,
-                FrecuenciaVisitas = relacion.FrecuenciaVisitas,
-                Prioridad = relacion.Prioridad,
-                Observaciones = relacion.Observaciones,
-                FechaCreacion = relacion.FechaCreacion,
-                CreadoPor = relacion.CreadoPor,
-                FechaModificacion = relacion.FechaModificacion,
-                ModificadoPor = relacion.ModificadoPor
-            };
+            var dto = MapToDto(relacion);
 
             return Ok(dto);
         }
@@ -154,6 +113,15 @@ public class RelacionesController : ControllerBase
     {
         try
         {
+            // Validar que el TipoRelacionId existe
+            var tipoRelacion = await _context.EsquemasPersonalizados
+                .FirstOrDefaultAsync(e => e.Id == dto.TipoRelacionId && e.EntidadTipo == "Relacion" && e.Status == false);
+
+            if (tipoRelacion == null)
+            {
+                return BadRequest(new { message = "Tipo de relación no encontrado" });
+            }
+
             // Verificar que el agente existe
             var agente = await _context.Agentes.FindAsync(dto.AgenteId);
             if (agente == null)
@@ -188,9 +156,29 @@ public class RelacionesController : ControllerBase
                 }
             }
 
+            // Crear EntidadDinamica si hay datos dinámicos
+            string? entidadDinamicaId = null;
+            if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
+            {
+                var entidadDinamica = new EntidadDinamica
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    EsquemaId = dto.TipoRelacionId,
+                    Datos = JsonSerializer.Serialize(dto.DatosDinamicos),
+                    Status = false,
+                    FechaCreacion = DateTime.Now,
+                    CreadoPor = "System"
+                };
+
+                _context.EntidadesDinamicas.Add(entidadDinamica);
+                entidadDinamicaId = entidadDinamica.Id;
+            }
+
             var relacion = new Relacion
             {
                 Id = Guid.NewGuid().ToString(),
+                TipoRelacionId = dto.TipoRelacionId,
+                EntidadDinamicaId = entidadDinamicaId,
                 CodigoRelacion = dto.CodigoRelacion,
                 AgenteId = dto.AgenteId,
                 ClientePrincipalId = dto.ClientePrincipalId,
@@ -212,33 +200,14 @@ public class RelacionesController : ControllerBase
             await _context.SaveChangesAsync();
 
             // Recargar con datos relacionados
+            await _context.Entry(relacion).Reference(r => r.TipoRelacionEsquema).LoadAsync();
+            await _context.Entry(relacion).Reference(r => r.DatosExtendidos).LoadAsync();
             await _context.Entry(relacion).Reference(r => r.Agente).LoadAsync();
             await _context.Entry(relacion).Reference(r => r.ClientePrincipal).LoadAsync();
             await _context.Entry(relacion).Reference(r => r.ClienteSecundario1).LoadAsync();
             await _context.Entry(relacion).Reference(r => r.ClienteSecundario2).LoadAsync();
 
-            var result = new RelacionDto
-            {
-                Id = relacion.Id,
-                CodigoRelacion = relacion.CodigoRelacion,
-                AgenteId = relacion.AgenteId,
-                AgenteNombre = relacion.Agente?.Nombre ?? "N/A",
-                ClientePrincipalId = relacion.ClientePrincipalId,
-                ClientePrincipalNombre = relacion.ClientePrincipal?.RazonSocial ?? "N/A",
-                ClienteSecundario1Id = relacion.ClienteSecundario1Id,
-                ClienteSecundario1Nombre = relacion.ClienteSecundario1?.RazonSocial,
-                ClienteSecundario2Id = relacion.ClienteSecundario2Id,
-                ClienteSecundario2Nombre = relacion.ClienteSecundario2?.RazonSocial,
-                TipoRelacion = relacion.TipoRelacion,
-                FechaInicio = relacion.FechaInicio,
-                FechaFin = relacion.FechaFin,
-                Estado = relacion.Estado,
-                FrecuenciaVisitas = relacion.FrecuenciaVisitas,
-                Prioridad = relacion.Prioridad,
-                Observaciones = relacion.Observaciones,
-                FechaCreacion = relacion.FechaCreacion,
-                CreadoPor = relacion.CreadoPor
-            };
+            var result = MapToDto(relacion);
 
             return CreatedAtAction(nameof(GetRelacionById), new { id = relacion.Id }, result);
         }
@@ -258,6 +227,8 @@ public class RelacionesController : ControllerBase
         try
         {
             var relacion = await _context.Relaciones
+                .Include(r => r.TipoRelacionEsquema)
+                .Include(r => r.DatosExtendidos)
                 .Include(r => r.Agente)
                 .Include(r => r.ClientePrincipal)
                 .Include(r => r.ClienteSecundario1)
@@ -289,6 +260,38 @@ public class RelacionesController : ControllerBase
                 }
             }
 
+            // Actualizar o crear EntidadDinamica con los datos dinámicos
+            if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
+            {
+                if (!string.IsNullOrWhiteSpace(relacion.EntidadDinamicaId))
+                {
+                    // Actualizar entidad dinámica existente
+                    var entidadDinamica = await _context.EntidadesDinamicas.FindAsync(relacion.EntidadDinamicaId);
+                    if (entidadDinamica != null)
+                    {
+                        entidadDinamica.Datos = JsonSerializer.Serialize(dto.DatosDinamicos);
+                        entidadDinamica.FechaModificacion = DateTime.Now;
+                        entidadDinamica.ModificadoPor = "System";
+                    }
+                }
+                else
+                {
+                    // Crear nueva entidad dinámica
+                    var nuevaEntidadDinamica = new EntidadDinamica
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        EsquemaId = relacion.TipoRelacionId,
+                        Datos = JsonSerializer.Serialize(dto.DatosDinamicos),
+                        Status = false,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "System"
+                    };
+
+                    _context.EntidadesDinamicas.Add(nuevaEntidadDinamica);
+                    relacion.EntidadDinamicaId = nuevaEntidadDinamica.Id;
+                }
+            }
+
             // Actualizar campos
             relacion.ClienteSecundario1Id = dto.ClienteSecundario1Id;
             relacion.ClienteSecundario2Id = dto.ClienteSecundario2Id;
@@ -305,35 +308,14 @@ public class RelacionesController : ControllerBase
             await _context.SaveChangesAsync();
 
             // Recargar con datos relacionados
+            await _context.Entry(relacion).Reference(r => r.TipoRelacionEsquema).LoadAsync();
+            await _context.Entry(relacion).Reference(r => r.DatosExtendidos).LoadAsync();
             await _context.Entry(relacion).Reference(r => r.Agente).LoadAsync();
             await _context.Entry(relacion).Reference(r => r.ClientePrincipal).LoadAsync();
             await _context.Entry(relacion).Reference(r => r.ClienteSecundario1).LoadAsync();
             await _context.Entry(relacion).Reference(r => r.ClienteSecundario2).LoadAsync();
 
-            var result = new RelacionDto
-            {
-                Id = relacion.Id,
-                CodigoRelacion = relacion.CodigoRelacion,
-                AgenteId = relacion.AgenteId,
-                AgenteNombre = relacion.Agente?.Nombre ?? "N/A",
-                ClientePrincipalId = relacion.ClientePrincipalId,
-                ClientePrincipalNombre = relacion.ClientePrincipal?.RazonSocial ?? "N/A",
-                ClienteSecundario1Id = relacion.ClienteSecundario1Id,
-                ClienteSecundario1Nombre = relacion.ClienteSecundario1?.RazonSocial,
-                ClienteSecundario2Id = relacion.ClienteSecundario2Id,
-                ClienteSecundario2Nombre = relacion.ClienteSecundario2?.RazonSocial,
-                TipoRelacion = relacion.TipoRelacion,
-                FechaInicio = relacion.FechaInicio,
-                FechaFin = relacion.FechaFin,
-                Estado = relacion.Estado,
-                FrecuenciaVisitas = relacion.FrecuenciaVisitas,
-                Prioridad = relacion.Prioridad,
-                Observaciones = relacion.Observaciones,
-                FechaCreacion = relacion.FechaCreacion,
-                CreadoPor = relacion.CreadoPor,
-                FechaModificacion = relacion.FechaModificacion,
-                ModificadoPor = relacion.ModificadoPor
-            };
+            var result = MapToDto(relacion);
 
             return Ok(result);
         }
@@ -373,5 +355,58 @@ public class RelacionesController : ControllerBase
             _logger.LogError(ex, "Error al eliminar relación con ID: {Id}", id);
             return StatusCode(500, new { message = "Error al eliminar la relación" });
         }
+    }
+
+    /// <summary>
+    /// Mapea una entidad Relacion a RelacionDto incluyendo datos dinámicos
+    /// </summary>
+    private RelacionDto MapToDto(Relacion relacion)
+    {
+        var dto = new RelacionDto
+        {
+            Id = relacion.Id,
+            TipoRelacionId = relacion.TipoRelacionId,
+            TipoRelacionNombre = relacion.TipoRelacionEsquema?.Nombre,
+            EntidadDinamicaId = relacion.EntidadDinamicaId,
+            CodigoRelacion = relacion.CodigoRelacion,
+            AgenteId = relacion.AgenteId,
+            AgenteNombre = relacion.Agente?.Nombre ?? "N/A",
+            ClientePrincipalId = relacion.ClientePrincipalId,
+            ClientePrincipalNombre = relacion.ClientePrincipal?.Nombre ?? relacion.ClientePrincipal?.RazonSocial ?? "N/A",
+            ClienteSecundario1Id = relacion.ClienteSecundario1Id,
+            ClienteSecundario1Nombre = relacion.ClienteSecundario1?.Nombre ?? relacion.ClienteSecundario1?.RazonSocial,
+            ClienteSecundario2Id = relacion.ClienteSecundario2Id,
+            ClienteSecundario2Nombre = relacion.ClienteSecundario2?.Nombre ?? relacion.ClienteSecundario2?.RazonSocial,
+            TipoRelacion = relacion.TipoRelacion,
+            FechaInicio = relacion.FechaInicio,
+            FechaFin = relacion.FechaFin,
+            Estado = relacion.Estado,
+            FrecuenciaVisitas = relacion.FrecuenciaVisitas,
+            Prioridad = relacion.Prioridad,
+            Observaciones = relacion.Observaciones,
+            FechaCreacion = relacion.FechaCreacion,
+            CreadoPor = relacion.CreadoPor,
+            FechaModificacion = relacion.FechaModificacion,
+            ModificadoPor = relacion.ModificadoPor
+        };
+
+        // Mapear datos dinámicos si existen
+        if (relacion.DatosExtendidos?.Datos != null)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                dto.DatosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(relacion.DatosExtendidos.Datos, options);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error al deserializar datos dinámicos para relación {Id}", relacion.Id);
+            }
+        }
+
+        return dto;
     }
 }

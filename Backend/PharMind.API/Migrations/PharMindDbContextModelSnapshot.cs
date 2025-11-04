@@ -22,6 +22,112 @@ namespace PharMind.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("PharMind.API.Models.Agente", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("CodigoAgente")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("CodigoAgente");
+
+                    b.Property<string>("CodigoDistrito")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("CodigoDistrito");
+
+                    b.Property<string>("CodigoLineaNegocio")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("CodigoLineaNegocio");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<string>("DistritoId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DistritoNombre")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("DistritoNombre");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Email");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Estado");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaIngreso")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaIngreso");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("LineaNegocioId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LineaNegocioNombre")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("LineaNegocioNombre");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Nombre");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.Property<string>("SupervisorId")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("SupervisorId");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Telefono");
+
+                    b.Property<string>("ZonaGeografica")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("ZonaGeografica");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DistritoId");
+
+                    b.HasIndex("LineaNegocioId");
+
+                    b.HasIndex("SupervisorId");
+
+                    b.ToTable("Agentes");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Analytics.AnalyticsMedico", b =>
                 {
                     b.Property<int>("Id")
@@ -275,6 +381,63 @@ namespace PharMind.API.Migrations
                     b.ToTable("analytics_visitas");
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.AuditoriaAgente", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("AgenteId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("AgenteId");
+
+                    b.Property<string>("CampoModificado")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("CampoModificado");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("Descripcion");
+
+                    b.Property<string>("DireccionIP")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("DireccionIP");
+
+                    b.Property<DateTime>("FechaOperacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaOperacion");
+
+                    b.Property<string>("TipoOperacion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("TipoOperacion");
+
+                    b.Property<string>("UsuarioOperacion")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("UsuarioOperacion");
+
+                    b.Property<string>("ValorAnterior")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ValorAnterior");
+
+                    b.Property<string>("ValorNuevo")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ValorNuevo");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgenteId");
+
+                    b.ToTable("AuditoriaAgentes");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Calle", b =>
                 {
                     b.Property<string>("Id")
@@ -388,6 +551,100 @@ namespace PharMind.API.Migrations
                     b.ToTable("Ciudades");
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.Cliente", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("Categoria")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Categoria");
+
+                    b.Property<string>("CodigoCliente")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("CodigoCliente");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<string>("DireccionId")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("DireccionId");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Email");
+
+                    b.Property<string>("Especialidad")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Especialidad");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Estado");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("InstitucionId")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("InstitucionId");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("RazonSocial")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("RazonSocial");
+
+                    b.Property<string>("Segmento")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Segmento");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Telefono");
+
+                    b.Property<string>("TipoCliente")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("TipoCliente");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DireccionId");
+
+                    b.HasIndex("InstitucionId");
+
+                    b.ToTable("Clientes");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Direccion", b =>
                 {
                     b.Property<string>("Id")
@@ -481,6 +738,91 @@ namespace PharMind.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Direcciones");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Distrito", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("Activo");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Codigo");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("Color");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Descripcion");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("Icono")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Icono");
+
+                    b.Property<string>("LegacyCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("LegacyCode");
+
+                    b.Property<string>("Legajo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Legajo");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Nombre");
+
+                    b.Property<int?>("Orden")
+                        .HasColumnType("int")
+                        .HasColumnName("Orden");
+
+                    b.Property<string>("RegionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("RegionId");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegionId");
+
+                    b.ToTable("Distritos");
                 });
 
             modelBuilder.Entity("PharMind.API.Models.Empresa", b =>
@@ -799,6 +1141,447 @@ namespace PharMind.API.Migrations
                     b.ToTable("Estados");
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.Interaccion", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("AgenteId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("AgenteId");
+
+                    b.Property<string>("ClienteId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("ClienteId");
+
+                    b.Property<string>("ClienteId1")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CodigoInteraccion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("CodigoInteraccion");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<int?>("DuracionMinutos")
+                        .HasColumnType("int")
+                        .HasColumnName("DuracionMinutos");
+
+                    b.Property<string>("EntidadDinamicaId")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("EntidadDinamicaId");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Fecha");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<DateTime?>("FechaProximaAccion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaProximaAccion");
+
+                    b.Property<decimal?>("Latitud")
+                        .HasColumnType("decimal(10, 7)")
+                        .HasColumnName("Latitud");
+
+                    b.Property<decimal?>("Longitud")
+                        .HasColumnType("decimal(10, 7)")
+                        .HasColumnName("Longitud");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("ObjetivoVisita")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("ObjetivoVisita");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("Observaciones");
+
+                    b.Property<string>("ProximaAccion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("ProximaAccion");
+
+                    b.Property<string>("RelacionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("RelacionId");
+
+                    b.Property<string>("Resultado")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Resultado");
+
+                    b.Property<string>("ResumenVisita")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("ResumenVisita");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.Property<string>("TipoInteraccion")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("TipoInteraccion");
+
+                    b.Property<string>("Turno")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("Turno");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgenteId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("ClienteId1");
+
+                    b.HasIndex("EntidadDinamicaId");
+
+                    b.HasIndex("RelacionId");
+
+                    b.ToTable("Interacciones");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.LineaNegocio", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("Activo");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Codigo");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("Color");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Descripcion");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("Icono")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Icono");
+
+                    b.Property<string>("LegacyCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("LegacyCode");
+
+                    b.Property<string>("Legajo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Legajo");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Nombre");
+
+                    b.Property<int?>("Orden")
+                        .HasColumnType("int")
+                        .HasColumnName("Orden");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LineasNegocio");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Manager", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("Activo");
+
+                    b.Property<string>("Apellido")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Apellido");
+
+                    b.Property<string>("Cargo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Cargo");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Codigo");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("Email");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaIngreso")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaIngreso");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("LegacyCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("LegacyCode");
+
+                    b.Property<string>("Legajo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Legajo");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Nombre");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("Observaciones");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Telefono");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("UsuarioId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("Managers");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.ManagerDistrito", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<string>("DistritoId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("DistritoId");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("ManagerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("ManagerId");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DistritoId");
+
+                    b.HasIndex("ManagerId");
+
+                    b.ToTable("ManagerDistritos");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.ManagerLineaNegocio", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("LineaNegocioId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("LineaNegocioId");
+
+                    b.Property<string>("ManagerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("ManagerId");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LineaNegocioId");
+
+                    b.HasIndex("ManagerId");
+
+                    b.ToTable("ManagerLineasNegocio");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.ManagerRegion", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("ManagerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("ManagerId");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("RegionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("RegionId");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManagerId");
+
+                    b.HasIndex("RegionId");
+
+                    b.ToTable("ManagerRegiones");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Modulo", b =>
                 {
                     b.Property<string>("Id")
@@ -951,6 +1734,199 @@ namespace PharMind.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Paises");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Region", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("Activo");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Codigo");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("Color");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Descripcion");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("Icono")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Icono");
+
+                    b.Property<string>("LegacyCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("LegacyCode");
+
+                    b.Property<string>("Legajo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Legajo");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Nombre");
+
+                    b.Property<int?>("Orden")
+                        .HasColumnType("int")
+                        .HasColumnName("Orden");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Regiones");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Relacion", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("AgenteId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("AgenteId");
+
+                    b.Property<string>("ClienteId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ClienteId1")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ClienteId2")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ClientePrincipalId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("ClientePrincipalId");
+
+                    b.Property<string>("ClienteSecundario1Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("ClienteSecundario1Id");
+
+                    b.Property<string>("ClienteSecundario2Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("ClienteSecundario2Id");
+
+                    b.Property<string>("CodigoRelacion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("CodigoRelacion");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Estado");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaFin")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaFin");
+
+                    b.Property<DateTime>("FechaInicio")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaInicio");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("FrecuenciaVisitas")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("FrecuenciaVisitas");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("Observaciones");
+
+                    b.Property<string>("Prioridad")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Prioridad");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.Property<string>("TipoRelacion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("TipoRelacion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgenteId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("ClienteId1");
+
+                    b.HasIndex("ClienteId2");
+
+                    b.HasIndex("ClientePrincipalId");
+
+                    b.HasIndex("ClienteSecundario1Id");
+
+                    b.HasIndex("ClienteSecundario2Id");
+
+                    b.ToTable("Relaciones");
                 });
 
             modelBuilder.Entity("PharMind.API.Models.Rol", b =>
@@ -1213,6 +2189,163 @@ namespace PharMind.API.Migrations
                     b.ToTable("TablasMaestras");
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.TiempoUtilizado", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Descripcion");
+
+                    b.Property<bool>("EsRecurrente")
+                        .HasColumnType("bit")
+                        .HasColumnName("EsRecurrente");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Fecha");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<decimal>("HorasUtilizadas")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("HorasUtilizadas");
+
+                    b.Property<int>("MinutosUtilizados")
+                        .HasColumnType("int")
+                        .HasColumnName("MinutosUtilizados");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("Observaciones");
+
+                    b.Property<string>("RepresentanteId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("RepresentanteId");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.Property<string>("TipoActividadId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("TipoActividadId");
+
+                    b.Property<string>("Turno")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("Turno");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RepresentanteId");
+
+                    b.HasIndex("TipoActividadId");
+
+                    b.ToTable("TiempoUtilizado");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.TipoActividad", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("Id");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("Activo");
+
+                    b.Property<string>("Clasificacion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Clasificacion");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Codigo");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("Color");
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("CreadoPor");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Descripcion");
+
+                    b.Property<bool>("EsSistema")
+                        .HasColumnType("bit")
+                        .HasColumnName("EsSistema");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaCreacion");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("FechaModificacion");
+
+                    b.Property<string>("Icono")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Icono");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("ModificadoPor");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Nombre");
+
+                    b.Property<int?>("Orden")
+                        .HasColumnType("int")
+                        .HasColumnName("Orden");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit")
+                        .HasColumnName("Status");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TiposActividad");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Usuario", b =>
                 {
                     b.Property<string>("Id")
@@ -1392,6 +2525,23 @@ namespace PharMind.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.Agente", b =>
+                {
+                    b.HasOne("PharMind.API.Models.Distrito", null)
+                        .WithMany("Agentes")
+                        .HasForeignKey("DistritoId");
+
+                    b.HasOne("PharMind.API.Models.LineaNegocio", null)
+                        .WithMany("Agentes")
+                        .HasForeignKey("LineaNegocioId");
+
+                    b.HasOne("PharMind.API.Models.Usuario", "Supervisor")
+                        .WithMany()
+                        .HasForeignKey("SupervisorId");
+
+                    b.Navigation("Supervisor");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Analytics.AnalyticsObjetivo", b =>
                 {
                     b.HasOne("PharMind.API.Models.Analytics.AnalyticsRepresentante", "Representante")
@@ -1422,6 +2572,17 @@ namespace PharMind.API.Migrations
                     b.Navigation("Representante");
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.AuditoriaAgente", b =>
+                {
+                    b.HasOne("PharMind.API.Models.Agente", "Agente")
+                        .WithMany("Auditorias")
+                        .HasForeignKey("AgenteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Agente");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Calle", b =>
                 {
                     b.HasOne("PharMind.API.Models.Ciudad", "Ciudad")
@@ -1438,6 +2599,34 @@ namespace PharMind.API.Migrations
                         .HasForeignKey("EstadoId");
 
                     b.Navigation("Estado");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Cliente", b =>
+                {
+                    b.HasOne("PharMind.API.Models.Direccion", "Direccion")
+                        .WithMany()
+                        .HasForeignKey("DireccionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PharMind.API.Models.Cliente", "Institucion")
+                        .WithMany("MedicosAsociados")
+                        .HasForeignKey("InstitucionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Direccion");
+
+                    b.Navigation("Institucion");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Distrito", b =>
+                {
+                    b.HasOne("PharMind.API.Models.Region", "Region")
+                        .WithMany("Distritos")
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Region");
                 });
 
             modelBuilder.Entity("PharMind.API.Models.EntidadDinamica", b =>
@@ -1481,6 +2670,112 @@ namespace PharMind.API.Migrations
                     b.Navigation("Pais");
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.Interaccion", b =>
+                {
+                    b.HasOne("PharMind.API.Models.Agente", "Agente")
+                        .WithMany("Interacciones")
+                        .HasForeignKey("AgenteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PharMind.API.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PharMind.API.Models.Cliente", null)
+                        .WithMany("Interacciones")
+                        .HasForeignKey("ClienteId1");
+
+                    b.HasOne("PharMind.API.Models.EsquemaPersonalizado", "EntidadDinamica")
+                        .WithMany()
+                        .HasForeignKey("EntidadDinamicaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PharMind.API.Models.Relacion", "Relacion")
+                        .WithMany("Interacciones")
+                        .HasForeignKey("RelacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Agente");
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("EntidadDinamica");
+
+                    b.Navigation("Relacion");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Manager", b =>
+                {
+                    b.HasOne("PharMind.API.Models.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.ManagerDistrito", b =>
+                {
+                    b.HasOne("PharMind.API.Models.Distrito", "Distrito")
+                        .WithMany("ManagerDistritos")
+                        .HasForeignKey("DistritoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PharMind.API.Models.Manager", "Manager")
+                        .WithMany("ManagerDistritos")
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Distrito");
+
+                    b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.ManagerLineaNegocio", b =>
+                {
+                    b.HasOne("PharMind.API.Models.LineaNegocio", "LineaNegocio")
+                        .WithMany("ManagerLineasNegocio")
+                        .HasForeignKey("LineaNegocioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PharMind.API.Models.Manager", "Manager")
+                        .WithMany("ManagerLineasNegocio")
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LineaNegocio");
+
+                    b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.ManagerRegion", b =>
+                {
+                    b.HasOne("PharMind.API.Models.Manager", "Manager")
+                        .WithMany("ManagerRegiones")
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PharMind.API.Models.Region", "Region")
+                        .WithMany("ManagerRegiones")
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("Region");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Modulo", b =>
                 {
                     b.HasOne("PharMind.API.Models.Modulo", "ModuloPadre")
@@ -1489,6 +2784,51 @@ namespace PharMind.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ModuloPadre");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Relacion", b =>
+                {
+                    b.HasOne("PharMind.API.Models.Agente", "Agente")
+                        .WithMany("Relaciones")
+                        .HasForeignKey("AgenteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PharMind.API.Models.Cliente", null)
+                        .WithMany("RelacionesPrincipales")
+                        .HasForeignKey("ClienteId");
+
+                    b.HasOne("PharMind.API.Models.Cliente", null)
+                        .WithMany("RelacionesSecundarias1")
+                        .HasForeignKey("ClienteId1");
+
+                    b.HasOne("PharMind.API.Models.Cliente", null)
+                        .WithMany("RelacionesSecundarias2")
+                        .HasForeignKey("ClienteId2");
+
+                    b.HasOne("PharMind.API.Models.Cliente", "ClientePrincipal")
+                        .WithMany()
+                        .HasForeignKey("ClientePrincipalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PharMind.API.Models.Cliente", "ClienteSecundario1")
+                        .WithMany()
+                        .HasForeignKey("ClienteSecundario1Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PharMind.API.Models.Cliente", "ClienteSecundario2")
+                        .WithMany()
+                        .HasForeignKey("ClienteSecundario2Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Agente");
+
+                    b.Navigation("ClientePrincipal");
+
+                    b.Navigation("ClienteSecundario1");
+
+                    b.Navigation("ClienteSecundario2");
                 });
 
             modelBuilder.Entity("PharMind.API.Models.Rol", b =>
@@ -1521,6 +2861,25 @@ namespace PharMind.API.Migrations
                     b.Navigation("Rol");
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.TiempoUtilizado", b =>
+                {
+                    b.HasOne("PharMind.API.Models.Usuario", "Representante")
+                        .WithMany()
+                        .HasForeignKey("RepresentanteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PharMind.API.Models.TipoActividad", "TipoActividad")
+                        .WithMany("TiemposUtilizados")
+                        .HasForeignKey("TipoActividadId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Representante");
+
+                    b.Navigation("TipoActividad");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Usuario", b =>
                 {
                     b.HasOne("PharMind.API.Models.Empresa", "Empresa")
@@ -1551,6 +2910,15 @@ namespace PharMind.API.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.Agente", b =>
+                {
+                    b.Navigation("Auditorias");
+
+                    b.Navigation("Interacciones");
+
+                    b.Navigation("Relaciones");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Analytics.AnalyticsMedico", b =>
                 {
                     b.Navigation("Visitas");
@@ -1563,6 +2931,42 @@ namespace PharMind.API.Migrations
                     b.Navigation("Visitas");
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.Cliente", b =>
+                {
+                    b.Navigation("Interacciones");
+
+                    b.Navigation("MedicosAsociados");
+
+                    b.Navigation("RelacionesPrincipales");
+
+                    b.Navigation("RelacionesSecundarias1");
+
+                    b.Navigation("RelacionesSecundarias2");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Distrito", b =>
+                {
+                    b.Navigation("Agentes");
+
+                    b.Navigation("ManagerDistritos");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.LineaNegocio", b =>
+                {
+                    b.Navigation("Agentes");
+
+                    b.Navigation("ManagerLineasNegocio");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Manager", b =>
+                {
+                    b.Navigation("ManagerDistritos");
+
+                    b.Navigation("ManagerLineasNegocio");
+
+                    b.Navigation("ManagerRegiones");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Modulo", b =>
                 {
                     b.Navigation("RolModulos");
@@ -1570,11 +2974,28 @@ namespace PharMind.API.Migrations
                     b.Navigation("SubModulos");
                 });
 
+            modelBuilder.Entity("PharMind.API.Models.Region", b =>
+                {
+                    b.Navigation("Distritos");
+
+                    b.Navigation("ManagerRegiones");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.Relacion", b =>
+                {
+                    b.Navigation("Interacciones");
+                });
+
             modelBuilder.Entity("PharMind.API.Models.Rol", b =>
                 {
                     b.Navigation("RolModulos");
 
                     b.Navigation("UsuarioRoles");
+                });
+
+            modelBuilder.Entity("PharMind.API.Models.TipoActividad", b =>
+                {
+                    b.Navigation("TiemposUtilizados");
                 });
 
             modelBuilder.Entity("PharMind.API.Models.Usuario", b =>

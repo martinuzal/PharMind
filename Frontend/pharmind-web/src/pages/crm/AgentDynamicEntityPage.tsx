@@ -102,6 +102,9 @@ const AgentDynamicEntityPage = () => {
     return (saved === 'list' || saved === 'grid') ? saved : 'grid';
   });
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Opciones para selects
   const [regiones, setRegiones] = useState<Region[]>([]);
   const [distritos, setDistritos] = useState<Distrito[]>([]);
@@ -504,6 +507,18 @@ const AgentDynamicEntityPage = () => {
     });
   };
 
+  const filteredAgentes = agentes.filter(agente => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      agente.codigoAgente.toLowerCase().includes(searchLower) ||
+      agente.nombre.toLowerCase().includes(searchLower) ||
+      agente.apellido?.toLowerCase().includes(searchLower) ||
+      agente.email?.toLowerCase().includes(searchLower) ||
+      agente.regionNombre?.toLowerCase().includes(searchLower) ||
+      agente.distritoNombre?.toLowerCase().includes(searchLower)
+    );
+  });
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -539,6 +554,15 @@ const AgentDynamicEntityPage = () => {
           </div>
         </div>
         <div className="header-actions">
+          <div className="search-box">
+            <span className="material-icons">search</span>
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
           <div className="view-toggle">
             <button
               className={`btn-view ${viewMode === 'grid' ? 'active' : ''}`}
@@ -564,7 +588,7 @@ const AgentDynamicEntityPage = () => {
 
       {viewMode === 'grid' ? (
         <div className="entities-grid">
-          {agentes.map((agente) => (
+          {filteredAgentes.map((agente) => (
             <div key={agente.id} className="entity-card">
               <div className="entity-body">
                 <div className="entity-title">
@@ -620,7 +644,7 @@ const AgentDynamicEntityPage = () => {
             </div>
           ))}
 
-          {agentes.length === 0 && (
+          {filteredAgentes.length === 0 && (
             <div className="empty-state">
               <span className="material-icons">inbox</span>
               <h3>No hay agentes</h3>
@@ -634,7 +658,7 @@ const AgentDynamicEntityPage = () => {
         </div>
       ) : (
         <div className="entities-list">
-          {agentes.length === 0 ? (
+          {filteredAgentes.length === 0 ? (
             <div className="empty-state">
               <span className="material-icons">inbox</span>
               <h3>No hay agentes</h3>
@@ -660,7 +684,7 @@ const AgentDynamicEntityPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {agentes.map((agente) => (
+                  {filteredAgentes.map((agente) => (
                     <tr key={agente.id}>
                       <td><strong>{agente.codigoAgente}</strong></td>
                       <td>{agente.nombre} {agente.apellido}</td>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import FormDesigner from '../formDesigner/FormDesigner';
 import type { FormSchema } from '../../types/formDesigner';
+import RelationClientsConfig from './RelationClientsConfig';
 import '../../styles/FormDesigner.css';
 import './SchemaBuilder.css';
 
@@ -45,10 +46,11 @@ interface SchemaField {
 interface SchemaBuilderProps {
   initialSchema?: string;
   onChange: (schema: string) => void;
+  entidadTipo?: string;
 }
 
-const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) => {
-  const [designMode, setDesignMode] = useState<'classic' | 'visual'>('visual');
+const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBuilderProps) => {
+  const [activeTab, setActiveTab] = useState<'visual' | 'classic' | 'clients'>('visual');
   const [fields, setFields] = useState<SchemaField[]>(() => {
     try {
       const parsed = JSON.parse(initialSchema);
@@ -67,6 +69,16 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
     required: false,
     dataSource: {
       type: 'static'
+    }
+  });
+
+  // State for clientesConfig (only for Relacion entities)
+  const [clientesConfig, setClientesConfig] = useState(() => {
+    try {
+      const parsed = JSON.parse(initialSchema);
+      return parsed.clientesConfig || {};
+    } catch {
+      return {};
     }
   });
 
@@ -138,7 +150,9 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
         ...(field.helpText && { helpText: field.helpText }),
       })),
       layout: formSchema.layout,
-      version: formSchema.version
+      version: formSchema.version,
+      // Include clientesConfig if it exists (for Relacion entities)
+      ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig })
     };
     onChange(JSON.stringify(schema, null, 2));
   };
@@ -161,7 +175,9 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
   const updateSchema = (newFields: SchemaField[]) => {
     const schema = {
       fields: newFields,
-      version: 1
+      version: 1,
+      // Include clientesConfig if it exists (for Relacion entities)
+      ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig })
     };
     onChange(JSON.stringify(schema, null, 2));
   };
@@ -223,6 +239,18 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
     updateSchema(newFields);
   };
 
+  const handleClientesConfigChange = (newConfig: any) => {
+    setClientesConfig(newConfig);
+
+    // Update the schema immediately with the new config
+    const schema = {
+      fields: fields,
+      version: 1,
+      clientesConfig: newConfig
+    };
+    onChange(JSON.stringify(schema, null, 2));
+  };
+
   return (
     <>
       <div className="schema-builder">
@@ -238,8 +266,8 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
             }}>
               <button
                 type="button"
-                className={designMode === 'visual' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
-                onClick={() => setDesignMode('visual')}
+                className={activeTab === 'visual' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+                onClick={() => setActiveTab('visual')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -251,8 +279,8 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
               </button>
               <button
                 type="button"
-                className={designMode === 'classic' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
-                onClick={() => setDesignMode('classic')}
+                className={activeTab === 'classic' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+                onClick={() => setActiveTab('classic')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -262,8 +290,23 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
                 <span className="material-icons" style={{ fontSize: '18px' }}>list</span>
                 Clásico
               </button>
+              {entidadTipo === 'Relacion' && (
+                <button
+                  type="button"
+                  className={activeTab === 'clients' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+                  onClick={() => setActiveTab('clients')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <span className="material-icons" style={{ fontSize: '18px' }}>groups</span>
+                  Clientes
+                </button>
+              )}
             </div>
-            {designMode === 'classic' && (
+            {activeTab === 'classic' && (
               <button type="button" className="btn-primary btn-sm" onClick={handleAddField}>
                 <span className="material-icons">add</span>
                 Agregar Campo
@@ -272,12 +315,12 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
           </div>
         </div>
 
-        {designMode === 'visual' ? (
+        {activeTab === 'visual' ? (
           <FormDesigner
             initialSchema={getFormDesignerSchema()}
             onChange={handleFormDesignerChange}
           />
-        ) : (
+        ) : activeTab === 'classic' ? (
           <div className="fields-list">
             {fields.length === 0 ? (
               <div className="empty-fields">
@@ -352,7 +395,12 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange }: SchemaBuilderProps) =
             ))
             )}
           </div>
-        )}
+        ) : activeTab === 'clients' ? (
+          <RelationClientsConfig
+            value={clientesConfig}
+            onChange={handleClientesConfigChange}
+          />
+        ) : null}
       </div>
 
       {showFieldModal && createPortal(

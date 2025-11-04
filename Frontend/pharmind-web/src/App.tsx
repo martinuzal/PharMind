@@ -13,6 +13,7 @@ import TablasMaestrasPage from './pages/admin/TablasMaestrasPage';
 import DynamicEntityPage from './pages/dynamic/DynamicEntityPage';
 import AgentDynamicEntityPage from './pages/crm/AgentDynamicEntityPage';
 import CustomerDynamicEntityPage from './pages/crm/CustomerDynamicEntityPage';
+import RelationDynamicEntityPage from './pages/crm/RelationDynamicEntityPage';
 import ActividadVisitasPage from './pages/analytics/ActividadVisitasPage';
 import DesempenoRepresentantesPage from './pages/analytics/DesempenoRepresentantesPage';
 import TiempoUtilizadoPage from './pages/gestion/TiempoUtilizadoPage';
@@ -275,7 +276,19 @@ function App() {
           }
         />
 
-        {/* Ruta genérica para otras entidades (Relaciones, Interacciones) */}
+        {/* Ruta específica para Relaciones (debe ir ANTES de la ruta genérica) */}
+        <Route
+          path="/relaciones/:subtipo"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <RelationDynamicEntityPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Ruta genérica para otras entidades (Interacciones) */}
         <Route
           path="/:tipo/:subtipo"
           element={

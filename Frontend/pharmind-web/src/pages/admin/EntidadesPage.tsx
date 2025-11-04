@@ -662,6 +662,7 @@ const EntidadesPage = () => {
                   <SchemaBuilder
                     initialSchema={formData.schema}
                     onChange={(schema) => setFormData({ ...formData, schema })}
+                    entidadTipo={formData.entidadTipo}
                   />
                 </div>
               </div>

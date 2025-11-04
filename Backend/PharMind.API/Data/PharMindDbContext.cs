@@ -176,19 +176,19 @@ public class PharMindDbContext : DbContext
 
         modelBuilder.Entity<Relacion>()
             .HasOne(r => r.ClientePrincipal)
-            .WithMany()
+            .WithMany(c => c.RelacionesPrincipales)
             .HasForeignKey(r => r.ClientePrincipalId)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Relacion>()
             .HasOne(r => r.ClienteSecundario1)
-            .WithMany()
+            .WithMany(c => c.RelacionesSecundarias1)
             .HasForeignKey(r => r.ClienteSecundario1Id)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Relacion>()
             .HasOne(r => r.ClienteSecundario2)
-            .WithMany()
+            .WithMany(c => c.RelacionesSecundarias2)
             .HasForeignKey(r => r.ClienteSecundario2Id)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -206,7 +206,7 @@ public class PharMindDbContext : DbContext
 
         modelBuilder.Entity<Interaccion>()
             .HasOne(i => i.Cliente)
-            .WithMany()
+            .WithMany(c => c.Interacciones)
             .HasForeignKey(i => i.ClienteId)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -216,11 +216,12 @@ public class PharMindDbContext : DbContext
             .HasForeignKey(i => i.EntidadDinamicaId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<AuditoriaAgente>()
-            .HasOne(aa => aa.Agente)
-            .WithMany(a => a.Auditorias)
-            .HasForeignKey(aa => aa.AgenteId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Comentado temporalmente - Agente no tiene colección Auditorias en el modelo actual
+        // modelBuilder.Entity<AuditoriaAgente>()
+        //     .HasOne(aa => aa.Agente)
+        //     .WithMany(a => a.Auditorias)
+        //     .HasForeignKey(aa => aa.AgenteId)
+        //     .OnDelete(DeleteBehavior.Restrict);
 
         // Seed data - IDs fijos para datos de prueba
         var empresaDefaultId = "EMP-DEFAULT-001";

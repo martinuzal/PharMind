@@ -37,6 +37,7 @@ const Sidebar = () => {
   const [relacionesExpanded, setRelacionesExpanded] = useState(false);
   const [interaccionesExpanded, setInteraccionesExpanded] = useState(false);
   const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
+  const [gestionExpanded, setGestionExpanded] = useState(false);
   const [adminExpanded, setAdminExpanded] = useState(false);
 
   const menuItems: MenuItem[] = [
@@ -60,6 +61,21 @@ const Sidebar = () => {
       label: 'Desempeño de Representantes',
       icon: 'leaderboard',
       path: '/analytics/desempeno-representantes'
+    }
+  ];
+
+  const gestionMenuItems: MenuItem[] = [
+    {
+      id: 'tiempo-utilizado',
+      label: 'Tiempo Utilizado',
+      icon: 'schedule',
+      path: '/gestion/tiempo-utilizado'
+    },
+    {
+      id: 'tipos-actividad',
+      label: 'Tipos de Actividad',
+      icon: 'category',
+      path: '/gestion/tipos-actividad'
     }
   ];
 
@@ -215,6 +231,37 @@ const Sidebar = () => {
           </div>
         )}
 
+        {/* Gestión Section */}
+        <div
+          className="sidebar-section-header"
+          onClick={() => setGestionExpanded(!gestionExpanded)}
+        >
+          <span className="material-icons">business_center</span>
+          {!sidebarCollapsed && <span>Gestión</span>}
+          {!sidebarCollapsed && (
+            <span className="material-icons sidebar-expand-icon">
+              {gestionExpanded ? 'expand_less' : 'expand_more'}
+            </span>
+          )}
+        </div>
+        {gestionExpanded && !sidebarCollapsed && (
+          <div className="sidebar-subsection">
+            {gestionMenuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.path}
+                  className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
+                >
+                  <span className="material-icons">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
         {/* Clientes Section */}
         {clientesEsquemas.length > 0 && (
           <>
@@ -250,37 +297,73 @@ const Sidebar = () => {
         )}
 
         {/* Agentes Section */}
-        {agentesEsquemas.length > 0 && (
-          <>
-            <div
-              className="sidebar-section-header"
-              onClick={() => setAgentesExpanded(!agentesExpanded)}
+        <div
+          className="sidebar-section-header"
+          onClick={() => setAgentesExpanded(!agentesExpanded)}
+        >
+          <span className="material-icons">badge</span>
+          {!sidebarCollapsed && <span>Agentes</span>}
+          {!sidebarCollapsed && (
+            <span className="material-icons sidebar-expand-icon">
+              {agentesExpanded ? 'expand_less' : 'expand_more'}
+            </span>
+          )}
+        </div>
+        {agentesExpanded && !sidebarCollapsed && (
+          <div className="sidebar-subsection">
+
+            {/* Módulos fijos de gestión */}
+            <Link
+              to="/gestion/regiones"
+              className={`sidebar-menu-item sidebar-submenu-item ${
+                location.pathname === '/gestion/regiones' ? 'active' : ''
+              }`}
             >
-              <span className="material-icons">badge</span>
-              {!sidebarCollapsed && <span>Agentes</span>}
-              {!sidebarCollapsed && (
-                <span className="material-icons sidebar-expand-icon">
-                  {agentesExpanded ? 'expand_less' : 'expand_more'}
-                </span>
-              )}
-            </div>
-            {agentesExpanded && !sidebarCollapsed && (
-              <div className="sidebar-subsection">
-                {agentesEsquemas.map((esquema) => (
-                  <Link
-                    key={esquema.id}
-                    to={`/agentes/${esquema.subTipo || esquema.id}`}
-                    className={`sidebar-menu-item sidebar-submenu-item ${
-                      location.pathname === `/agentes/${esquema.subTipo || esquema.id}` ? 'active' : ''
-                    }`}
-                  >
-                    <span className="material-icons">{esquema.icono || 'badge'}</span>
-                    <span>{esquema.nombre}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </>
+              <span className="material-icons">public</span>
+              <span>Regiones</span>
+            </Link>
+            <Link
+              to="/gestion/distritos"
+              className={`sidebar-menu-item sidebar-submenu-item ${
+                location.pathname === '/gestion/distritos' ? 'active' : ''
+              }`}
+            >
+              <span className="material-icons">location_city</span>
+              <span>Distritos</span>
+            </Link>
+            <Link
+              to="/gestion/lineas-negocio"
+              className={`sidebar-menu-item sidebar-submenu-item ${
+                location.pathname === '/gestion/lineas-negocio' ? 'active' : ''
+              }`}
+            >
+              <span className="material-icons">business_center</span>
+              <span>Líneas de Negocio</span>
+            </Link>
+            <Link
+              to="/gestion/managers"
+              className={`sidebar-menu-item sidebar-submenu-item ${
+                location.pathname === '/gestion/managers' ? 'active' : ''
+              }`}
+            >
+              <span className="material-icons">manage_accounts</span>
+              <span>Managers</span>
+            </Link>
+
+            {/* Entidades dinámicas de tipo Agente */}
+            {agentesEsquemas.map((esquema) => (
+              <Link
+                key={esquema.id}
+                to={`/agentes/${esquema.subTipo || esquema.id}`}
+                className={`sidebar-menu-item sidebar-submenu-item ${
+                  location.pathname === `/agentes/${esquema.subTipo || esquema.id}` ? 'active' : ''
+                }`}
+              >
+                <span className="material-icons">{esquema.icono || 'badge'}</span>
+                <span>{esquema.nombre}</span>
+              </Link>
+            ))}
+          </div>
         )}
 
         {/* Relaciones Section */}

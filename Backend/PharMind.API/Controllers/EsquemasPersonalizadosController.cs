@@ -117,6 +117,37 @@ public class EsquemasPersonalizadosController : ControllerBase
     }
 
     /// <summary>
+    /// Obtiene un esquema específico por tipo de entidad y subtipo
+    /// </summary>
+    /// <param name="tipo">Tipo de entidad (Cliente, Agente, Relacion, Interaccion)</param>
+    /// <param name="subtipo">Subtipo del esquema</param>
+    /// <returns>Esquema encontrado</returns>
+    [HttpGet("tipo/{tipo}/subtipo/{subtipo}")]
+    public async Task<ActionResult<EsquemaPersonalizado>> GetEsquemaPorTipoSubTipo(string tipo, string subtipo)
+    {
+        try
+        {
+            var esquema = await _context.EsquemasPersonalizados
+                .FirstOrDefaultAsync(e =>
+                    e.EntidadTipo == tipo &&
+                    e.SubTipo == subtipo &&
+                    e.Status == false);
+
+            if (esquema == null)
+            {
+                return NotFound($"Esquema con tipo '{tipo}' y subtipo '{subtipo}' no encontrado");
+            }
+
+            return Ok(esquema);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener esquema por tipo: {Tipo} y subtipo: {SubTipo}", tipo, subtipo);
+            return StatusCode(500, "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
     /// Crea un nuevo esquema personalizado
     /// </summary>
     /// <param name="esquema">Datos del esquema a crear</param>

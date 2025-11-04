@@ -106,6 +106,9 @@ const CustomerDynamicEntityPage: React.FC = () => {
     return (saved === 'list' || saved === 'grid') ? saved : 'grid';
   });
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Form state - Static fields
   const [formData, setFormData] = useState<CreateClienteDto>({
     tipoClienteId: '',
@@ -467,6 +470,19 @@ const CustomerDynamicEntityPage: React.FC = () => {
     });
   };
 
+  const filteredClientes = clientes.filter(cliente => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      cliente.codigoCliente.toLowerCase().includes(searchLower) ||
+      cliente.nombre.toLowerCase().includes(searchLower) ||
+      cliente.apellido?.toLowerCase().includes(searchLower) ||
+      cliente.razonSocial.toLowerCase().includes(searchLower) ||
+      cliente.especialidad?.toLowerCase().includes(searchLower) ||
+      cliente.email?.toLowerCase().includes(searchLower) ||
+      cliente.estado.toLowerCase().includes(searchLower)
+    );
+  });
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -502,6 +518,15 @@ const CustomerDynamicEntityPage: React.FC = () => {
           </div>
         </div>
         <div className="header-actions">
+          <div className="search-box">
+            <span className="material-icons">search</span>
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
           <div className="view-toggle">
             <button
               className={`btn-view ${viewMode === 'grid' ? 'active' : ''}`}
@@ -527,7 +552,7 @@ const CustomerDynamicEntityPage: React.FC = () => {
 
       {viewMode === 'grid' ? (
         <div className="entities-grid">
-          {clientes.map((cliente) => (
+          {filteredClientes.map((cliente) => (
             <div key={cliente.id} className="entity-card">
               <div className="entity-body">
                 <div className="entity-title">
@@ -593,7 +618,7 @@ const CustomerDynamicEntityPage: React.FC = () => {
             </div>
           ))}
 
-          {clientes.length === 0 && (
+          {filteredClientes.length === 0 && (
             <div className="empty-state">
               <span className="material-icons">inbox</span>
               <h3>No hay clientes</h3>
@@ -607,7 +632,7 @@ const CustomerDynamicEntityPage: React.FC = () => {
         </div>
       ) : (
         <div className="entities-list">
-          {clientes.length === 0 ? (
+          {filteredClientes.length === 0 ? (
             <div className="empty-state">
               <span className="material-icons">inbox</span>
               <h3>No hay clientes</h3>
@@ -633,7 +658,7 @@ const CustomerDynamicEntityPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {clientes.map((cliente) => (
+                  {filteredClientes.map((cliente) => (
                     <tr key={cliente.id}>
                       <td><strong>{cliente.codigoCliente}</strong></td>
                       <td>{cliente.nombre} {cliente.apellido}</td>
