@@ -6,6 +6,11 @@ namespace PharMind.API.Models;
 [Table("Interacciones")]
 public class Interaccion : AuditableEntity
 {
+    // Relación con esquema personalizado (define el tipo de interacción)
+    [Required]
+    [Column("TipoInteraccionId")]
+    public string TipoInteraccionId { get; set; } = string.Empty;
+
     [Required]
     [Column("CodigoInteraccion")]
     [MaxLength(50)]
@@ -72,6 +77,9 @@ public class Interaccion : AuditableEntity
     public string? EntidadDinamicaId { get; set; }
 
     // Navigation properties
+    [ForeignKey("TipoInteraccionId")]
+    public virtual EsquemaPersonalizado? TipoInteraccionEsquema { get; set; }
+
     [ForeignKey("RelacionId")]
     public virtual Relacion? Relacion { get; set; }
 
@@ -82,5 +90,5 @@ public class Interaccion : AuditableEntity
     public virtual Cliente? Cliente { get; set; }
 
     [ForeignKey("EntidadDinamicaId")]
-    public virtual EsquemaPersonalizado? EntidadDinamica { get; set; }
+    public virtual EntidadDinamica? DatosExtendidos { get; set; }
 }

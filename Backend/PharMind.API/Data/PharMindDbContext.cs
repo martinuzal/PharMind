@@ -211,7 +211,7 @@ public class PharMindDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Interaccion>()
-            .HasOne(i => i.EntidadDinamica)
+            .HasOne(i => i.DatosExtendidos)
             .WithMany()
             .HasForeignKey(i => i.EntidadDinamicaId)
             .OnDelete(DeleteBehavior.Restrict);

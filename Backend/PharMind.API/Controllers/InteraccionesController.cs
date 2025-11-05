@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PharMind.API.Data;
 using PharMind.API.DTOs;
 using PharMind.API.Models;
+using System.Text.Json;
 
 namespace PharMind.API.Controllers;
 
@@ -32,10 +33,11 @@ public class InteraccionesController : ControllerBase
         try
         {
             var query = _context.Interacciones
+                .Include(i => i.TipoInteraccionEsquema)
+                .Include(i => i.DatosExtendidos)
                 .Include(i => i.Relacion)
                 .Include(i => i.Agente)
                 .Include(i => i.Cliente)
-                .Include(i => i.EntidadDinamica)
                 .Where(i => i.Status == false); // Excluir eliminados
 
             // Contar total de items
@@ -49,35 +51,8 @@ public class InteraccionesController : ControllerBase
                 .Take(pageSize)
                 .ToListAsync();
 
-            // Mapear a DTOs
-            var itemDtos = items.Select(i => new InteraccionDto
-            {
-                Id = i.Id,
-                CodigoInteraccion = i.CodigoInteraccion,
-                RelacionId = i.RelacionId,
-                RelacionCodigo = i.Relacion?.CodigoRelacion ?? "N/A",
-                AgenteId = i.AgenteId,
-                AgenteNombre = i.Agente?.Nombre ?? "N/A",
-                ClienteId = i.ClienteId,
-                ClienteNombre = i.Cliente?.RazonSocial ?? "N/A",
-                TipoInteraccion = i.TipoInteraccion,
-                Fecha = i.Fecha,
-                Turno = i.Turno,
-                DuracionMinutos = i.DuracionMinutos,
-                Resultado = i.Resultado,
-                ObjetivoVisita = i.ObjetivoVisita,
-                ResumenVisita = i.ResumenVisita,
-                ProximaAccion = i.ProximaAccion,
-                FechaProximaAccion = i.FechaProximaAccion,
-                Latitud = i.Latitud,
-                Longitud = i.Longitud,
-                Observaciones = i.Observaciones,
-                EntidadDinamicaId = i.EntidadDinamicaId,
-                FechaCreacion = i.FechaCreacion,
-                CreadoPor = i.CreadoPor,
-                FechaModificacion = i.FechaModificacion,
-                ModificadoPor = i.ModificadoPor
-            }).ToList();
+            // Mapear a DTOs usando MapToDto
+            var itemDtos = items.Select(i => MapToDto(i)).ToList();
 
             var response = new InteraccionListResponse
             {
@@ -105,10 +80,11 @@ public class InteraccionesController : ControllerBase
         try
         {
             var interaccion = await _context.Interacciones
+                .Include(i => i.TipoInteraccionEsquema)
+                .Include(i => i.DatosExtendidos)
                 .Include(i => i.Relacion)
                 .Include(i => i.Agente)
                 .Include(i => i.Cliente)
-                .Include(i => i.EntidadDinamica)
                 .FirstOrDefaultAsync(i => i.Id == id && i.Status == false);
 
             if (interaccion == null)
@@ -116,34 +92,7 @@ public class InteraccionesController : ControllerBase
                 return NotFound(new { message = "Interacción no encontrada" });
             }
 
-            var dto = new InteraccionDto
-            {
-                Id = interaccion.Id,
-                CodigoInteraccion = interaccion.CodigoInteraccion,
-                RelacionId = interaccion.RelacionId,
-                RelacionCodigo = interaccion.Relacion?.CodigoRelacion ?? "N/A",
-                AgenteId = interaccion.AgenteId,
-                AgenteNombre = interaccion.Agente?.Nombre ?? "N/A",
-                ClienteId = interaccion.ClienteId,
-                ClienteNombre = interaccion.Cliente?.RazonSocial ?? "N/A",
-                TipoInteraccion = interaccion.TipoInteraccion,
-                Fecha = interaccion.Fecha,
-                Turno = interaccion.Turno,
-                DuracionMinutos = interaccion.DuracionMinutos,
-                Resultado = interaccion.Resultado,
-                ObjetivoVisita = interaccion.ObjetivoVisita,
-                ResumenVisita = interaccion.ResumenVisita,
-                ProximaAccion = interaccion.ProximaAccion,
-                FechaProximaAccion = interaccion.FechaProximaAccion,
-                Latitud = interaccion.Latitud,
-                Longitud = interaccion.Longitud,
-                Observaciones = interaccion.Observaciones,
-                EntidadDinamicaId = interaccion.EntidadDinamicaId,
-                FechaCreacion = interaccion.FechaCreacion,
-                CreadoPor = interaccion.CreadoPor,
-                FechaModificacion = interaccion.FechaModificacion,
-                ModificadoPor = interaccion.ModificadoPor
-            };
+            var dto = MapToDto(interaccion);
 
             return Ok(dto);
         }
@@ -162,6 +111,15 @@ public class InteraccionesController : ControllerBase
     {
         try
         {
+            // Validar que el TipoInteraccionId existe
+            var tipoInteraccion = await _context.EsquemasPersonalizados
+                .FirstOrDefaultAsync(e => e.Id == dto.TipoInteraccionId && e.EntidadTipo == "Interaccion" && e.Status == false);
+
+            if (tipoInteraccion == null)
+            {
+                return BadRequest(new { message = "Tipo de interacción no encontrado" });
+            }
+
             // Verificar que la relación existe
             var relacion = await _context.Relaciones.FindAsync(dto.RelacionId);
             if (relacion == null)
@@ -183,19 +141,29 @@ public class InteraccionesController : ControllerBase
                 return BadRequest(new { message = "Cliente no encontrado" });
             }
 
-            // Verificar que la entidad dinámica existe si se proporciona
-            if (!string.IsNullOrWhiteSpace(dto.EntidadDinamicaId))
+            // Crear EntidadDinamica si hay datos dinámicos
+            string? entidadDinamicaId = null;
+            if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
             {
-                var entidadDinamica = await _context.EsquemasPersonalizados.FindAsync(dto.EntidadDinamicaId);
-                if (entidadDinamica == null)
+                var entidadDinamica = new EntidadDinamica
                 {
-                    return BadRequest(new { message = "Entidad dinámica no encontrada" });
-                }
+                    Id = Guid.NewGuid().ToString(),
+                    EsquemaId = dto.TipoInteraccionId,
+                    Datos = JsonSerializer.Serialize(dto.DatosDinamicos),
+                    Status = false,
+                    FechaCreacion = DateTime.Now,
+                    CreadoPor = "System"
+                };
+
+                _context.EntidadesDinamicas.Add(entidadDinamica);
+                entidadDinamicaId = entidadDinamica.Id;
             }
 
             var interaccion = new Interaccion
             {
                 Id = Guid.NewGuid().ToString(),
+                TipoInteraccionId = dto.TipoInteraccionId,
+                EntidadDinamicaId = entidadDinamicaId,
                 CodigoInteraccion = dto.CodigoInteraccion,
                 RelacionId = dto.RelacionId,
                 AgenteId = dto.AgenteId,
@@ -212,7 +180,6 @@ public class InteraccionesController : ControllerBase
                 Latitud = dto.Latitud,
                 Longitud = dto.Longitud,
                 Observaciones = dto.Observaciones,
-                EntidadDinamicaId = dto.EntidadDinamicaId,
                 Status = false,
                 FechaCreacion = DateTime.Now,
                 CreadoPor = "System"
@@ -222,37 +189,13 @@ public class InteraccionesController : ControllerBase
             await _context.SaveChangesAsync();
 
             // Recargar con datos relacionados
+            await _context.Entry(interaccion).Reference(i => i.TipoInteraccionEsquema).LoadAsync();
+            await _context.Entry(interaccion).Reference(i => i.DatosExtendidos).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Relacion).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Agente).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Cliente).LoadAsync();
-            await _context.Entry(interaccion).Reference(i => i.EntidadDinamica).LoadAsync();
 
-            var result = new InteraccionDto
-            {
-                Id = interaccion.Id,
-                CodigoInteraccion = interaccion.CodigoInteraccion,
-                RelacionId = interaccion.RelacionId,
-                RelacionCodigo = interaccion.Relacion?.CodigoRelacion ?? "N/A",
-                AgenteId = interaccion.AgenteId,
-                AgenteNombre = interaccion.Agente?.Nombre ?? "N/A",
-                ClienteId = interaccion.ClienteId,
-                ClienteNombre = interaccion.Cliente?.RazonSocial ?? "N/A",
-                TipoInteraccion = interaccion.TipoInteraccion,
-                Fecha = interaccion.Fecha,
-                Turno = interaccion.Turno,
-                DuracionMinutos = interaccion.DuracionMinutos,
-                Resultado = interaccion.Resultado,
-                ObjetivoVisita = interaccion.ObjetivoVisita,
-                ResumenVisita = interaccion.ResumenVisita,
-                ProximaAccion = interaccion.ProximaAccion,
-                FechaProximaAccion = interaccion.FechaProximaAccion,
-                Latitud = interaccion.Latitud,
-                Longitud = interaccion.Longitud,
-                Observaciones = interaccion.Observaciones,
-                EntidadDinamicaId = interaccion.EntidadDinamicaId,
-                FechaCreacion = interaccion.FechaCreacion,
-                CreadoPor = interaccion.CreadoPor
-            };
+            var result = MapToDto(interaccion);
 
             return CreatedAtAction(nameof(GetInteraccionById), new { id = interaccion.Id }, result);
         }
@@ -272,10 +215,11 @@ public class InteraccionesController : ControllerBase
         try
         {
             var interaccion = await _context.Interacciones
+                .Include(i => i.TipoInteraccionEsquema)
+                .Include(i => i.DatosExtendidos)
                 .Include(i => i.Relacion)
                 .Include(i => i.Agente)
                 .Include(i => i.Cliente)
-                .Include(i => i.EntidadDinamica)
                 .FirstOrDefaultAsync(i => i.Id == id && i.Status == false);
 
             if (interaccion == null)
@@ -283,17 +227,39 @@ public class InteraccionesController : ControllerBase
                 return NotFound(new { message = "Interacción no encontrada" });
             }
 
-            // Verificar que la entidad dinámica existe si se proporciona
-            if (!string.IsNullOrWhiteSpace(dto.EntidadDinamicaId))
+            // Actualizar o crear EntidadDinamica con los datos dinámicos
+            if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
             {
-                var entidadDinamica = await _context.EsquemasPersonalizados.FindAsync(dto.EntidadDinamicaId);
-                if (entidadDinamica == null)
+                if (!string.IsNullOrWhiteSpace(interaccion.EntidadDinamicaId))
                 {
-                    return BadRequest(new { message = "Entidad dinámica no encontrada" });
+                    // Actualizar entidad dinámica existente
+                    var entidadDinamica = await _context.EntidadesDinamicas.FindAsync(interaccion.EntidadDinamicaId);
+                    if (entidadDinamica != null)
+                    {
+                        entidadDinamica.Datos = JsonSerializer.Serialize(dto.DatosDinamicos);
+                        entidadDinamica.FechaModificacion = DateTime.Now;
+                        entidadDinamica.ModificadoPor = "System";
+                    }
+                }
+                else
+                {
+                    // Crear nueva entidad dinámica
+                    var nuevaEntidadDinamica = new EntidadDinamica
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        EsquemaId = interaccion.TipoInteraccionId,
+                        Datos = JsonSerializer.Serialize(dto.DatosDinamicos),
+                        Status = false,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "System"
+                    };
+
+                    _context.EntidadesDinamicas.Add(nuevaEntidadDinamica);
+                    interaccion.EntidadDinamicaId = nuevaEntidadDinamica.Id;
                 }
             }
 
-            // Actualizar campos
+            // Actualizar campos estáticos
             interaccion.TipoInteraccion = dto.TipoInteraccion;
             interaccion.Fecha = dto.Fecha;
             interaccion.Turno = dto.Turno;
@@ -306,46 +272,19 @@ public class InteraccionesController : ControllerBase
             interaccion.Latitud = dto.Latitud;
             interaccion.Longitud = dto.Longitud;
             interaccion.Observaciones = dto.Observaciones;
-            interaccion.EntidadDinamicaId = dto.EntidadDinamicaId;
             interaccion.FechaModificacion = DateTime.Now;
             interaccion.ModificadoPor = "System";
 
             await _context.SaveChangesAsync();
 
             // Recargar con datos relacionados
+            await _context.Entry(interaccion).Reference(i => i.TipoInteraccionEsquema).LoadAsync();
+            await _context.Entry(interaccion).Reference(i => i.DatosExtendidos).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Relacion).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Agente).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Cliente).LoadAsync();
-            await _context.Entry(interaccion).Reference(i => i.EntidadDinamica).LoadAsync();
 
-            var result = new InteraccionDto
-            {
-                Id = interaccion.Id,
-                CodigoInteraccion = interaccion.CodigoInteraccion,
-                RelacionId = interaccion.RelacionId,
-                RelacionCodigo = interaccion.Relacion?.CodigoRelacion ?? "N/A",
-                AgenteId = interaccion.AgenteId,
-                AgenteNombre = interaccion.Agente?.Nombre ?? "N/A",
-                ClienteId = interaccion.ClienteId,
-                ClienteNombre = interaccion.Cliente?.RazonSocial ?? "N/A",
-                TipoInteraccion = interaccion.TipoInteraccion,
-                Fecha = interaccion.Fecha,
-                Turno = interaccion.Turno,
-                DuracionMinutos = interaccion.DuracionMinutos,
-                Resultado = interaccion.Resultado,
-                ObjetivoVisita = interaccion.ObjetivoVisita,
-                ResumenVisita = interaccion.ResumenVisita,
-                ProximaAccion = interaccion.ProximaAccion,
-                FechaProximaAccion = interaccion.FechaProximaAccion,
-                Latitud = interaccion.Latitud,
-                Longitud = interaccion.Longitud,
-                Observaciones = interaccion.Observaciones,
-                EntidadDinamicaId = interaccion.EntidadDinamicaId,
-                FechaCreacion = interaccion.FechaCreacion,
-                CreadoPor = interaccion.CreadoPor,
-                FechaModificacion = interaccion.FechaModificacion,
-                ModificadoPor = interaccion.ModificadoPor
-            };
+            var result = MapToDto(interaccion);
 
             return Ok(result);
         }
@@ -385,5 +324,61 @@ public class InteraccionesController : ControllerBase
             _logger.LogError(ex, "Error al eliminar interacción con ID: {Id}", id);
             return StatusCode(500, new { message = "Error al eliminar la interacción" });
         }
+    }
+
+    /// <summary>
+    /// Mapea una entidad Interaccion a InteraccionDto incluyendo datos dinámicos
+    /// </summary>
+    private InteraccionDto MapToDto(Interaccion interaccion)
+    {
+        var dto = new InteraccionDto
+        {
+            Id = interaccion.Id,
+            TipoInteraccionId = interaccion.TipoInteraccionId,
+            TipoInteraccionNombre = interaccion.TipoInteraccionEsquema?.Nombre,
+            EntidadDinamicaId = interaccion.EntidadDinamicaId,
+            CodigoInteraccion = interaccion.CodigoInteraccion,
+            RelacionId = interaccion.RelacionId,
+            RelacionCodigo = interaccion.Relacion?.CodigoRelacion,
+            AgenteId = interaccion.AgenteId,
+            AgenteNombre = interaccion.Agente?.Nombre,
+            ClienteId = interaccion.ClienteId,
+            ClienteNombre = interaccion.Cliente?.Nombre ?? interaccion.Cliente?.RazonSocial,
+            TipoInteraccion = interaccion.TipoInteraccion,
+            Fecha = interaccion.Fecha,
+            Turno = interaccion.Turno,
+            DuracionMinutos = interaccion.DuracionMinutos,
+            Resultado = interaccion.Resultado,
+            ObjetivoVisita = interaccion.ObjetivoVisita,
+            ResumenVisita = interaccion.ResumenVisita,
+            ProximaAccion = interaccion.ProximaAccion,
+            FechaProximaAccion = interaccion.FechaProximaAccion,
+            Latitud = interaccion.Latitud,
+            Longitud = interaccion.Longitud,
+            Observaciones = interaccion.Observaciones,
+            FechaCreacion = interaccion.FechaCreacion,
+            CreadoPor = interaccion.CreadoPor,
+            FechaModificacion = interaccion.FechaModificacion,
+            ModificadoPor = interaccion.ModificadoPor
+        };
+
+        // Mapear datos dinámicos si existen
+        if (interaccion.DatosExtendidos?.Datos != null)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                dto.DatosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(interaccion.DatosExtendidos.Datos, options);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error al deserializar datos dinámicos para interacción {Id}", interaccion.Id);
+            }
+        }
+
+        return dto;
     }
 }

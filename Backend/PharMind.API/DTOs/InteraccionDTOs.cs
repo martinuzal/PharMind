@@ -3,13 +3,17 @@ namespace PharMind.API.DTOs;
 public class InteraccionDto
 {
     public string Id { get; set; } = string.Empty;
+    public string TipoInteraccionId { get; set; } = string.Empty;
+    public string? TipoInteraccionNombre { get; set; }
+    public string? EntidadDinamicaId { get; set; }
+    public Dictionary<string, object?>? DatosDinamicos { get; set; }
     public string CodigoInteraccion { get; set; } = string.Empty;
     public string RelacionId { get; set; } = string.Empty;
-    public string RelacionCodigo { get; set; } = string.Empty;
+    public string? RelacionCodigo { get; set; }
     public string AgenteId { get; set; } = string.Empty;
-    public string AgenteNombre { get; set; } = string.Empty;
+    public string? AgenteNombre { get; set; }
     public string ClienteId { get; set; } = string.Empty;
-    public string ClienteNombre { get; set; } = string.Empty;
+    public string? ClienteNombre { get; set; }
     public string TipoInteraccion { get; set; } = string.Empty;
     public DateTime Fecha { get; set; }
     public string? Turno { get; set; }
@@ -22,7 +26,6 @@ public class InteraccionDto
     public decimal? Latitud { get; set; }
     public decimal? Longitud { get; set; }
     public string? Observaciones { get; set; }
-    public string? EntidadDinamicaId { get; set; }
     public DateTime FechaCreacion { get; set; }
     public string? CreadoPor { get; set; }
     public DateTime? FechaModificacion { get; set; }
@@ -31,6 +34,8 @@ public class InteraccionDto
 
 public class CreateInteraccionDto
 {
+    public string TipoInteraccionId { get; set; } = string.Empty;
+    public Dictionary<string, object?>? DatosDinamicos { get; set; }
     public string CodigoInteraccion { get; set; } = string.Empty;
     public string RelacionId { get; set; } = string.Empty;
     public string AgenteId { get; set; } = string.Empty;
@@ -47,11 +52,11 @@ public class CreateInteraccionDto
     public decimal? Latitud { get; set; }
     public decimal? Longitud { get; set; }
     public string? Observaciones { get; set; }
-    public string? EntidadDinamicaId { get; set; }
 }
 
 public class UpdateInteraccionDto
 {
+    public Dictionary<string, object?>? DatosDinamicos { get; set; }
     public string TipoInteraccion { get; set; } = string.Empty;
     public DateTime Fecha { get; set; }
     public string? Turno { get; set; }
@@ -64,7 +69,6 @@ public class UpdateInteraccionDto
     public decimal? Latitud { get; set; }
     public decimal? Longitud { get; set; }
     public string? Observaciones { get; set; }
-    public string? EntidadDinamicaId { get; set; }
 }
 
 public class InteraccionListResponse
