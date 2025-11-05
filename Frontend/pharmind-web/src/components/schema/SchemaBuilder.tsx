@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import FormDesigner from '../formDesigner/FormDesigner';
 import type { FormSchema } from '../../types/formDesigner';
 import RelationClientsConfig from './RelationClientsConfig';
+import RelationInteractionsConfig from './RelationInteractionsConfig';
 import StaticFieldsConfig from './StaticFieldsConfig';
 import InteractionEntitiesConfig from './InteractionEntitiesConfig';
 import ViewsConfig from './ViewsConfig';
@@ -53,7 +54,7 @@ interface SchemaBuilderProps {
 }
 
 const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBuilderProps) => {
-  const [activeTab, setActiveTab] = useState<'visual' | 'classic' | 'clients' | 'entities' | 'properties' | 'views'>('visual');
+  const [activeTab, setActiveTab] = useState<'visual' | 'classic' | 'clients' | 'interactions' | 'entities' | 'properties' | 'views'>('visual');
   const [fields, setFields] = useState<SchemaField[]>(() => {
     try {
       const parsed = JSON.parse(initialSchema);
@@ -82,6 +83,16 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
       return parsed.clientesConfig || {};
     } catch {
       return {};
+    }
+  });
+
+  // State for interactionsConfig (only for Relacion entities)
+  const [interactionsConfig, setInteractionsConfig] = useState<string[]>(() => {
+    try {
+      const parsed = JSON.parse(initialSchema);
+      return parsed.interactionsConfig || [];
+    } catch {
+      return [];
     }
   });
 
@@ -254,6 +265,8 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
       version: formSchema.version,
       // Include clientesConfig if it exists (for Relacion entities)
       ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig }),
+      // Include interactionsConfig if it exists (for Relacion entities)
+      ...(entidadTipo === 'Relacion' && interactionsConfig.length > 0 && { interactionsConfig }),
       // Include entitiesConfig if it exists (for Interaccion entities)
       ...(entidadTipo === 'Interaccion' && Object.keys(entitiesConfig).length > 0 && { entitiesConfig }),
       // Include staticFieldsConfig if it exists
@@ -285,6 +298,8 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
       version: 1,
       // Include clientesConfig if it exists (for Relacion entities)
       ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig }),
+      // Include interactionsConfig if it exists (for Relacion entities)
+      ...(entidadTipo === 'Relacion' && interactionsConfig.length > 0 && { interactionsConfig }),
       // Include entitiesConfig if it exists (for Interaccion entities)
       ...(entidadTipo === 'Interaccion' && Object.keys(entitiesConfig).length > 0 && { entitiesConfig }),
       // Include staticFieldsConfig if it exists
@@ -360,10 +375,30 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
       fields: fields,
       version: 1,
       clientesConfig: newConfig,
+      // Include interactionsConfig if it exists
+      ...(interactionsConfig.length > 0 && { interactionsConfig }),
       // Include staticFieldsConfig if it exists
       ...(Object.keys(staticFieldsConfig.campos).length > 0 && { staticFieldsConfig }),
       // Include entitiesConfig if it exists (for Interaccion entities)
       ...(entidadTipo === 'Interaccion' && Object.keys(entitiesConfig).length > 0 && { entitiesConfig }),
+      // Include viewsConfig if it exists
+      ...(Object.keys(viewsConfig).length > 0 && { viewsConfig })
+    };
+    onChange(JSON.stringify(schema, null, 2));
+  };
+
+  const handleInteractionsConfigChange = (newConfig: string[]) => {
+    setInteractionsConfig(newConfig);
+
+    // Update the schema immediately with the new config
+    const schema = {
+      fields: fields,
+      version: 1,
+      interactionsConfig: newConfig,
+      // Include clientesConfig if it exists
+      ...(Object.keys(clientesConfig).length > 0 && { clientesConfig }),
+      // Include staticFieldsConfig if it exists
+      ...(Object.keys(staticFieldsConfig.campos).length > 0 && { staticFieldsConfig }),
       // Include viewsConfig if it exists
       ...(Object.keys(viewsConfig).length > 0 && { viewsConfig })
     };
@@ -380,6 +415,8 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
       staticFieldsConfig: newConfig,
       // Include clientesConfig if it exists (for Relacion entities)
       ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig }),
+      // Include interactionsConfig if it exists (for Relacion entities)
+      ...(entidadTipo === 'Relacion' && interactionsConfig.length > 0 && { interactionsConfig }),
       // Include entitiesConfig if it exists (for Interaccion entities)
       ...(entidadTipo === 'Interaccion' && Object.keys(entitiesConfig).length > 0 && { entitiesConfig }),
       // Include viewsConfig if it exists
@@ -414,6 +451,8 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
       viewsConfig: newConfig,
       // Include clientesConfig if it exists (for Relacion entities)
       ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig }),
+      // Include interactionsConfig if it exists (for Relacion entities)
+      ...(entidadTipo === 'Relacion' && interactionsConfig.length > 0 && { interactionsConfig }),
       // Include entitiesConfig if it exists (for Interaccion entities)
       ...(entidadTipo === 'Interaccion' && Object.keys(entitiesConfig).length > 0 && { entitiesConfig }),
       // Include staticFieldsConfig if it exists
@@ -474,6 +513,21 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
                 >
                   <span className="material-icons" style={{ fontSize: '18px' }}>groups</span>
                   Clientes
+                </button>
+              )}
+              {entidadTipo === 'Relacion' && (
+                <button
+                  type="button"
+                  className={activeTab === 'interactions' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+                  onClick={() => setActiveTab('interactions')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <span className="material-icons" style={{ fontSize: '18px' }}>assignment</span>
+                  Interacciones
                 </button>
               )}
               {entidadTipo === 'Interaccion' && (
@@ -615,6 +669,11 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
           <RelationClientsConfig
             value={clientesConfig}
             onChange={handleClientesConfigChange}
+          />
+        ) : activeTab === 'interactions' ? (
+          <RelationInteractionsConfig
+            value={interactionsConfig}
+            onChange={handleInteractionsConfigChange}
           />
         ) : activeTab === 'entities' ? (
           <InteractionEntitiesConfig

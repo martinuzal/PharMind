@@ -200,6 +200,16 @@ const Sidebar = () => {
           );
         })}
 
+        {/* Mi Cartera */}
+        <Link
+          to="/mi-cartera"
+          className={`sidebar-menu-item sidebar-menu-item-highlight ${location.pathname === '/mi-cartera' ? 'active' : ''}`}
+          title={sidebarCollapsed ? 'MI CARTERA' : undefined}
+        >
+          <span className="material-icons">folder_shared</span>
+          {!sidebarCollapsed && <span>MI CARTERA</span>}
+        </Link>
+
         {/* Analytics Section */}
         <div
           className="sidebar-section-header"

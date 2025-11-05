@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import '../../styles/TablasMaestrasPage.css';
 
 interface ColumnaDef {
@@ -23,6 +24,8 @@ interface TablaMaestra {
 
 const TablasMaestrasPage = () => {
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarRightContent, clearToolbarContent } = usePage();
+
   const [tablas, setTablas] = useState<TablaMaestra[]>([]);
   const [filteredTablas, setFilteredTablas] = useState<TablaMaestra[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +47,12 @@ const TablasMaestrasPage = () => {
 
   useEffect(() => {
     fetchTablas();
+    return () => clearToolbarContent();
   }, []);
+
+  useEffect(() => {
+    setupToolbar();
+  }, [searchTerm]);
 
   useEffect(() => {
     const filtered = tablas.filter(tabla =>
@@ -53,6 +61,95 @@ const TablasMaestrasPage = () => {
     );
     setFilteredTablas(filtered);
   }, [searchTerm, tablas]);
+
+  const setupToolbar = () => {
+    // Título y buscador
+    setToolbarContent(
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span className="material-icons" style={{ fontSize: '1.75rem', color: 'var(--accent-color)' }}>
+            table_chart
+          </span>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Tablas Maestras
+            </h1>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+              Crear y gestionar tablas SQL dinámicas
+            </p>
+          </div>
+        </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          background: 'var(--bg-primary)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '0.5rem',
+          padding: '0.5rem 1rem',
+          flex: 1,
+          maxWidth: '400px'
+        }}>
+          <span className="material-icons" style={{ color: 'var(--text-secondary)' }}>search</span>
+          <input
+            type="text"
+            placeholder="Buscar tablas por nombre o descripción..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              outline: 'none',
+              fontSize: '0.875rem',
+              color: 'var(--text-primary)',
+              flex: 1
+            }}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0.25rem',
+                color: 'var(--text-secondary)'
+              }}
+            >
+              <span className="material-icons">clear</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+
+    // Botón de nueva tabla
+    setToolbarRightContent(
+      <button
+        className="btn-primary"
+        onClick={handleCreate}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.75rem 1.5rem',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '0.5rem',
+          fontSize: '0.875rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap'
+        }}
+      >
+        <span className="material-icons">add</span>
+        Nueva Tabla Maestra
+      </button>
+    );
+  };
 
   const fetchTablas = async () => {
     try {
@@ -257,31 +354,6 @@ const TablasMaestrasPage = () => {
 
   return (
     <div className="tablas-maestras-page">
-      <div className="page-header">
-        <div>
-          <h1>Tablas Maestras</h1>
-          <p className="page-subtitle">Crear y gestionar tablas SQL dinámicas</p>
-        </div>
-        <button className="btn-primary" onClick={handleCreate}>
-          <span className="material-icons">add</span>
-          Nueva Tabla Maestra
-        </button>
-      </div>
-
-      <div className="search-bar">
-        <span className="material-icons">search</span>
-        <input
-          type="text"
-          placeholder="Buscar tablas por nombre o descripción..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        {searchTerm && (
-          <button className="btn-icon" onClick={() => setSearchTerm('')}>
-            <span className="material-icons">clear</span>
-          </button>
-        )}
-      </div>
 
       {filteredTablas.length === 0 && !loading && (
         <div className="empty-state">

@@ -1,7 +1,17 @@
 .dynamic-entity-page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding-top: 96px;
   padding: 2rem;
+  padding-top: calc(70px + 2rem); /* 70px del toolbar + 2rem de espaciado */
   max-width: 1400px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .page-header {
@@ -10,6 +20,7 @@
   align-items: center;
   margin-bottom: 2rem;
   gap: 2rem;
+  width: 100%;
 }
 
 .header-info {
@@ -38,6 +49,7 @@
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 1.5rem;
   min-height: 300px;
+  width: 100%;
 }
 
 .entity-card {
@@ -194,6 +206,11 @@
 /* Responsive */
 @media (max-width: 768px) {
   .dynamic-entity-page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding-top: 96px;
     padding: 1rem;
   }
 

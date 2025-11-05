@@ -26,6 +26,7 @@ import RegionesPage from './pages/gestion/RegionesPage';
 import DistritosPage from './pages/gestion/DistritosPage';
 import LineasNegocioPage from './pages/gestion/LineasNegocioPage';
 import ManagersPage from './pages/gestion/ManagersPage';
+import MiCarteraPage from './pages/cartera/MiCarteraPage';
 import './styles/App.css';
 import './styles/dark-mode.css';
 
@@ -78,6 +79,16 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <DashboardPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mi-cartera"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <MiCarteraPage />
               </AppLayout>
             </ProtectedRoute>
           }

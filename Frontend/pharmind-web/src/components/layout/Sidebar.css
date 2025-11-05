@@ -167,6 +167,30 @@
   border-radius: 0 2px 2px 0;
 }
 
+/* Highlight special menu items */
+.sidebar-menu-item-highlight {
+  background: linear-gradient(135deg, rgba(77, 184, 184, 0.15) 0%, rgba(102, 126, 234, 0.15) 100%);
+  border: 1px solid rgba(77, 184, 184, 0.3);
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.sidebar-menu-item-highlight:hover {
+  background: linear-gradient(135deg, rgba(77, 184, 184, 0.25) 0%, rgba(102, 126, 234, 0.25) 100%);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.sidebar-menu-item-highlight.active {
+  background: linear-gradient(135deg, rgba(77, 184, 184, 0.2) 0%, rgba(102, 126, 234, 0.2) 100%);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.sidebar-menu-item-highlight .material-icons {
+  color: var(--accent-color);
+}
+
 /* Footer */
 .sidebar-footer {
   padding: 1rem 0.5rem;
