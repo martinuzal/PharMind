@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { usePreferences } from './contexts/PreferencesContext';
 import Sidebar from './components/layout/Sidebar';
-import NotificationCenter from './components/notifications/NotificationCenter';
+import Toolbar from './components/layout/Toolbar';
 import LoginPage from './pages/auth/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UsuariosPage from './pages/usuarios/UsuariosPage';
@@ -40,15 +40,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Layout con Sidebar
+// Layout con Sidebar y Toolbar
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { sidebarCollapsed } = usePreferences();
 
   return (
     <div className="app">
       <Sidebar />
-      <div className={`app-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        {children}
+      <div className={`app-wrapper ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        <Toolbar />
+        <div className="app-content app-content-with-toolbar">
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -59,7 +62,6 @@ function App() {
 
   return (
     <BrowserRouter>
-      {isAuthenticated && <NotificationCenter />}
       <Routes>
         {/* Ruta de Login */}
         <Route

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePage } from '../../contexts/PageContext';
 import DynamicFormField from '../../components/dynamic/DynamicFormField';
 import '../../styles/DynamicEntityPage.css';
 
@@ -30,6 +31,7 @@ const DynamicEntityPage = () => {
   const { tipo, subtipo } = useParams<{ tipo: string; subtipo: string }>();
   const { addNotification } = useNotifications();
   const { user } = useAuth();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
 
   console.log('DynamicEntityPage montado con params:', { tipo, subtipo });
 
@@ -59,6 +61,88 @@ const DynamicEntityPage = () => {
   useEffect(() => {
     localStorage.setItem('entitiesViewMode', viewMode);
   }, [viewMode]);
+
+  // Configurar toolbar
+  useEffect(() => {
+    if (!esquema) return;
+
+    // Izquierda: Icono + Título
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: esquema.color || '#4db8b8',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>
+            {esquema.icono || 'category'}
+          </span>
+        </div>
+        <div>
+          <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+            {esquema.nombre}
+          </span>
+          {esquema.descripcion && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.125rem' }}>
+              {esquema.descripcion}
+            </div>
+          )}
+        </div>
+      </>
+    );
+
+    // Derecha: View toggle + Botón de agregar
+    const toolbarRight = (
+      <>
+        <div className="view-toggle">
+          <button
+            className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+            onClick={() => setViewMode('grid')}
+            title="Vista de mosaico"
+          >
+            <span className="material-icons">grid_view</span>
+          </button>
+          <button
+            className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => setViewMode('list')}
+            title="Vista de lista"
+          >
+            <span className="material-icons">view_list</span>
+          </button>
+        </div>
+        <button
+          className="toolbar-icon-btn"
+          onClick={handleCreate}
+          title={`Nuevo ${esquema.nombre}`}
+          style={{
+            backgroundColor: esquema.color || '#4db8b8',
+            color: 'white',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <span className="material-icons">add</span>
+        </button>
+      </>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, [esquema, viewMode]);
 
   useEffect(() => {
     if (esquema) {
@@ -355,40 +439,6 @@ const DynamicEntityPage = () => {
 
   return (
     <div className="dynamic-entity-page">
-      <div className="page-header">
-        <div className="header-info">
-          <div className="entity-icon" style={{ backgroundColor: esquema.color || '#4db8b8' }}>
-            <span className="material-icons">{esquema.icono || 'category'}</span>
-          </div>
-          <div>
-            <h1>{esquema.nombre}</h1>
-            <p className="page-subtitle">{esquema.descripcion || `Gestión de ${esquema.nombre}`}</p>
-          </div>
-        </div>
-        <div className="header-actions">
-          <div className="view-toggle">
-            <button
-              className={`btn-view ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-              title="Vista de mosaico"
-            >
-              <span className="material-icons">grid_view</span>
-            </button>
-            <button
-              className={`btn-view ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
-              title="Vista de lista"
-            >
-              <span className="material-icons">view_list</span>
-            </button>
-          </div>
-          <button className="btn-primary" onClick={handleCreate}>
-            <span className="material-icons">add</span>
-            Nuevo Registro
-          </button>
-        </div>
-      </div>
-
       {viewMode === 'grid' ? (
         <div className="entities-grid">
           {entidades.map((entidad) => {

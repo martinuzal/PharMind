@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import { distritosService } from '../../services/distritos.service';
 import { regionesService } from '../../services/regiones.service';
 import type {
@@ -12,6 +13,7 @@ import '../crm/CRMPages.css';
 
 const DistritosPage = () => {
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [items, setItems] = useState<Distrito[]>([]);
   const [regiones, setRegiones] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +50,75 @@ const DistritosPage = () => {
     loadRegiones();
     loadItems();
   }, [currentPage, searchTerm, filtroActivo, filtroRegion]);
+
+  // Configurar toolbar
+  useEffect(() => {
+    // Izquierda: Icono + Título
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: '#4db8b8',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>location_city</span>
+        </div>
+        <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Distritos</span>
+      </>
+    );
+
+    // Centro: Búsqueda
+    const toolbarCenter = (
+      <div className="search-box">
+        <span className="material-icons search-icon">search</span>
+        <input
+          type="text"
+          placeholder="Buscar distrito..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="search-input"
+        />
+      </div>
+    );
+
+    // Derecha: Botón de agregar
+    const toolbarRight = (
+      <button
+        className="toolbar-icon-btn"
+        onClick={() => handleOpenModal('create')}
+        title="Nuevo Distrito"
+        style={{
+          backgroundColor: '#4db8b8',
+          color: 'white',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span className="material-icons">add</span>
+      </button>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarCenterContent(toolbarCenter);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, [searchTerm]);
 
   const loadRegiones = async () => {
     try {
@@ -217,41 +288,9 @@ const DistritosPage = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>
-            <span className="material-icons">location_city</span>
-            Distritos
-          </h1>
-          <p className="page-description">
-            Gestion de distritos y subdivisiones territoriales
-          </p>
-        </div>
-        <button className="btn btn-primary" onClick={() => handleOpenModal('create')}>
-          <span className="material-icons">add</span>
-          Nuevo Distrito
-        </button>
-      </div>
-
       {/* Filters */}
       <div className="filters-section">
         <div className="filters-grid">
-          <div className="form-group">
-            <label>Buscar por nombre</label>
-            <div className="search-bar">
-              <span className="material-icons">search</span>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="form-control"
-                placeholder="Buscar distrito..."
-              />
-            </div>
-          </div>
           <div className="form-group">
             <label>Region</label>
             <select

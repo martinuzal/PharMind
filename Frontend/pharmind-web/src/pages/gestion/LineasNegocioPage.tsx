@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import { lineasNegocioService } from '../../services/lineasnegocio.service';
 import type {
   LineaNegocio,
@@ -10,6 +11,7 @@ import '../crm/CRMPages.css';
 
 const LineasNegocioPage = () => {
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [items, setItems] = useState<LineaNegocio[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -42,6 +44,75 @@ const LineasNegocioPage = () => {
   useEffect(() => {
     loadItems();
   }, [currentPage, searchTerm, filtroActivo]);
+
+  // Configurar toolbar
+  useEffect(() => {
+    // Izquierda: Icono + Título
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: '#10B981',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>business_center</span>
+        </div>
+        <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Líneas de Negocio</span>
+      </>
+    );
+
+    // Centro: Búsqueda
+    const toolbarCenter = (
+      <div className="search-box">
+        <span className="material-icons search-icon">search</span>
+        <input
+          type="text"
+          placeholder="Buscar línea de negocio..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="search-input"
+        />
+      </div>
+    );
+
+    // Derecha: Botón de agregar
+    const toolbarRight = (
+      <button
+        className="toolbar-icon-btn"
+        onClick={() => handleOpenModal('create')}
+        title="Nueva Línea de Negocio"
+        style={{
+          backgroundColor: '#10B981',
+          color: 'white',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span className="material-icons">add</span>
+      </button>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarCenterContent(toolbarCenter);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, [searchTerm]);
 
   const loadItems = async () => {
     try {
@@ -198,41 +269,9 @@ const LineasNegocioPage = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>
-            <span className="material-icons">business_center</span>
-            Lineas de Negocio
-          </h1>
-          <p className="page-description">
-            Gestion de lineas de negocio y unidades de producto
-          </p>
-        </div>
-        <button className="btn btn-primary" onClick={() => handleOpenModal('create')}>
-          <span className="material-icons">add</span>
-          Nueva Linea de Negocio
-        </button>
-      </div>
-
       {/* Filters */}
       <div className="filters-section">
         <div className="filters-grid">
-          <div className="form-group">
-            <label>Buscar por nombre</label>
-            <div className="search-bar">
-              <span className="material-icons">search</span>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="form-control"
-                placeholder="Buscar linea de negocio..."
-              />
-            </div>
-          </div>
           <div className="form-group">
             <label>Estado</label>
             <select

@@ -33,8 +33,9 @@
 
 .fields-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .client-field-config {
@@ -42,6 +43,8 @@
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: 0.5rem;
+  flex: 1;
+  min-width: 300px;
 }
 
 .config-header {

@@ -6,6 +6,7 @@ interface NotificationContextType {
   unreadCount: number;
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
   markAsRead: (id: string) => void;
+  removeNotification: (id: string) => void;
   clearAll: () => void;
 }
 
@@ -43,6 +44,10 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
   const clearAll = () => {
     setNotifications([]);
   };
@@ -55,6 +60,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       unreadCount,
       addNotification,
       markAsRead,
+      removeNotification,
       clearAll
     }}>
       {children}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import { managersService } from '../../services/managers.service';
 import { regionesService } from '../../services/regiones.service';
 import { distritosService } from '../../services/distritos.service';
@@ -16,6 +17,7 @@ import '../crm/CRMPages.css';
 
 const ManagersPage = () => {
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [items, setItems] = useState<Manager[]>([]);
   const [regiones, setRegiones] = useState<Region[]>([]);
   const [distritos, setDistritos] = useState<Distrito[]>([]);
@@ -59,6 +61,75 @@ const ManagersPage = () => {
     loadReferences();
     loadItems();
   }, [currentPage, searchTerm, filtroActivo, filtroCargo]);
+
+  // Configurar toolbar
+  useEffect(() => {
+    // Izquierda: Icono + Título
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: '#8B5CF6',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>manage_accounts</span>
+        </div>
+        <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Managers</span>
+      </>
+    );
+
+    // Centro: Búsqueda
+    const toolbarCenter = (
+      <div className="search-box">
+        <span className="material-icons search-icon">search</span>
+        <input
+          type="text"
+          placeholder="Buscar manager..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="search-input"
+        />
+      </div>
+    );
+
+    // Derecha: Botón de agregar
+    const toolbarRight = (
+      <button
+        className="toolbar-icon-btn"
+        onClick={() => handleOpenModal('create')}
+        title="Nuevo Manager"
+        style={{
+          backgroundColor: '#8B5CF6',
+          color: 'white',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span className="material-icons">add</span>
+      </button>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarCenterContent(toolbarCenter);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, [searchTerm]);
 
   const loadReferences = async () => {
     try {
@@ -267,41 +338,9 @@ const ManagersPage = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>
-            <span className="material-icons">manage_accounts</span>
-            Managers
-          </h1>
-          <p className="page-description">
-            Gestion de gerentes y supervisores de territorio
-          </p>
-        </div>
-        <button className="btn btn-primary" onClick={() => handleOpenModal('create')}>
-          <span className="material-icons">add</span>
-          Nuevo Manager
-        </button>
-      </div>
-
       {/* Filters */}
       <div className="filters-section">
         <div className="filters-grid">
-          <div className="form-group">
-            <label>Buscar por nombre</label>
-            <div className="search-bar">
-              <span className="material-icons">search</span>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="form-control"
-                placeholder="Buscar manager..."
-              />
-            </div>
-          </div>
           <div className="form-group">
             <label>Cargo</label>
             <input

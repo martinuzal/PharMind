@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import rolesService from '../../services/roles.service';
 import type { Rol, CreateRolDto, UpdateRolDto } from '../../services/roles.service';
 import modulosService from '../../services/modulos.service';
@@ -10,6 +11,7 @@ import '../usuarios/UsuariosPage.css';
 
 const RolesPage = () => {
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [roles, setRoles] = useState<Rol[]>([]);
   const [modulos, setModulos] = useState<Modulo[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -30,6 +32,69 @@ const RolesPage = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Configurar toolbar
+  useEffect(() => {
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: '#F59E0B',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>shield</span>
+        </div>
+        <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Roles</span>
+      </>
+    );
+
+    const toolbarCenter = (
+      <div className="search-box">
+        <span className="material-icons search-icon">search</span>
+        <input
+          type="text"
+          placeholder="Buscar rol..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+      </div>
+    );
+
+    const toolbarRight = (
+      <button
+        className="toolbar-icon-btn"
+        onClick={() => handleOpenModal('create')}
+        title="Nuevo Rol"
+        style={{
+          backgroundColor: '#F59E0B',
+          color: 'white',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span className="material-icons">add</span>
+      </button>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarCenterContent(toolbarCenter);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, [searchTerm]);
 
   const loadData = async () => {
     try {
@@ -184,34 +249,8 @@ const RolesPage = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div>
-          <h1>Roles</h1>
-          <p className="page-description">
-            Gestión de roles y permisos del sistema
-          </p>
-        </div>
-        <button className="btn-primary" onClick={() => handleOpenModal('create')}>
-          <span className="material-icons">add</span>
-          Nuevo Rol
-        </button>
-      </div>
-
       <div className="page-content">
         <div className="card">
-          {/* Barra de búsqueda */}
-          <div className="table-header">
-            <div className="search-box">
-              <span className="material-icons">search</span>
-              <input
-                type="text"
-                placeholder="Buscar roles..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-
           {/* Tabla de roles */}
           {loading ? (
             <div className="loading-container">

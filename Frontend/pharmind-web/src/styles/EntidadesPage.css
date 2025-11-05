@@ -327,7 +327,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: 0.5rem;
   backdrop-filter: blur(4px);
 }
 
@@ -338,7 +338,7 @@
   width: 60%;
   max-height: 95vh;
   height: 95vh;
-  overflow-y: auto;
+  overflow-y: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
@@ -485,8 +485,11 @@
 
 /* Two Column Layout for Modal */
 .modal-content.modal-wide {
-  max-width: 80%;
-  width: 80%;
+  max-width: 98%;
+  width: 98%;
+  overflow: hidden;
+  max-height: 98vh;
+  height: 98vh;
 }
 
 .modal-form-layout {
@@ -503,6 +506,12 @@
   gap: 1rem;
   padding: 0.75rem;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modal-form-left::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .modal-form-right {
@@ -511,6 +520,12 @@
   border-radius: 0;
   padding: 0.75rem;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modal-form-right::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 /* Splitter */
@@ -680,6 +695,12 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.json-section::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .json-viewer-container {
@@ -832,6 +853,12 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.preview-section::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .preview-container {
@@ -884,6 +911,12 @@
   padding: 2rem;
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.preview-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .preview-form {

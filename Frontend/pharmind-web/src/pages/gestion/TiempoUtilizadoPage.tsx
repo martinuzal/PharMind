@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import { tiempoUtilizadoService } from '../../services/tiempoUtilizado.service';
 import type {
   TiempoUtilizado,
@@ -15,6 +16,7 @@ import './TiempoUtilizadoPage.css';
 
 const TiempoUtilizadoPage = () => {
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [items, setItems] = useState<TiempoUtilizado[]>([]);
   const [representantes, setRepresentantes] = useState<Usuario[]>([]);
   const [tiposActividad, setTiposActividad] = useState<TipoActividad[]>([]);
@@ -52,6 +54,57 @@ const TiempoUtilizadoPage = () => {
     loadItems();
     loadEstadisticas();
   }, [filtroRepresentante, filtroTipoActividad, filtroFechaInicio, filtroFechaFin]);
+
+  // Configurar toolbar
+  useEffect(() => {
+    // Izquierda: Icono + Título
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: '#4db8b8',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>schedule</span>
+        </div>
+        <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Tiempo Utilizado</span>
+      </>
+    );
+
+    // Derecha: Botón de agregar
+    const toolbarRight = (
+      <button
+        className="toolbar-icon-btn"
+        onClick={() => handleOpenModal('create')}
+        title="Nuevo Registro"
+        style={{
+          backgroundColor: '#4db8b8',
+          color: 'white',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span className="material-icons">add</span>
+      </button>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, []);
 
   const loadData = async () => {
     try {
@@ -255,22 +308,6 @@ const TiempoUtilizadoPage = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>
-            <span className="material-icons">schedule</span>
-            Tiempo Utilizado
-          </h1>
-          <p className="page-description">
-            Gestión de tiempo dedicado a actividades no relacionadas con promoción médica
-          </p>
-        </div>
-        <button className="btn btn-primary" onClick={() => handleOpenModal('create')}>
-          <span className="material-icons">add</span>
-          Nuevo Registro
-        </button>
-      </div>
-
       {/* Estadísticas */}
       {estadisticas && (
         <div className="stats-grid">

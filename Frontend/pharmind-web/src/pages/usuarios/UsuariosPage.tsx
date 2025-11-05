@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import { usuariosService } from '../../services/usuarios.service';
 import type { Usuario, CreateUsuarioDto, UpdateUsuarioDto } from '../../services/usuarios.service';
 import type { Rol } from '../../services/roles.service';
@@ -10,6 +11,7 @@ import './UsuariosPage.css';
 
 const UsuariosPage = () => {
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [roles, setRoles] = useState<Rol[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -34,6 +36,72 @@ const UsuariosPage = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Configurar toolbar
+  useEffect(() => {
+    // Izquierda: Icono + Título
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: '#3B82F6',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>person</span>
+        </div>
+        <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Usuarios</span>
+      </>
+    );
+
+    // Centro: Búsqueda
+    const toolbarCenter = (
+      <div className="search-box">
+        <span className="material-icons search-icon">search</span>
+        <input
+          type="text"
+          placeholder="Buscar usuario..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+      </div>
+    );
+
+    // Derecha: Botón de agregar
+    const toolbarRight = (
+      <button
+        className="toolbar-icon-btn"
+        onClick={() => handleOpenModal('create')}
+        title="Nuevo Usuario"
+        style={{
+          backgroundColor: '#3B82F6',
+          color: 'white',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span className="material-icons">add</span>
+      </button>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarCenterContent(toolbarCenter);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, [searchTerm]);
 
   const loadData = async () => {
     try {
@@ -174,34 +242,8 @@ const UsuariosPage = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div>
-          <h1>Usuarios</h1>
-          <p className="page-description">
-            Gestión de usuarios del sistema
-          </p>
-        </div>
-        <button className="btn-primary" onClick={() => handleOpenModal('create')}>
-          <span className="material-icons">add</span>
-          Nuevo Usuario
-        </button>
-      </div>
-
       <div className="page-content">
         <div className="card">
-          {/* Barra de búsqueda */}
-          <div className="table-header">
-            <div className="search-box">
-              <span className="material-icons">search</span>
-              <input
-                type="text"
-                placeholder="Buscar usuarios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-
           {/* Tabla de usuarios */}
           {loading ? (
             <div className="loading-container">

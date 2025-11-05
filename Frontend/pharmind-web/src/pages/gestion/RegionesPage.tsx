@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import { regionesService } from '../../services/regiones.service';
 import type {
   Region,
@@ -10,6 +11,7 @@ import '../crm/CRMPages.css';
 
 const RegionesPage = () => {
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [items, setItems] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -42,6 +44,75 @@ const RegionesPage = () => {
   useEffect(() => {
     loadItems();
   }, [currentPage, searchTerm, filtroActivo]);
+
+  // Configurar toolbar
+  useEffect(() => {
+    // Izquierda: Icono + Título
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: '#4db8b8',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>public</span>
+        </div>
+        <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Regiones</span>
+      </>
+    );
+
+    // Centro: Búsqueda
+    const toolbarCenter = (
+      <div className="search-box">
+        <span className="material-icons search-icon">search</span>
+        <input
+          type="text"
+          placeholder="Buscar región..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="search-input"
+        />
+      </div>
+    );
+
+    // Derecha: Botón de agregar
+    const toolbarRight = (
+      <button
+        className="toolbar-icon-btn"
+        onClick={() => handleOpenModal('create')}
+        title="Nueva Región"
+        style={{
+          backgroundColor: '#4db8b8',
+          color: 'white',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span className="material-icons">add</span>
+      </button>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarCenterContent(toolbarCenter);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, [searchTerm]);
 
   const loadItems = async () => {
     try {
@@ -198,41 +269,9 @@ const RegionesPage = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>
-            <span className="material-icons">public</span>
-            Regiones
-          </h1>
-          <p className="page-description">
-            Gestion de regiones geograficas y zonas de venta
-          </p>
-        </div>
-        <button className="btn btn-primary" onClick={() => handleOpenModal('create')}>
-          <span className="material-icons">add</span>
-          Nueva Region
-        </button>
-      </div>
-
       {/* Filters */}
       <div className="filters-section">
         <div className="filters-grid">
-          <div className="form-group">
-            <label>Buscar por nombre</label>
-            <div className="search-bar">
-              <span className="material-icons">search</span>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="form-control"
-                placeholder="Buscar region..."
-              />
-            </div>
-          </div>
           <div className="form-group">
             <label>Estado</label>
             <select

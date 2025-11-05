@@ -56,16 +56,24 @@ body {
   background: var(--bg-primary);
 }
 
-.app-content {
+/* Wrapper que contiene toolbar y content */
+.app-wrapper {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   margin-left: 260px;
-  min-height: 100vh;
-  background: var(--bg-primary);
   transition: margin-left 0.3s ease;
 }
 
-.app-content.sidebar-collapsed {
+.app-wrapper.sidebar-collapsed {
   margin-left: 70px;
+}
+
+.app-content {
+  flex: 1;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  overflow-y: auto;
 }
 
 /* Estilos de página estándar */

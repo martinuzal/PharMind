@@ -3,9 +3,11 @@ import { tiposActividadService } from '../../services/tiposActividad.service';
 import type { TipoActividad,
   CreateTipoActividadDto,
   UpdateTipoActividadDto} from '../../services/tiposActividad.service';
+import { usePage } from '../../contexts/PageContext';
 import './TiposActividadPage.css';
 
 const TiposActividadPage: React.FC = () => {
+  const { setToolbarContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [tiposActividad, setTiposActividad] = useState<TipoActividad[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -31,6 +33,57 @@ const TiposActividadPage: React.FC = () => {
   useEffect(() => {
     loadTiposActividad();
   }, [clasificacionFilter, activoFilter, searchFilter]);
+
+  // Configurar toolbar
+  useEffect(() => {
+    // Izquierda: Icono + Título
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: '#4db8b8',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>category</span>
+        </div>
+        <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Tipos de Actividad</span>
+      </>
+    );
+
+    // Derecha: Botón de agregar
+    const toolbarRight = (
+      <button
+        className="toolbar-icon-btn"
+        onClick={() => handleOpenModal()}
+        title="Nuevo Tipo"
+        style={{
+          backgroundColor: '#4db8b8',
+          color: 'white',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span className="material-icons">add</span>
+      </button>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, []);
 
   const loadTiposActividad = async () => {
     try {
@@ -153,14 +206,6 @@ const TiposActividadPage: React.FC = () => {
 
   return (
     <div className="tipos-actividad-page">
-      <div className="page-header">
-        <h1>Tipos de Actividad</h1>
-        <button className="btn btn-primary" onClick={() => handleOpenModal()}>
-          <span className="material-icons">add</span>
-          Nuevo Tipo
-        </button>
-      </div>
-
       {error && (
         <div className="alert alert-error">
           <span className="material-icons">error</span>

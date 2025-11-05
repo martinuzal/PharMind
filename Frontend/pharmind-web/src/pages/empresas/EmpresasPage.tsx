@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import empresasService from '../../services/empresas.service';
 import type { Empresa, CreateEmpresaDto, UpdateEmpresaDto } from '../../services/empresas.service';
 import '../usuarios/UsuariosPage.css';
 
 const EmpresasPage = () => {
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +29,69 @@ const EmpresasPage = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Configurar toolbar
+  useEffect(() => {
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: '#EF4444',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>business</span>
+        </div>
+        <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Empresas</span>
+      </>
+    );
+
+    const toolbarCenter = (
+      <div className="search-box">
+        <span className="material-icons search-icon">search</span>
+        <input
+          type="text"
+          placeholder="Buscar empresa..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+      </div>
+    );
+
+    const toolbarRight = (
+      <button
+        className="toolbar-icon-btn"
+        onClick={() => handleOpenModal('create')}
+        title="Nueva Empresa"
+        style={{
+          backgroundColor: '#EF4444',
+          color: 'white',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span className="material-icons">add</span>
+      </button>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarCenterContent(toolbarCenter);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, [searchTerm]);
 
   const loadData = async () => {
     try {
@@ -160,34 +225,8 @@ const EmpresasPage = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div>
-          <h1>Empresas</h1>
-          <p className="page-description">
-            Gestión de empresas del sistema
-          </p>
-        </div>
-        <button className="btn-primary" onClick={() => handleOpenModal('create')}>
-          <span className="material-icons">add</span>
-          Nueva Empresa
-        </button>
-      </div>
-
       <div className="page-content">
         <div className="card">
-          {/* Barra de búsqueda */}
-          <div className="table-header">
-            <div className="search-box">
-              <span className="material-icons">search</span>
-              <input
-                type="text"
-                placeholder="Buscar empresas..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-
           {/* Tabla de empresas */}
           {loading ? (
             <div className="loading-container">

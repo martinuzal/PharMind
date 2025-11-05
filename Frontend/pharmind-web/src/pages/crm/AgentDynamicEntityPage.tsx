@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import api from '../../services/api';
 import type { EsquemaPersonalizado } from '../../types/dynamic-entities';
 import DynamicFormField from '../../components/dynamic/DynamicFormField';
@@ -91,6 +92,7 @@ const AgentDynamicEntityPage = () => {
   const { subtipo } = useParams<{ subtipo: string }>();
   const navigate = useNavigate();
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
 
   const [esquema, setEsquema] = useState<EsquemaPersonalizado | null>(null);
   const [agentes, setAgentes] = useState<Agente[]>([]);
@@ -99,7 +101,7 @@ const AgentDynamicEntityPage = () => {
   const [editingAgente, setEditingAgente] = useState<Agente | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     const saved = localStorage.getItem('agentesViewMode');
-    return (saved === 'list' || saved === 'grid') ? saved : 'grid';
+    return (saved === 'list' || saved === 'grid') ? saved : 'list';
   });
 
   // Search state
@@ -149,6 +151,92 @@ const AgentDynamicEntityPage = () => {
       fetchAgentes();
     }
   }, [esquema]);
+
+  // Actualizar toolbar cuando el esquema o estados cambien
+  useEffect(() => {
+    if (esquema) {
+      // Izquierda: Icono + Título
+      const toolbarLeft = (
+        <>
+          <div className="entity-icon" style={{
+            backgroundColor: esquema.color || '#4db8b8',
+            padding: '0.375rem',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: '0.75rem',
+            width: '32px',
+            height: '32px'
+          }}>
+            <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>{esquema.icono || 'badge'}</span>
+          </div>
+          <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>{esquema.nombre}</span>
+        </>
+      );
+
+      // Centro: Búsqueda + Vista
+      const toolbarCenter = (
+        <>
+          <div className="search-box" style={{ marginRight: '0.5rem' }}>
+            <span className="material-icons search-icon">search</span>
+            <input
+              type="text"
+              placeholder="Buscar agentes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          <div className="view-toggle">
+            <button
+              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="Vista Lista"
+            >
+              <span className="material-icons">view_list</span>
+            </button>
+            <button
+              className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title="Vista Mosaico"
+            >
+              <span className="material-icons">grid_view</span>
+            </button>
+          </div>
+        </>
+      );
+
+      // Derecha: Botón de agregar
+      const toolbarRight = (
+        <button
+          className="toolbar-icon-btn"
+          onClick={handleCreate}
+          title={`Nuevo ${esquema.nombre}`}
+          style={{
+            backgroundColor: esquema.color || '#4db8b8',
+            color: 'white',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <span className="material-icons">add</span>
+        </button>
+      );
+
+      setToolbarContent(toolbarLeft);
+      setToolbarCenterContent(toolbarCenter);
+      setToolbarRightContent(toolbarRight);
+    }
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, [esquema, searchQuery, viewMode]);
 
   const fetchEsquema = async () => {
     if (!subtipo) {
@@ -543,49 +631,6 @@ const AgentDynamicEntityPage = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div className="header-content">
-          <div className="entity-icon" style={{ backgroundColor: esquema.color || '#4db8b8' }}>
-            <span className="material-icons">{esquema.icono || 'person'}</span>
-          </div>
-          <div>
-            <h1>{esquema.nombre}</h1>
-            <p className="page-description">{esquema.descripcion || `Gestión de ${esquema.nombre}`}</p>
-          </div>
-        </div>
-        <div className="header-actions">
-          <div className="search-box">
-            <span className="material-icons">search</span>
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="view-toggle">
-            <button
-              className={`btn-view ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-              title="Vista de mosaico"
-            >
-              <span className="material-icons">grid_view</span>
-            </button>
-            <button
-              className={`btn-view ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
-              title="Vista de lista"
-            >
-              <span className="material-icons">view_list</span>
-            </button>
-          </div>
-          <button className="btn btn-primary" onClick={handleCreate}>
-            <span className="material-icons">add</span>
-            Nuevo {esquema.nombre}
-          </button>
-        </div>
-      </div>
-
       {viewMode === 'grid' ? (
         <div className="entities-grid">
           {filteredAgentes.map((agente) => (

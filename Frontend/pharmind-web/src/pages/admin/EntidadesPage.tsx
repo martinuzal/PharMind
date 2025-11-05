@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { usePage } from '../../contexts/PageContext';
 import SchemaBuilder from '../../components/schema/SchemaBuilder';
 import '../../styles/EntidadesPage.css';
 
@@ -23,6 +24,7 @@ interface EsquemaPersonalizado {
 
 const EntidadesPage = () => {
   const { addNotification } = useNotifications();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [esquemas, setEsquemas] = useState<EsquemaPersonalizado[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -136,6 +138,87 @@ const EntidadesPage = () => {
 
   useEffect(() => {
     fetchEsquemas();
+  }, [filterTipo]);
+
+  // Configurar toolbar
+  useEffect(() => {
+    // Izquierda: Icono + Título + Subtítulo
+    const toolbarLeft = (
+      <>
+        <div className="entity-icon" style={{
+          backgroundColor: '#6366f1',
+          padding: '0.375rem',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.75rem',
+          width: '32px',
+          height: '32px'
+        }}>
+          <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>category</span>
+        </div>
+        <div>
+          <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+            Gestión de Entidades
+          </span>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.125rem' }}>
+            Configure los diferentes tipos de entidades del sistema
+          </div>
+        </div>
+      </>
+    );
+
+    // Centro: Filtro de tipo
+    const toolbarCenter = (
+      <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+          Filtrar por tipo:
+        </label>
+        <select
+          value={filterTipo}
+          onChange={(e) => setFilterTipo(e.target.value)}
+          className="form-control"
+          style={{ minWidth: '200px' }}
+        >
+          <option value="">Todos los tipos</option>
+          {entidadTipos.map((tipo) => (
+            <option key={tipo.value} value={tipo.value}>
+              {tipo.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+
+    // Derecha: Botón de agregar
+    const toolbarRight = (
+      <button
+        className="toolbar-icon-btn"
+        onClick={handleCreate}
+        title="Nueva Entidad"
+        style={{
+          backgroundColor: '#6366f1',
+          color: 'white',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span className="material-icons">add</span>
+      </button>
+    );
+
+    setToolbarContent(toolbarLeft);
+    setToolbarCenterContent(toolbarCenter);
+    setToolbarRightContent(toolbarRight);
+
+    return () => {
+      clearToolbarContent();
+    };
   }, [filterTipo]);
 
   const handleTabSwitch = (tab: 'form' | 'json' | 'preview') => {
@@ -351,37 +434,6 @@ const EntidadesPage = () => {
 
   return (
     <div className="entidades-page">
-      <div className="page-header">
-        <div>
-          <h1>Gestión de Entidades</h1>
-          <p className="page-subtitle">
-            Configure los diferentes tipos de entidades del sistema
-          </p>
-        </div>
-        <button className="btn-primary" onClick={handleCreate}>
-          <span className="material-icons">add</span>
-          Nueva Entidad
-        </button>
-      </div>
-
-      <div className="filters-section">
-        <div className="filter-group">
-          <label>Filtrar por tipo:</label>
-          <select
-            value={filterTipo}
-            onChange={(e) => setFilterTipo(e.target.value)}
-            className="filter-select"
-          >
-            <option value="">Todos los tipos</option>
-            {entidadTipos.map((tipo) => (
-              <option key={tipo.value} value={tipo.value}>
-                {tipo.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
       {loading ? (
         <div className="loading-container">
           <div className="spinner"></div>

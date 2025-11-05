@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import DynamicFormField from '../../components/dynamic/DynamicFormField';
+import { usePage } from '../../contexts/PageContext';
 import './CRMPages.css';
 
 interface Schema {
@@ -77,6 +78,7 @@ interface ClientesConfig {
 const RelationDynamicEntityPage: React.FC = () => {
   const { subtipo } = useParams<{ subtipo: string }>();
   const navigate = useNavigate();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
 
   const [esquema, setEsquema] = useState<Schema | null>(null);
   const [relaciones, setRelaciones] = useState<Relation[]>([]);
@@ -102,7 +104,7 @@ const RelationDynamicEntityPage: React.FC = () => {
   const [dynamicFormData, setDynamicFormData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -117,6 +119,92 @@ const RelationDynamicEntityPage: React.FC = () => {
       loadRelaciones();
     }
   }, [esquema]);
+
+  // Actualizar toolbar cuando el esquema o estados cambien
+  useEffect(() => {
+    if (esquema) {
+      // Izquierda: Icono + Título
+      const toolbarLeft = (
+        <>
+          <div className="entity-icon" style={{
+            backgroundColor: esquema.color || '#3B82F6',
+            padding: '0.375rem',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: '0.75rem',
+            width: '32px',
+            height: '32px'
+          }}>
+            <span className="material-icons" style={{ color: 'white', fontSize: '1.125rem' }}>{esquema.icono || 'link'}</span>
+          </div>
+          <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>{esquema.nombre}</span>
+        </>
+      );
+
+      // Centro: Búsqueda + Vista
+      const toolbarCenter = (
+        <>
+          <div className="search-box" style={{ marginRight: '0.5rem' }}>
+            <span className="material-icons search-icon">search</span>
+            <input
+              type="text"
+              placeholder="Buscar relaciones..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          <div className="view-toggle">
+            <button
+              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="Vista Lista"
+            >
+              <span className="material-icons">view_list</span>
+            </button>
+            <button
+              className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title="Vista Mosaico"
+            >
+              <span className="material-icons">grid_view</span>
+            </button>
+          </div>
+        </>
+      );
+
+      // Derecha: Botón de agregar
+      const toolbarRight = (
+        <button
+          className="toolbar-icon-btn"
+          onClick={handleCreate}
+          title="Nueva Relación"
+          style={{
+            backgroundColor: esquema.color || '#3B82F6',
+            color: 'white',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <span className="material-icons">add</span>
+        </button>
+      );
+
+      setToolbarContent(toolbarLeft);
+      setToolbarCenterContent(toolbarCenter);
+      setToolbarRightContent(toolbarRight);
+    }
+
+    return () => {
+      clearToolbarContent();
+    };
+  }, [esquema, searchQuery, viewMode]);
 
   const loadEsquema = async () => {
     try {
@@ -507,50 +595,7 @@ const RelationDynamicEntityPage: React.FC = () => {
   }
 
   return (
-    <div className="dynamic-entity-page">
-      <div className="page-header">
-        <div className="header-content">
-          <div className="entity-icon" style={{ backgroundColor: esquema.color || '#3B82F6' }}>
-            <span className="material-icons">{esquema.icono || 'link'}</span>
-          </div>
-          <div>
-            <h1>{esquema.nombre}</h1>
-            <p className="page-description">{esquema.descripcion || `Gestión de ${esquema.nombre}`}</p>
-          </div>
-        </div>
-        <div className="header-actions">
-          <div className="search-box">
-            <span className="material-icons">search</span>
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="view-toggle">
-            <button
-              className={`btn-view ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-              title="Vista de mosaico"
-            >
-              <span className="material-icons">grid_view</span>
-            </button>
-            <button
-              className={`btn-view ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
-              title="Vista de lista"
-            >
-              <span className="material-icons">view_list</span>
-            </button>
-          </div>
-          <button className="btn btn-primary" onClick={handleCreate}>
-            <span className="material-icons">add</span>
-            Nueva Relación
-          </button>
-        </div>
-      </div>
-
+    <div className="dynamic-entity-page" style={{ paddingTop: '2rem' }}>
       {viewMode === 'grid' ? (
         <div className="entities-grid">
           {filteredRelaciones.map((relacion) => (
