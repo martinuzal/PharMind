@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 import FormDesigner from '../formDesigner/FormDesigner';
 import type { FormSchema } from '../../types/formDesigner';
 import RelationClientsConfig from './RelationClientsConfig';
+import StaticFieldsConfig from './StaticFieldsConfig';
+import InteractionEntitiesConfig from './InteractionEntitiesConfig';
+import ViewsConfig from './ViewsConfig';
 import '../../styles/FormDesigner.css';
 import './SchemaBuilder.css';
 
@@ -50,7 +53,7 @@ interface SchemaBuilderProps {
 }
 
 const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBuilderProps) => {
-  const [activeTab, setActiveTab] = useState<'visual' | 'classic' | 'clients'>('visual');
+  const [activeTab, setActiveTab] = useState<'visual' | 'classic' | 'clients' | 'entities' | 'properties' | 'views'>('visual');
   const [fields, setFields] = useState<SchemaField[]>(() => {
     try {
       const parsed = JSON.parse(initialSchema);
@@ -81,6 +84,104 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
       return {};
     }
   });
+
+  // State for staticFieldsConfig (for Cliente, Agente, Relacion, Interaccion)
+  const [staticFieldsConfig, setStaticFieldsConfig] = useState(() => {
+    try {
+      const parsed = JSON.parse(initialSchema);
+      return parsed.staticFieldsConfig || { campos: {} };
+    } catch {
+      return { campos: {} };
+    }
+  });
+
+  // State for entitiesConfig (only for Interaccion entities)
+  const [entitiesConfig, setEntitiesConfig] = useState(() => {
+    try {
+      const parsed = JSON.parse(initialSchema);
+      return parsed.entitiesConfig || {};
+    } catch {
+      return {};
+    }
+  });
+
+  // State for viewsConfig (for all entity types)
+  const [viewsConfig, setViewsConfig] = useState(() => {
+    try {
+      const parsed = JSON.parse(initialSchema);
+      return parsed.viewsConfig || {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Helper function to get static fields for each entity type
+  const getStaticFieldsForEntity = (entityType: string) => {
+    const staticFieldsMap: { [key: string]: Array<{ name: string; label: string; type: string }> } = {
+      Cliente: [
+        { name: 'CodigoCliente', label: 'Código Cliente', type: 'text' },
+        { name: 'Nombre', label: 'Nombre', type: 'text' },
+        { name: 'Apellido', label: 'Apellido', type: 'text' },
+        { name: 'RazonSocial', label: 'Razón Social', type: 'text' },
+        { name: 'Especialidad', label: 'Especialidad', type: 'text' },
+        { name: 'Categoria', label: 'Categoría', type: 'text' },
+        { name: 'Segmento', label: 'Segmento', type: 'text' },
+        { name: 'InstitucionId', label: 'Institución', type: 'text' },
+        { name: 'Email', label: 'Email', type: 'email' },
+        { name: 'Telefono', label: 'Teléfono', type: 'tel' },
+        { name: 'DireccionId', label: 'Dirección', type: 'text' },
+        { name: 'Estado', label: 'Estado', type: 'text' }
+      ],
+      Agente: [
+        { name: 'CodigoAgente', label: 'Código Agente', type: 'text' },
+        { name: 'Nombre', label: 'Nombre', type: 'text' },
+        { name: 'Apellido', label: 'Apellido', type: 'text' },
+        { name: 'Email', label: 'Email', type: 'email' },
+        { name: 'Telefono', label: 'Teléfono', type: 'tel' },
+        { name: 'RegionId', label: 'Región', type: 'text' },
+        { name: 'DistritoId', label: 'Distrito', type: 'text' },
+        { name: 'LineaNegocioId', label: 'Línea de Negocio', type: 'text' },
+        { name: 'ManagerId', label: 'Manager', type: 'text' },
+        { name: 'FechaIngreso', label: 'Fecha de Ingreso', type: 'date' },
+        { name: 'Activo', label: 'Activo', type: 'checkbox' },
+        { name: 'Observaciones', label: 'Observaciones', type: 'textarea' }
+      ],
+      Relacion: [
+        { name: 'CodigoRelacion', label: 'Código Relación', type: 'text' },
+        { name: 'AgenteId', label: 'Agente', type: 'text' },
+        { name: 'ClientePrincipalId', label: 'Cliente Principal', type: 'text' },
+        { name: 'ClienteSecundario1Id', label: 'Cliente Secundario 1', type: 'text' },
+        { name: 'ClienteSecundario2Id', label: 'Cliente Secundario 2', type: 'text' },
+        { name: 'TipoRelacion', label: 'Tipo de Relación', type: 'text' },
+        { name: 'FechaInicio', label: 'Fecha Inicio', type: 'date' },
+        { name: 'FechaFin', label: 'Fecha Fin', type: 'date' },
+        { name: 'Estado', label: 'Estado', type: 'text' },
+        { name: 'FrecuenciaVisitas', label: 'Frecuencia de Visitas', type: 'text' },
+        { name: 'Prioridad', label: 'Prioridad', type: 'text' },
+        { name: 'Observaciones', label: 'Observaciones', type: 'textarea' }
+      ],
+      Interaccion: [
+        { name: 'CodigoInteraccion', label: 'Código Interacción', type: 'text' },
+        { name: 'RelacionId', label: 'Relación', type: 'text' },
+        { name: 'AgenteId', label: 'Agente', type: 'text' },
+        { name: 'ClienteId', label: 'Cliente', type: 'text' },
+        { name: 'TipoInteraccion', label: 'Tipo de Interacción', type: 'text' },
+        { name: 'Fecha', label: 'Fecha', type: 'date' },
+        { name: 'Turno', label: 'Turno', type: 'text' },
+        { name: 'DuracionMinutos', label: 'Duración (minutos)', type: 'number' },
+        { name: 'Resultado', label: 'Resultado', type: 'text' },
+        { name: 'ObjetivoVisita', label: 'Objetivo de Visita', type: 'text' },
+        { name: 'ResumenVisita', label: 'Resumen de Visita', type: 'textarea' },
+        { name: 'ProximaAccion', label: 'Próxima Acción', type: 'text' },
+        { name: 'FechaProximaAccion', label: 'Fecha Próxima Acción', type: 'date' },
+        { name: 'Latitud', label: 'Latitud', type: 'number' },
+        { name: 'Longitud', label: 'Longitud', type: 'number' },
+        { name: 'Observaciones', label: 'Observaciones', type: 'textarea' }
+      ]
+    };
+
+    return staticFieldsMap[entityType] || [];
+  };
 
   // Convert initialSchema to FormDesigner format
   const getFormDesignerSchema = (): FormSchema | undefined => {
@@ -152,7 +253,13 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
       layout: formSchema.layout,
       version: formSchema.version,
       // Include clientesConfig if it exists (for Relacion entities)
-      ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig })
+      ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig }),
+      // Include entitiesConfig if it exists (for Interaccion entities)
+      ...(entidadTipo === 'Interaccion' && Object.keys(entitiesConfig).length > 0 && { entitiesConfig }),
+      // Include staticFieldsConfig if it exists
+      ...(Object.keys(staticFieldsConfig.campos).length > 0 && { staticFieldsConfig }),
+      // Include viewsConfig if it exists
+      ...(Object.keys(viewsConfig).length > 0 && { viewsConfig })
     };
     onChange(JSON.stringify(schema, null, 2));
   };
@@ -177,7 +284,13 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
       fields: newFields,
       version: 1,
       // Include clientesConfig if it exists (for Relacion entities)
-      ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig })
+      ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig }),
+      // Include entitiesConfig if it exists (for Interaccion entities)
+      ...(entidadTipo === 'Interaccion' && Object.keys(entitiesConfig).length > 0 && { entitiesConfig }),
+      // Include staticFieldsConfig if it exists
+      ...(Object.keys(staticFieldsConfig.campos).length > 0 && { staticFieldsConfig }),
+      // Include viewsConfig if it exists
+      ...(Object.keys(viewsConfig).length > 0 && { viewsConfig })
     };
     onChange(JSON.stringify(schema, null, 2));
   };
@@ -246,7 +359,65 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
     const schema = {
       fields: fields,
       version: 1,
-      clientesConfig: newConfig
+      clientesConfig: newConfig,
+      // Include staticFieldsConfig if it exists
+      ...(Object.keys(staticFieldsConfig.campos).length > 0 && { staticFieldsConfig }),
+      // Include entitiesConfig if it exists (for Interaccion entities)
+      ...(entidadTipo === 'Interaccion' && Object.keys(entitiesConfig).length > 0 && { entitiesConfig }),
+      // Include viewsConfig if it exists
+      ...(Object.keys(viewsConfig).length > 0 && { viewsConfig })
+    };
+    onChange(JSON.stringify(schema, null, 2));
+  };
+
+  const handleStaticFieldsConfigChange = (newConfig: any) => {
+    setStaticFieldsConfig(newConfig);
+
+    // Update the schema immediately with the new config
+    const schema = {
+      fields: fields,
+      version: 1,
+      staticFieldsConfig: newConfig,
+      // Include clientesConfig if it exists (for Relacion entities)
+      ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig }),
+      // Include entitiesConfig if it exists (for Interaccion entities)
+      ...(entidadTipo === 'Interaccion' && Object.keys(entitiesConfig).length > 0 && { entitiesConfig }),
+      // Include viewsConfig if it exists
+      ...(Object.keys(viewsConfig).length > 0 && { viewsConfig })
+    };
+    onChange(JSON.stringify(schema, null, 2));
+  };
+
+  const handleEntitiesConfigChange = (newConfig: any) => {
+    setEntitiesConfig(newConfig);
+
+    // Update the schema immediately with the new config
+    const schema = {
+      fields: fields,
+      version: 1,
+      entitiesConfig: newConfig,
+      // Include staticFieldsConfig if it exists
+      ...(Object.keys(staticFieldsConfig.campos).length > 0 && { staticFieldsConfig }),
+      // Include viewsConfig if it exists
+      ...(Object.keys(viewsConfig).length > 0 && { viewsConfig })
+    };
+    onChange(JSON.stringify(schema, null, 2));
+  };
+
+  const handleViewsConfigChange = (newConfig: any) => {
+    setViewsConfig(newConfig);
+
+    // Update the schema immediately with the new config
+    const schema = {
+      fields: fields,
+      version: 1,
+      viewsConfig: newConfig,
+      // Include clientesConfig if it exists (for Relacion entities)
+      ...(entidadTipo === 'Relacion' && Object.keys(clientesConfig).length > 0 && { clientesConfig }),
+      // Include entitiesConfig if it exists (for Interaccion entities)
+      ...(entidadTipo === 'Interaccion' && Object.keys(entitiesConfig).length > 0 && { entitiesConfig }),
+      // Include staticFieldsConfig if it exists
+      ...(Object.keys(staticFieldsConfig.campos).length > 0 && { staticFieldsConfig })
     };
     onChange(JSON.stringify(schema, null, 2));
   };
@@ -303,6 +474,51 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
                 >
                   <span className="material-icons" style={{ fontSize: '18px' }}>groups</span>
                   Clientes
+                </button>
+              )}
+              {entidadTipo === 'Interaccion' && (
+                <button
+                  type="button"
+                  className={activeTab === 'entities' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+                  onClick={() => setActiveTab('entities')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <span className="material-icons" style={{ fontSize: '18px' }}>link</span>
+                  Entidades
+                </button>
+              )}
+              {(entidadTipo === 'Cliente' || entidadTipo === 'Agente' || entidadTipo === 'Relacion' || entidadTipo === 'Interaccion') && (
+                <button
+                  type="button"
+                  className={activeTab === 'properties' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+                  onClick={() => setActiveTab('properties')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <span className="material-icons" style={{ fontSize: '18px' }}>settings</span>
+                  Propiedades
+                </button>
+              )}
+              {(entidadTipo === 'Cliente' || entidadTipo === 'Agente' || entidadTipo === 'Relacion' || entidadTipo === 'Interaccion') && (
+                <button
+                  type="button"
+                  className={activeTab === 'views' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+                  onClick={() => setActiveTab('views')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <span className="material-icons" style={{ fontSize: '18px' }}>visibility</span>
+                  Vistas
                 </button>
               )}
             </div>
@@ -399,6 +615,25 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
           <RelationClientsConfig
             value={clientesConfig}
             onChange={handleClientesConfigChange}
+          />
+        ) : activeTab === 'entities' ? (
+          <InteractionEntitiesConfig
+            value={entitiesConfig}
+            onChange={handleEntitiesConfigChange}
+          />
+        ) : activeTab === 'properties' ? (
+          <StaticFieldsConfig
+            entidadTipo={entidadTipo || ''}
+            value={staticFieldsConfig}
+            onChange={handleStaticFieldsConfigChange}
+          />
+        ) : activeTab === 'views' ? (
+          <ViewsConfig
+            entidadTipo={entidadTipo || ''}
+            value={viewsConfig}
+            onChange={handleViewsConfigChange}
+            availableFields={fields.map(f => ({ name: f.name, label: f.label, type: f.type }))}
+            staticFields={getStaticFieldsForEntity(entidadTipo || '')}
           />
         ) : null}
       </div>
