@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { usePage } from '../../contexts/PageContext';
+import InteractionFormModal from '../../components/modals/InteractionFormModal';
 import './MiCarteraPage.css';
 
 interface TipoRelacion {
@@ -57,6 +58,9 @@ const MiCarteraPage: React.FC = () => {
   const [tipoFiltro, setTipoFiltro] = useState<string>('todos');
   const [viewMode, setViewMode] = useState<'mosaico' | 'lista'>('mosaico');
   const [menuAbiertoId, setMenuAbiertoId] = useState<string | null>(null);
+  const [showInteractionModal, setShowInteractionModal] = useState(false);
+  const [modalPrefilledData, setModalPrefilledData] = useState<any>(null);
+  const [selectedTipoInteraccion, setSelectedTipoInteraccion] = useState<TipoInteraccion | null>(null);
 
   useEffect(() => {
     loadData();
@@ -291,20 +295,39 @@ const MiCarteraPage: React.FC = () => {
     setMenuAbiertoId(menuAbiertoId === relacionId ? null : relacionId);
   };
 
-  const handleCrearInteraccion = (relacion: Relacion, tipoInteraccion: TipoInteraccion) => {
-    // Navegar a la página de creación de interacción con datos pre-cargados
-    navigate(`/interacciones/${tipoInteraccion.subTipo}`, {
-      state: {
+  const handleCrearInteraccion = async (relacion: Relacion, tipoInteraccion: TipoInteraccion) => {
+    try {
+      // Cargar esquema completo del tipo de interacción
+      const esquemaResponse = await api.get(`/esquemaspersonalizados/tipo/Interaccion/subtipo/${tipoInteraccion.subTipo}`);
+
+      // Preparar datos pre-poblados y abrir modal
+      setModalPrefilledData({
         relacionId: relacion.id,
-        relacionCodigo: relacion.codigoRelacion,
         agenteId: relacion.agenteId,
-        agenteNombre: relacion.agenteNombre,
         clienteId: relacion.clientePrincipalId,
-        clienteNombre: relacion.clientePrincipalNombre,
         tipoInteraccionId: tipoInteraccion.id
-      }
-    });
-    setMenuAbiertoId(null);
+      });
+      setSelectedTipoInteraccion({
+        ...tipoInteraccion,
+        ...esquemaResponse.data
+      });
+      setShowInteractionModal(true);
+      setMenuAbiertoId(null);
+    } catch (error) {
+      console.error('Error al cargar esquema de interacción:', error);
+      alert('Error al abrir formulario de interacción');
+    }
+  };
+
+  const handleModalClose = () => {
+    setShowInteractionModal(false);
+    setModalPrefilledData(null);
+    setSelectedTipoInteraccion(null);
+  };
+
+  const handleModalSave = async () => {
+    // Recargar relaciones después de guardar
+    await loadData();
   };
 
   const getEstadoBadgeClass = (estado: string) => {
@@ -603,6 +626,17 @@ const MiCarteraPage: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Modal de Interacción */}
+      {selectedTipoInteraccion && (
+        <InteractionFormModal
+          isOpen={showInteractionModal}
+          onClose={handleModalClose}
+          onSave={handleModalSave}
+          prefilledData={modalPrefilledData}
+          esquema={selectedTipoInteraccion as any}
+        />
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import DynamicFormField from '../../components/dynamic/DynamicFormField';
+import InteractionFormModal from '../../components/modals/InteractionFormModal';
 import { usePage } from '../../contexts/PageContext';
 import './CRMPages.css';
 
@@ -75,6 +76,14 @@ interface ClientesConfig {
   clienteSecundario2?: ClientFieldConfig;
 }
 
+interface TipoInteraccion {
+  id: string;
+  nombre: string;
+  subTipo: string;
+  icono?: string;
+  color?: string;
+}
+
 const RelationDynamicEntityPage: React.FC = () => {
   const { subtipo } = useParams<{ subtipo: string }>();
   const navigate = useNavigate();
@@ -85,7 +94,9 @@ const RelationDynamicEntityPage: React.FC = () => {
   const [agentes, setAgentes] = useState<Agent[]>([]);
   const [clientes, setClientes] = useState<Client[]>([]);
   const [tiposCliente, setTiposCliente] = useState<TipoCliente[]>([]);
+  const [tiposInteraccion, setTiposInteraccion] = useState<TipoInteraccion[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [menuAbiertoId, setMenuAbiertoId] = useState<string | null>(null);
   const [editingRelacion, setEditingRelacion] = useState<Relation | null>(null);
   const [formData, setFormData] = useState<any>({
     codigoRelacion: '',
@@ -106,12 +117,16 @@ const RelationDynamicEntityPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showInteractionModal, setShowInteractionModal] = useState(false);
+  const [modalPrefilledData, setModalPrefilledData] = useState<any>(null);
+  const [selectedTipoInteraccion, setSelectedTipoInteraccion] = useState<TipoInteraccion | null>(null);
 
   useEffect(() => {
     loadEsquema();
     loadAgentes();
     loadClientes();
     loadTiposCliente();
+    loadTiposInteraccion();
   }, [subtipo]);
 
   useEffect(() => {
@@ -271,6 +286,15 @@ const RelationDynamicEntityPage: React.FC = () => {
     }
   };
 
+  const loadTiposInteraccion = async () => {
+    try {
+      const response = await api.get('/esquemaspersonalizados/tipo/Interaccion');
+      setTiposInteraccion(response.data || []);
+    } catch (err) {
+      console.error('Error al cargar tipos de interacción:', err);
+    }
+  };
+
   const generateRelationCode = () => {
     const timestamp = Date.now();
     return `REL-${timestamp}`;
@@ -326,6 +350,75 @@ const RelationDynamicEntityPage: React.FC = () => {
     } catch (err: any) {
       alert(err.response?.data?.message || 'Error al eliminar la relación');
     }
+  };
+
+  // Obtener interacciones disponibles según configuración del tipo de relación
+  const getInteraccionesDisponibles = (tipoRelacionId: string): TipoInteraccion[] => {
+    if (!esquema) return [];
+
+    try {
+      let interaccionesPermitidas: string[] = [];
+
+      // Intentar leer desde configuracionUI del esquema
+      if (esquema.schema) {
+        const schema = JSON.parse(esquema.schema);
+        const configuracionUI = schema.configuracionUI || {};
+        interaccionesPermitidas = configuracionUI.interactionsConfig || [];
+      }
+
+      // Si no hay configuración, permitir todas
+      if (interaccionesPermitidas.length === 0) {
+        return tiposInteraccion;
+      }
+
+      // Filtrar solo las interacciones permitidas
+      return tiposInteraccion.filter(tipoInt =>
+        interaccionesPermitidas.includes(tipoInt.id)
+      );
+    } catch (error) {
+      console.error('Error parsing schema configuracionUI:', error);
+      return tiposInteraccion;
+    }
+  };
+
+  // Manejar creación de interacción desde relación
+  const handleCrearInteraccion = async (relacion: Relation, tipoInteraccion: TipoInteraccion) => {
+    try {
+      // Cargar esquema completo de la interacción
+      const esquemaResponse = await api.get(`/esquemaspersonalizados/tipo/Interaccion/subtipo/${tipoInteraccion.subTipo}`);
+
+      // Preparar datos prellenados
+      setModalPrefilledData({
+        relacionId: relacion.id,
+        agenteId: relacion.agenteId,
+        clienteId: relacion.clientePrincipalId,
+        tipoInteraccionId: tipoInteraccion.id
+      });
+
+      // Configurar esquema seleccionado
+      setSelectedTipoInteraccion({
+        ...tipoInteraccion,
+        ...esquemaResponse.data
+      });
+
+      // Abrir modal
+      setShowInteractionModal(true);
+      setMenuAbiertoId(null);
+    } catch (error) {
+      console.error('Error al cargar esquema de interacción:', error);
+      alert('Error al abrir formulario de interacción');
+    }
+  };
+
+  const handleInteractionModalClose = () => {
+    setShowInteractionModal(false);
+    setModalPrefilledData(null);
+    setSelectedTipoInteraccion(null);
+  };
+
+  const handleInteractionModalSave = async () => {
+    // Opcionalmente recargar datos si es necesario
+    console.log('Interacción guardada exitosamente');
   };
 
   const generateDemoData = async () => {
@@ -666,6 +759,85 @@ const RelationDynamicEntityPage: React.FC = () => {
                 >
                   <span className="material-icons">delete</span>
                 </button>
+                <div style={{ position: 'relative' }}>
+                  <button
+                    className="btn-icon btn-icon-primary"
+                    onClick={() => setMenuAbiertoId(menuAbiertoId === relacion.id ? null : relacion.id)}
+                    title="Nueva Interacción"
+                  >
+                    <span className="material-icons">add_circle</span>
+                  </button>
+                  {menuAbiertoId === relacion.id && (
+                    <>
+                      <div
+                        style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          zIndex: 999
+                        }}
+                        onClick={() => setMenuAbiertoId(null)}
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          right: 0,
+                          marginTop: '0.5rem',
+                          backgroundColor: 'white',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          minWidth: '200px',
+                          zIndex: 1000,
+                          maxHeight: '300px',
+                          overflowY: 'auto'
+                        }}
+                      >
+                        {getInteraccionesDisponibles(relacion.tipoRelacionId).length > 0 ? (
+                          getInteraccionesDisponibles(relacion.tipoRelacionId).map((tipoInt) => (
+                            <button
+                              key={tipoInt.id}
+                              onClick={() => handleCrearInteraccion(relacion, tipoInt)}
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem 1rem',
+                                border: 'none',
+                                backgroundColor: 'transparent',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                fontSize: '0.9rem',
+                                transition: 'background-color 0.2s'
+                              }}
+                              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--hover-bg)'}
+                              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                              <span
+                                className="material-icons"
+                                style={{
+                                  fontSize: '1.25rem',
+                                  color: tipoInt.color || '#10B981'
+                                }}
+                              >
+                                {tipoInt.icono || 'assignment'}
+                              </span>
+                              <span>{tipoInt.nombre}</span>
+                            </button>
+                          ))
+                        ) : (
+                          <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                            No hay tipos de interacción configurados para este tipo de relación
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -717,6 +889,85 @@ const RelationDynamicEntityPage: React.FC = () => {
                 >
                   <span className="material-icons">delete</span>
                 </button>
+                <div style={{ position: 'relative' }}>
+                  <button
+                    className="btn-icon btn-icon-primary"
+                    onClick={() => setMenuAbiertoId(menuAbiertoId === relacion.id ? null : relacion.id)}
+                    title="Nueva Interacción"
+                  >
+                    <span className="material-icons">add_circle</span>
+                  </button>
+                  {menuAbiertoId === relacion.id && (
+                    <>
+                      <div
+                        style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          zIndex: 999
+                        }}
+                        onClick={() => setMenuAbiertoId(null)}
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          right: 0,
+                          marginTop: '0.5rem',
+                          backgroundColor: 'white',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          minWidth: '200px',
+                          zIndex: 1000,
+                          maxHeight: '300px',
+                          overflowY: 'auto'
+                        }}
+                      >
+                        {getInteraccionesDisponibles(relacion.tipoRelacionId).length > 0 ? (
+                          getInteraccionesDisponibles(relacion.tipoRelacionId).map((tipoInt) => (
+                            <button
+                              key={tipoInt.id}
+                              onClick={() => handleCrearInteraccion(relacion, tipoInt)}
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem 1rem',
+                                border: 'none',
+                                backgroundColor: 'transparent',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                fontSize: '0.9rem',
+                                transition: 'background-color 0.2s'
+                              }}
+                              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--hover-bg)'}
+                              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                              <span
+                                className="material-icons"
+                                style={{
+                                  fontSize: '1.25rem',
+                                  color: tipoInt.color || '#10B981'
+                                }}
+                              >
+                                {tipoInt.icono || 'assignment'}
+                              </span>
+                              <span>{tipoInt.nombre}</span>
+                            </button>
+                          ))
+                        ) : (
+                          <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                            No hay tipos de interacción configurados para este tipo de relación
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -996,6 +1247,17 @@ const RelationDynamicEntityPage: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal de Interacción */}
+      {selectedTipoInteraccion && (
+        <InteractionFormModal
+          isOpen={showInteractionModal}
+          onClose={handleInteractionModalClose}
+          onSave={handleInteractionModalSave}
+          prefilledData={modalPrefilledData}
+          esquema={selectedTipoInteraccion as any}
+        />
       )}
     </div>
   );

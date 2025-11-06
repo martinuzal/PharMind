@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import DynamicFormField from '../../components/dynamic/DynamicFormField';
 import { usePage } from '../../contexts/PageContext';
@@ -75,9 +75,16 @@ interface EntitiesConfig {
   relacionesPermitidas?: string[];
 }
 
+interface TipoInteraccion {
+  id: string;
+  nombre: string;
+  subTipo: string;
+}
+
 const InteractionDynamicEntityPage: React.FC = () => {
   const { subtipo } = useParams<{ subtipo: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
 
   const [esquema, setEsquema] = useState<Schema | null>(null);
@@ -86,6 +93,7 @@ const InteractionDynamicEntityPage: React.FC = () => {
   const [agentes, setAgentes] = useState<Agent[]>([]);
   const [clientes, setClientes] = useState<Client[]>([]);
   const [tiposRelacion, setTiposRelacion] = useState<TipoRelacion[]>([]);
+  const [tiposInteraccion, setTiposInteraccion] = useState<TipoInteraccion[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingInteraccion, setEditingInteraccion] = useState<Interaction | null>(null);
   const [formData, setFormData] = useState<any>({
@@ -111,6 +119,7 @@ const InteractionDynamicEntityPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isPrefilledForm, setIsPrefilledForm] = useState(false);
 
   useEffect(() => {
     loadEsquema();
@@ -118,6 +127,7 @@ const InteractionDynamicEntityPage: React.FC = () => {
     loadAgentes();
     loadClientes();
     loadTiposRelacion();
+    loadTiposInteraccion();
   }, [subtipo]);
 
   useEffect(() => {
@@ -125,6 +135,23 @@ const InteractionDynamicEntityPage: React.FC = () => {
       loadInteracciones();
     }
   }, [esquema]);
+
+  // Detectar si llegamos con datos pre-poblados desde navegación
+  useEffect(() => {
+    const navigationState = location.state as any;
+    if (navigationState && navigationState.relacionId) {
+      // Abrir modal automáticamente con datos pre-poblados
+      handleCreate({
+        relacionId: navigationState.relacionId,
+        agenteId: navigationState.agenteId,
+        clienteId: navigationState.clienteId,
+        tipoInteraccionId: navigationState.tipoInteraccionId
+      });
+
+      // Limpiar el estado de navegación para evitar que se vuelva a abrir
+      window.history.replaceState({}, document.title);
+    }
+  }, [esquema, relaciones.length, agentes.length, clientes.length]);
 
   // Actualizar toolbar cuando el esquema o estados cambien
   useEffect(() => {
@@ -288,19 +315,30 @@ const InteractionDynamicEntityPage: React.FC = () => {
     }
   };
 
+  const loadTiposInteraccion = async () => {
+    try {
+      const response = await api.get('/esquemaspersonalizados/tipo/Interaccion');
+      setTiposInteraccion(response.data || []);
+    } catch (err) {
+      console.error('Error al cargar tipos de interacción:', err);
+    }
+  };
+
   const generateInteractionCode = () => {
     const timestamp = Date.now();
     return `INT-${timestamp}`;
   };
 
-  const handleCreate = () => {
+  const handleCreate = (prefilledData?: any) => {
     const code = generateInteractionCode();
+    const hasPrefilled = !!(prefilledData?.relacionId);
+
     setFormData({
       codigoInteraccion: code,
-      relacionId: '',
-      agenteId: '',
-      clienteId: '',
-      tipoInteraccion: '',
+      relacionId: prefilledData?.relacionId || '',
+      agenteId: prefilledData?.agenteId || '',
+      clienteId: prefilledData?.clienteId || '',
+      tipoInteraccion: prefilledData?.tipoInteraccionId || '',
       fecha: new Date().toISOString().split('T')[0],
       turno: '',
       duracionMinutos: 0,
@@ -315,6 +353,7 @@ const InteractionDynamicEntityPage: React.FC = () => {
     });
     setDynamicFormData({});
     setEditingInteraccion(null);
+    setIsPrefilledForm(hasPrefilled);
     setShowModal(true);
   };
 
@@ -689,6 +728,8 @@ const InteractionDynamicEntityPage: React.FC = () => {
                       value={formData.relacionId}
                       onChange={(e) => handleStaticFieldChange('relacionId', e.target.value)}
                       required
+                      disabled={isPrefilledForm && !editingInteraccion}
+                      className={isPrefilledForm && !editingInteraccion ? 'readonly' : ''}
                     >
                       <option value="">Seleccione una relación</option>
                       {(() => {
@@ -711,6 +752,8 @@ const InteractionDynamicEntityPage: React.FC = () => {
                       value={formData.agenteId}
                       onChange={(e) => handleStaticFieldChange('agenteId', e.target.value)}
                       required
+                      disabled={isPrefilledForm && !editingInteraccion}
+                      className={isPrefilledForm && !editingInteraccion ? 'readonly' : ''}
                     >
                       <option value="">Seleccione un agente</option>
                       {agentes.map(agent => (
@@ -727,6 +770,8 @@ const InteractionDynamicEntityPage: React.FC = () => {
                       value={formData.clienteId}
                       onChange={(e) => handleStaticFieldChange('clienteId', e.target.value)}
                       required
+                      disabled={isPrefilledForm && !editingInteraccion}
+                      className={isPrefilledForm && !editingInteraccion ? 'readonly' : ''}
                     >
                       <option value="">Seleccione un cliente</option>
                       {clientes.map(client => (
@@ -765,12 +810,19 @@ const InteractionDynamicEntityPage: React.FC = () => {
                   <div className="form-row">
                     <div className="form-field">
                       <label>Tipo de Interacción</label>
-                      <input
-                        type="text"
+                      <select
                         value={formData.tipoInteraccion}
                         onChange={(e) => handleStaticFieldChange('tipoInteraccion', e.target.value)}
-                        placeholder="Ej: Visita, Llamada, Email"
-                      />
+                        disabled={isPrefilledForm && !editingInteraccion}
+                        className={isPrefilledForm && !editingInteraccion ? 'readonly' : ''}
+                      >
+                        <option value="">Seleccione un tipo</option>
+                        {tiposInteraccion.map(tipo => (
+                          <option key={tipo.id} value={tipo.id}>
+                            {tipo.nombre}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="form-field">

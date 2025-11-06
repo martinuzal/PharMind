@@ -1,0 +1,81 @@
+.interaction-modal {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.interaction-modal .modal-body {
+  padding: 1.5rem;
+}
+
+.interaction-modal .form-section {
+  margin-bottom: 2rem;
+}
+
+.interaction-modal .form-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.interaction-modal .form-field {
+  margin-bottom: 1rem;
+}
+
+.interaction-modal .form-field label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.interaction-modal .form-field input,
+.interaction-modal .form-field select,
+.interaction-modal .form-field textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.interaction-modal .form-field input.readonly,
+.interaction-modal .form-field select.readonly,
+.interaction-modal .form-field select:disabled {
+  background-color: var(--bg-secondary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.interaction-modal .form-field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.interaction-modal .form-field small {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.interaction-modal .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .interaction-modal {
+    max-width: 95%;
+    margin: 1rem auto;
+  }
+
+  .interaction-modal .form-row {
+    grid-template-columns: 1fr;
+  }
+}
