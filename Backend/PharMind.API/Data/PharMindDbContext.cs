@@ -50,6 +50,17 @@ public class PharMindDbContext : DbContext
     public DbSet<AnalyticsProducto> AnalyticsProductos { get; set; }
     public DbSet<AnalyticsObjetivo> AnalyticsObjetivos { get; set; }
 
+    // Audit DbSets (Auditoría de Prescripciones)
+    public DbSet<AuditMercado> AuditMercados { get; set; }
+    public DbSet<AuditCategory> AuditCategories { get; set; }
+    public DbSet<AuditCustomer> AuditCustomers { get; set; }
+    public DbSet<AuditPeriod> AuditPeriods { get; set; }
+    public DbSet<AuditProductClass> AuditProductClasses { get; set; }
+    public DbSet<AuditMarketMarca> AuditMarketMarcas { get; set; }
+
+    // Process Logs
+    public DbSet<ProcessLog> ProcessLogs { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

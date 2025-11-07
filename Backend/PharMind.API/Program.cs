@@ -18,16 +18,39 @@ builder.Services.AddDbContext<PharMindDbContext>(options =>
 
 // Services
 builder.Services.AddScoped<DynamicTableService>();
+builder.Services.AddSingleton<IChunkedUploadService, ChunkedUploadService>();
+builder.Services.AddScoped<IAuditoriaPrescripcionesService, AuditoriaPrescripcionesService>();
+builder.Services.AddScoped<IProcessLogService, ProcessLogService>();
 builder.Services.AddHttpClient();
+
+// SignalR
+builder.Services.AddSignalR();
+
+// Configurar límites para archivos grandes
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 300 * 1024 * 1024; // 300MB (total request)
+    options.ValueLengthLimit = int.MaxValue;
+    options.MultipartHeadersLengthLimit = int.MaxValue;
+});
+
+// Configurar Kestrel para soportar archivos grandes
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 300 * 1024 * 1024; // 300MB
+    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(5);
+    serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(5);
+});
 
 // CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:5173", "http://localhost:4200")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials(); // Necesario para SignalR
     });
 });
 
@@ -120,5 +143,8 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// SignalR Hub
+app.MapHub<PharMind.API.Hubs.ImportProgressHub>("/hubs/import-progress");
 
 app.Run();

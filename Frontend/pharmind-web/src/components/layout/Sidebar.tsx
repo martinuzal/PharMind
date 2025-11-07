@@ -38,6 +38,8 @@ const Sidebar = () => {
   const [interaccionesExpanded, setInteraccionesExpanded] = useState(false);
   const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
   const [gestionExpanded, setGestionExpanded] = useState(false);
+  const [atlasExpanded, setAtlasExpanded] = useState(false);
+  const [auditoriasExpanded, setAuditoriasExpanded] = useState(false);
   const [adminExpanded, setAdminExpanded] = useState(false);
 
   const menuItems: MenuItem[] = [
@@ -76,6 +78,48 @@ const Sidebar = () => {
       label: 'Tipos de Actividad',
       icon: 'category',
       path: '/gestion/tipos-actividad'
+    }
+  ];
+
+  const atlasMenuItems: MenuItem[] = [
+    {
+      id: 'paises',
+      label: 'Países',
+      icon: 'public',
+      path: '/atlas/paises'
+    },
+    {
+      id: 'provincias',
+      label: 'Provincias/Estados',
+      icon: 'map',
+      path: '/atlas/provincias'
+    },
+    {
+      id: 'localidades',
+      label: 'Localidades',
+      icon: 'location_city',
+      path: '/atlas/localidades'
+    },
+    {
+      id: 'calles',
+      label: 'Calles',
+      icon: 'signpost',
+      path: '/atlas/calles'
+    },
+    {
+      id: 'codigos-postales',
+      label: 'Códigos Postales',
+      icon: 'markunread_mailbox',
+      path: '/atlas/codigos-postales'
+    }
+  ];
+
+  const auditoriasMenuItems: MenuItem[] = [
+    {
+      id: 'importaciones',
+      label: 'Importaciones',
+      icon: 'upload_file',
+      path: '/auditoria/importaciones'
     }
   ];
 
@@ -210,6 +254,37 @@ const Sidebar = () => {
           {!sidebarCollapsed && <span>MI CARTERA</span>}
         </Link>
 
+        {/* Auditorías Section */}
+        <div
+          className="sidebar-section-header"
+          onClick={() => setAuditoriasExpanded(!auditoriasExpanded)}
+        >
+          <span className="material-icons">assessment</span>
+          {!sidebarCollapsed && <span>AUDITORÍAS</span>}
+          {!sidebarCollapsed && (
+            <span className="material-icons sidebar-expand-icon">
+              {auditoriasExpanded ? 'expand_less' : 'expand_more'}
+            </span>
+          )}
+        </div>
+        {auditoriasExpanded && !sidebarCollapsed && (
+          <div className="sidebar-subsection">
+            {auditoriasMenuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.path}
+                  className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
+                >
+                  <span className="material-icons">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
         {/* Analytics Section */}
         <div
           className="sidebar-section-header"
@@ -257,6 +332,37 @@ const Sidebar = () => {
         {gestionExpanded && !sidebarCollapsed && (
           <div className="sidebar-subsection">
             {gestionMenuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.path}
+                  className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
+                >
+                  <span className="material-icons">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Atlas Section */}
+        <div
+          className="sidebar-section-header"
+          onClick={() => setAtlasExpanded(!atlasExpanded)}
+        >
+          <span className="material-icons">travel_explore</span>
+          {!sidebarCollapsed && <span>Atlas</span>}
+          {!sidebarCollapsed && (
+            <span className="material-icons sidebar-expand-icon">
+              {atlasExpanded ? 'expand_less' : 'expand_more'}
+            </span>
+          )}
+        </div>
+        {atlasExpanded && !sidebarCollapsed && (
+          <div className="sidebar-subsection">
+            {atlasMenuItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link

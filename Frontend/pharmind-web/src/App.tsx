@@ -28,6 +28,13 @@ import DistritosPage from './pages/gestion/DistritosPage';
 import LineasNegocioPage from './pages/gestion/LineasNegocioPage';
 import ManagersPage from './pages/gestion/ManagersPage';
 import MiCarteraPage from './pages/cartera/MiCarteraPage';
+import PruebaDireccionPage from './pages/pruebas/PruebaDireccionPage';
+import PaisesPage from './pages/atlas/PaisesPage';
+import ProvinciasPage from './pages/atlas/ProvinciasPage';
+import LocalidadesPage from './pages/atlas/LocalidadesPage';
+import CallesPage from './pages/atlas/CallesPage';
+import CodigosPostalesPage from './pages/atlas/CodigosPostalesPage';
+import ImportacionesPage from './pages/auditoria/ImportacionesPage';
 import './styles/App.css';
 import './styles/dark-mode.css';
 
@@ -225,6 +232,66 @@ function App() {
           }
         />
         <Route
+          path="/atlas/paises"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <PaisesPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/atlas/provincias"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <ProvinciasPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/atlas/localidades"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <LocalidadesPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/atlas/calles"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CallesPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/atlas/codigos-postales"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CodigosPostalesPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/auditoria/importaciones"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <ImportacionesPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/crm/agentes"
           element={
             <ProtectedRoute>
@@ -321,6 +388,18 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <DynamicEntityPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Ruta de prueba para componente de direcciones */}
+        <Route
+          path="/pruebas/direccion"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <PruebaDireccionPage />
               </AppLayout>
             </ProtectedRoute>
           }
