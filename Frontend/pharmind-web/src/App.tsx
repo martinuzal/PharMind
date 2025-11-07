@@ -35,6 +35,9 @@ import LocalidadesPage from './pages/atlas/LocalidadesPage';
 import CallesPage from './pages/atlas/CallesPage';
 import CodigosPostalesPage from './pages/atlas/CodigosPostalesPage';
 import ImportacionesPage from './pages/auditoria/ImportacionesPage';
+import PortfolioBEBPage from './pages/auditoria/PortfolioBEBPage';
+import AnalisisMercadoPage from './pages/auditoria/AnalisisMercadoPage';
+import MapaGeograficoPage from './pages/auditoria/MapaGeograficoPage';
 import './styles/App.css';
 import './styles/dark-mode.css';
 
@@ -287,6 +290,36 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <ImportacionesPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/auditoria/portfolio"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <PortfolioBEBPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/auditoria/mercado"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <AnalisisMercadoPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/auditoria/mapa-geografico"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <MapaGeograficoPage />
               </AppLayout>
             </ProtectedRoute>
           }

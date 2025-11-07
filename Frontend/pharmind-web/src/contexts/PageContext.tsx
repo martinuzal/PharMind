@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 
 interface PageContextType {
   pageTitle: string;
@@ -24,49 +24,64 @@ export const PageProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [toolbarCenterContent, setToolbarCenterContentState] = useState<ReactNode | null>(null);
   const [toolbarRightContent, setToolbarRightContentState] = useState<ReactNode | null>(null);
 
-  const setPageInfo = (title: string, icon: string, color?: string) => {
+  const setPageInfo = useCallback((title: string, icon: string, color?: string) => {
     setPageTitle(title);
     setPageIcon(icon);
     setPageColor(color);
-  };
+  }, []);
 
-  const setToolbarContent = (content: ReactNode | null) => {
+  const setToolbarContent = useCallback((content: ReactNode | null) => {
     setToolbarContentState(content);
-  };
+  }, []);
 
-  const setToolbarCenterContent = (content: ReactNode | null) => {
+  const setToolbarCenterContent = useCallback((content: ReactNode | null) => {
     setToolbarCenterContentState(content);
-  };
+  }, []);
 
-  const setToolbarRightContent = (content: ReactNode | null) => {
+  const setToolbarRightContent = useCallback((content: ReactNode | null) => {
     setToolbarRightContentState(content);
-  };
+  }, []);
 
-  const clearToolbarContent = () => {
+  const clearToolbarContent = useCallback(() => {
     setToolbarContentState(null);
     setToolbarCenterContentState(null);
     setToolbarRightContentState(null);
     setPageTitle('');
     setPageIcon('');
     setPageColor(undefined);
-  };
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
+      pageTitle,
+      pageIcon,
+      pageColor,
+      toolbarContent,
+      toolbarCenterContent,
+      toolbarRightContent,
+      setPageInfo,
+      setToolbarContent,
+      setToolbarCenterContent,
+      setToolbarRightContent,
+      clearToolbarContent,
+    }),
+    [
+      pageTitle,
+      pageIcon,
+      pageColor,
+      toolbarContent,
+      toolbarCenterContent,
+      toolbarRightContent,
+      setPageInfo,
+      setToolbarContent,
+      setToolbarCenterContent,
+      setToolbarRightContent,
+      clearToolbarContent,
+    ]
+  );
 
   return (
-    <PageContext.Provider
-      value={{
-        pageTitle,
-        pageIcon,
-        pageColor,
-        toolbarContent,
-        toolbarCenterContent,
-        toolbarRightContent,
-        setPageInfo,
-        setToolbarContent,
-        setToolbarCenterContent,
-        setToolbarRightContent,
-        clearToolbarContent,
-      }}
-    >
+    <PageContext.Provider value={contextValue}>
       {children}
     </PageContext.Provider>
   );

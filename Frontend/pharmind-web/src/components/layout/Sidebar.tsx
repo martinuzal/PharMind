@@ -120,6 +120,24 @@ const Sidebar = () => {
       label: 'Importaciones',
       icon: 'upload_file',
       path: '/auditoria/importaciones'
+    },
+    {
+      id: 'portfolio-beb',
+      label: 'Portfolio BEB',
+      icon: 'folder_special',
+      path: '/auditoria/portfolio'
+    },
+    {
+      id: 'analisis-mercado',
+      label: 'Análisis por Mercado',
+      icon: 'insights',
+      path: '/auditoria/mercado'
+    },
+    {
+      id: 'mapa-geografico',
+      label: 'Mapa Geográfico',
+      icon: 'map',
+      path: '/auditoria/mapa-geografico'
     }
   ];
 
