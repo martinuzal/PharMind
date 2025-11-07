@@ -6,8 +6,8 @@ export interface AuditCustomer {
   crm?: string;
   nome?: string;
   blank?: string;
-  cdgesp1?: string;
-  cdgesp2?: string;
+  cdgesP1?: string;  // Backend serializa CDGESP1 como cdgesP1
+  cdgesP2?: string;  // Backend serializa CDGESP2 como cdgesP2
   cdgreG_PMIX?: string;  // Backend serializa CDGREG_PMIX como cdgreG_PMIX
   local?: string;
   bairro?: string;

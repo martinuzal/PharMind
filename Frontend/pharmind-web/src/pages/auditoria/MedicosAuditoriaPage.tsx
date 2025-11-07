@@ -338,8 +338,8 @@ const MedicosAuditoriaPage: React.FC = () => {
                         )}
                       </td>
                       <td className="nombre-cell">{medico.nome || '-'}</td>
-                      <td className="especialidad-cell">{medico.cdgesp1 || '-'}</td>
-                      <td className="especialidad-cell">{medico.cdgesp2 || '-'}</td>
+                      <td className="especialidad-cell">{medico.cdgesP1 || '-'}</td>
+                      <td className="especialidad-cell">{medico.cdgesP2 || '-'}</td>
                       <td className="codigo-cell">{medico.cdgreG_PMIX || '-'}</td>
                       <td className="ubicacion-cell">{medico.local || '-'}</td>
                       <td className="ubicacion-cell">{medico.bairro || '-'}</td>
