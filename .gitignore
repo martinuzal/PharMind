@@ -76,3 +76,6 @@ $RECYCLE.BIN/
 tmp/
 temp/
 nul
+
+# Uploads folder
+**/Uploads/
