@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PharMind.API.Models;
 
-[Table("RolModulos")]
+[Table("RolesModulos")]
 public class RolModulo : AuditableEntity
 {
     [Required]
@@ -14,13 +14,8 @@ public class RolModulo : AuditableEntity
     [Column("ModuloId")]
     public string ModuloId { get; set; } = string.Empty;
 
-    [Required]
-    [Column("NivelAcceso")]
-    [MaxLength(50)]
-    public string NivelAcceso { get; set; } = "Lectura";
-
     [Column("PuedeVer")]
-    public bool PuedeVer { get; set; } = false;
+    public bool PuedeVer { get; set; } = true;
 
     [Column("PuedeCrear")]
     public bool PuedeCrear { get; set; } = false;

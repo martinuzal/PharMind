@@ -36,7 +36,7 @@ public class RolesController : ControllerBase
         {
             var query = _context.Roles
                 .Include(r => r.Empresa)
-                .Include(r => r.UsuarioRoles)
+                .Include(r => r.Usuarios)
                 .Include(r => r.RolModulos)
                     .ThenInclude(rm => rm.Modulo)
                 .Where(r => r.Status == false); // Excluir eliminados
@@ -65,12 +65,11 @@ public class RolesController : ControllerBase
                 EmpresaId = r.EmpresaId,
                 EsSistema = r.EsSistema,
                 Activo = r.Activo,
-                UsuariosCount = r.UsuarioRoles.Count,
+                UsuariosCount = r.Usuarios.Count,
                 Permisos = r.RolModulos.Select(rm => new PermisoModuloDto
                 {
                     ModuloId = rm.ModuloId,
                     ModuloNombre = rm.Modulo?.Nombre ?? "",
-                    NivelAcceso = rm.NivelAcceso,
                     PuedeVer = rm.PuedeVer,
                     PuedeCrear = rm.PuedeCrear,
                     PuedeEditar = rm.PuedeEditar,
@@ -102,7 +101,7 @@ public class RolesController : ControllerBase
         {
             var rol = await _context.Roles
                 .Include(r => r.Empresa)
-                .Include(r => r.UsuarioRoles)
+                .Include(r => r.Usuarios)
                 .Include(r => r.RolModulos)
                     .ThenInclude(rm => rm.Modulo)
                 .Where(r => r.Status == false)
@@ -121,19 +120,15 @@ public class RolesController : ControllerBase
                 EmpresaId = rol.EmpresaId,
                 EsSistema = rol.EsSistema,
                 Activo = rol.Activo,
-                UsuariosCount = rol.UsuarioRoles.Count,
+                UsuariosCount = rol.Usuarios.Count,
                 Permisos = rol.RolModulos.Select(rm => new PermisoModuloDto
                 {
                     ModuloId = rm.ModuloId,
                     ModuloNombre = rm.Modulo?.Nombre ?? "",
-                    NivelAcceso = rm.NivelAcceso,
                     PuedeVer = rm.PuedeVer,
                     PuedeCrear = rm.PuedeCrear,
                     PuedeEditar = rm.PuedeEditar,
-                    PuedeEliminar = rm.PuedeEliminar,
-                    PuedeExportar = rm.PuedeExportar,
-                    PuedeImportar = rm.PuedeImportar,
-                    PuedeAprobar = rm.PuedeAprobar
+                    PuedeEliminar = rm.PuedeEliminar
                 }).ToList()
             };
 
@@ -156,6 +151,10 @@ public class RolesController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("=== INICIO CreateRol ===");
+            _logger.LogInformation("Datos recibidos: Nombre={Nombre}, EmpresaId={EmpresaId}, Permisos={PermisosCount}",
+                createDto.Nombre, createDto.EmpresaId, createDto.Permisos?.Count ?? 0);
+
             // Validar que la empresa exista
             var empresa = await _context.Empresas.FindAsync(createDto.EmpresaId);
             if (empresa == null || empresa.Status == true)
@@ -189,10 +188,36 @@ public class RolesController : ControllerBase
                 }
             }
 
+            // Generar código único basado en el nombre
+            var codigo = GenerarCodigoRol(createDto.Nombre);
+            _logger.LogInformation("Código generado: {Codigo}", codigo);
+
+            // Validar que el código no esté duplicado
+            var codigoExistente = await _context.Roles
+                .FirstOrDefaultAsync(r => r.Codigo == codigo && r.Status == false);
+
+            if (codigoExistente != null)
+            {
+                _logger.LogInformation("Código duplicado encontrado, generando sufijo numérico...");
+                // Si existe, agregar un sufijo numérico
+                var contador = 1;
+                var codigoBase = codigo;
+                while (codigoExistente != null)
+                {
+                    codigo = $"{codigoBase}_{contador}";
+                    codigoExistente = await _context.Roles
+                        .FirstOrDefaultAsync(r => r.Codigo == codigo && r.Status == false);
+                    contador++;
+                }
+                _logger.LogInformation("Código único final: {Codigo}", codigo);
+            }
+
             // Crear rol
+            _logger.LogInformation("Creando rol con Codigo={Codigo}, Nombre={Nombre}", codigo, createDto.Nombre);
             var rol = new Rol
             {
                 Id = Guid.NewGuid().ToString(),
+                Codigo = codigo,
                 Nombre = createDto.Nombre,
                 Descripcion = createDto.Descripcion,
                 EmpresaId = createDto.EmpresaId,
@@ -203,10 +228,12 @@ public class RolesController : ControllerBase
             };
 
             _context.Roles.Add(rol);
+            _logger.LogInformation("Rol agregado al contexto con Id={RolId}", rol.Id);
 
             // Asignar permisos
             if (createDto.Permisos != null && createDto.Permisos.Any())
             {
+                _logger.LogInformation("Asignando {PermisosCount} permisos al rol", createDto.Permisos.Count);
                 foreach (var permiso in createDto.Permisos)
                 {
                     var rolModulo = new RolModulo
@@ -214,14 +241,13 @@ public class RolesController : ControllerBase
                         Id = Guid.NewGuid().ToString(),
                         RolId = rol.Id,
                         ModuloId = permiso.ModuloId,
-                        NivelAcceso = permiso.NivelAcceso,
                         PuedeVer = permiso.PuedeVer,
                         PuedeCrear = permiso.PuedeCrear,
                         PuedeEditar = permiso.PuedeEditar,
                         PuedeEliminar = permiso.PuedeEliminar,
-                        PuedeExportar = permiso.PuedeExportar,
-                        PuedeImportar = permiso.PuedeImportar,
-                        PuedeAprobar = permiso.PuedeAprobar,
+                        PuedeExportar = permiso.PuedeExportar ?? false,
+                        PuedeImportar = permiso.PuedeImportar ?? false,
+                        PuedeAprobar = permiso.PuedeAprobar ?? false,
                         FechaCreacion = DateTime.Now,
                         Status = false
                     };
@@ -229,12 +255,15 @@ public class RolesController : ControllerBase
                 }
             }
 
+            _logger.LogInformation("Guardando cambios en la base de datos...");
             await _context.SaveChangesAsync();
+            _logger.LogInformation("Cambios guardados exitosamente");
 
             // Cargar el rol completo con relaciones
+            _logger.LogInformation("Cargando rol completo con relaciones...");
             var rolCompleto = await _context.Roles
                 .Include(r => r.Empresa)
-                .Include(r => r.UsuarioRoles)
+                .Include(r => r.Usuarios)
                 .Include(r => r.RolModulos)
                     .ThenInclude(rm => rm.Modulo)
                 .FirstOrDefaultAsync(r => r.Id == rol.Id);
@@ -252,28 +281,26 @@ public class RolesController : ControllerBase
                 EmpresaId = rolCompleto.EmpresaId,
                 EsSistema = rolCompleto.EsSistema,
                 Activo = rolCompleto.Activo,
-                UsuariosCount = rolCompleto.UsuarioRoles.Count,
+                UsuariosCount = rolCompleto.Usuarios.Count,
                 Permisos = rolCompleto.RolModulos.Select(rm => new PermisoModuloDto
                 {
                     ModuloId = rm.ModuloId,
                     ModuloNombre = rm.Modulo?.Nombre ?? "",
-                    NivelAcceso = rm.NivelAcceso,
                     PuedeVer = rm.PuedeVer,
                     PuedeCrear = rm.PuedeCrear,
                     PuedeEditar = rm.PuedeEditar,
-                    PuedeEliminar = rm.PuedeEliminar,
-                    PuedeExportar = rm.PuedeExportar,
-                    PuedeImportar = rm.PuedeImportar,
-                    PuedeAprobar = rm.PuedeAprobar
+                    PuedeEliminar = rm.PuedeEliminar
                 }).ToList()
             };
 
+            _logger.LogInformation("=== FIN CreateRol EXITOSO === RolId={RolId}, Nombre={Nombre}", rolDto.Id, rolDto.Nombre);
             return CreatedAtAction(nameof(GetRol), new { id = rol.Id }, rolDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al crear rol");
-            return StatusCode(500, "Error interno del servidor");
+            _logger.LogError(ex, "=== ERROR en CreateRol === Mensaje: {Message}", ex.Message);
+            var errorMessage = GetFullErrorMessage(ex);
+            return StatusCode(500, new { error = "Error al crear rol", details = errorMessage });
         }
     }
 
@@ -351,14 +378,13 @@ public class RolesController : ControllerBase
                         Id = Guid.NewGuid().ToString(),
                         RolId = rol.Id,
                         ModuloId = permiso.ModuloId,
-                        NivelAcceso = permiso.NivelAcceso,
                         PuedeVer = permiso.PuedeVer,
                         PuedeCrear = permiso.PuedeCrear,
                         PuedeEditar = permiso.PuedeEditar,
                         PuedeEliminar = permiso.PuedeEliminar,
-                        PuedeExportar = permiso.PuedeExportar,
-                        PuedeImportar = permiso.PuedeImportar,
-                        PuedeAprobar = permiso.PuedeAprobar,
+                        PuedeExportar = permiso.PuedeExportar ?? false,
+                        PuedeImportar = permiso.PuedeImportar ?? false,
+                        PuedeAprobar = permiso.PuedeAprobar ?? false,
                         FechaCreacion = DateTime.Now,
                         Status = false
                     };
@@ -371,7 +397,7 @@ public class RolesController : ControllerBase
             // Recargar con todas las relaciones
             var rolActualizado = await _context.Roles
                 .Include(r => r.Empresa)
-                .Include(r => r.UsuarioRoles)
+                .Include(r => r.Usuarios)
                 .Include(r => r.RolModulos)
                     .ThenInclude(rm => rm.Modulo)
                 .FirstOrDefaultAsync(r => r.Id == id);
@@ -389,19 +415,15 @@ public class RolesController : ControllerBase
                 EmpresaId = rolActualizado.EmpresaId,
                 EsSistema = rolActualizado.EsSistema,
                 Activo = rolActualizado.Activo,
-                UsuariosCount = rolActualizado.UsuarioRoles.Count,
+                UsuariosCount = rolActualizado.Usuarios.Count,
                 Permisos = rolActualizado.RolModulos.Select(rm => new PermisoModuloDto
                 {
                     ModuloId = rm.ModuloId,
                     ModuloNombre = rm.Modulo?.Nombre ?? "",
-                    NivelAcceso = rm.NivelAcceso,
                     PuedeVer = rm.PuedeVer,
                     PuedeCrear = rm.PuedeCrear,
                     PuedeEditar = rm.PuedeEditar,
-                    PuedeEliminar = rm.PuedeEliminar,
-                    PuedeExportar = rm.PuedeExportar,
-                    PuedeImportar = rm.PuedeImportar,
-                    PuedeAprobar = rm.PuedeAprobar
+                    PuedeEliminar = rm.PuedeEliminar
                 }).ToList()
             };
 
@@ -425,7 +447,7 @@ public class RolesController : ControllerBase
         try
         {
             var rol = await _context.Roles
-                .Include(r => r.UsuarioRoles)
+                .Include(r => r.Usuarios)
                 .FirstOrDefaultAsync(r => r.Id == id && r.Status == false);
 
             if (rol == null)
@@ -440,9 +462,9 @@ public class RolesController : ControllerBase
             }
 
             // Validar que no tenga usuarios asignados
-            if (rol.UsuarioRoles.Any())
+            if (rol.Usuarios.Any())
             {
-                return BadRequest($"No se puede eliminar el rol porque tiene {rol.UsuarioRoles.Count} usuario(s) asignado(s)");
+                return BadRequest($"No se puede eliminar el rol porque tiene {rol.Usuarios.Count} usuario(s) asignado(s)");
             }
 
             // Soft delete
@@ -459,5 +481,66 @@ public class RolesController : ControllerBase
             _logger.LogError(ex, "Error al eliminar rol {RolId}", id);
             return StatusCode(500, "Error interno del servidor");
         }
+    }
+
+    /// <summary>
+    /// Genera un código único para el rol basado en su nombre
+    /// </summary>
+    /// <param name="nombre">Nombre del rol</param>
+    /// <returns>Código generado en formato UPPER_SNAKE_CASE</returns>
+    private string GenerarCodigoRol(string nombre)
+    {
+        // Remover acentos y caracteres especiales
+        var nombreNormalizado = nombre
+            .Normalize(System.Text.NormalizationForm.FormD)
+            .Where(c => char.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+            .ToArray();
+
+        var nombreSinAcentos = new string(nombreNormalizado);
+
+        // Convertir a mayúsculas y reemplazar espacios por guiones bajos
+        var codigo = nombreSinAcentos
+            .ToUpper()
+            .Replace(" ", "_")
+            .Replace("-", "_");
+
+        // Remover caracteres no alfanuméricos excepto guiones bajos
+        codigo = new string(codigo.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray());
+
+        // Limitar a 50 caracteres (tamaño máximo del campo)
+        if (codigo.Length > 50)
+        {
+            codigo = codigo.Substring(0, 50);
+        }
+
+        return codigo;
+    }
+
+    /// <summary>
+    /// Obtiene el mensaje completo de error incluyendo inner exceptions
+    /// </summary>
+    /// <param name="ex">Excepción a formatear</param>
+    /// <returns>Mensaje completo del error</returns>
+    private string GetFullErrorMessage(Exception ex)
+    {
+        var messages = new System.Text.StringBuilder();
+        messages.AppendLine($"Error: {ex.Message}");
+
+        if (ex.InnerException != null)
+        {
+            messages.AppendLine($"Inner Exception: {ex.InnerException.Message}");
+
+            // Si hay más niveles de inner exceptions
+            var innerEx = ex.InnerException.InnerException;
+            var level = 2;
+            while (innerEx != null && level <= 5) // Limitar a 5 niveles
+            {
+                messages.AppendLine($"Inner Exception (Level {level}): {innerEx.Message}");
+                innerEx = innerEx.InnerException;
+                level++;
+            }
+        }
+
+        return messages.ToString();
     }
 }

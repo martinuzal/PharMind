@@ -7,6 +7,11 @@ namespace PharMind.API.Models;
 public class Modulo : AuditableEntity
 {
     [Required]
+    [Column("Codigo")]
+    [MaxLength(50)]
+    public string Codigo { get; set; } = string.Empty;
+
+    [Required]
     [Column("Nombre")]
     [MaxLength(100)]
     public string Nombre { get; set; } = string.Empty;
@@ -23,8 +28,8 @@ public class Modulo : AuditableEntity
     [MaxLength(200)]
     public string? Ruta { get; set; }
 
-    [Column("Orden")]
-    public int Orden { get; set; } = 0;
+    [Column("OrdenMenu")]
+    public int OrdenMenu { get; set; } = 0;
 
     [Column("Activo")]
     public bool Activo { get; set; } = true;

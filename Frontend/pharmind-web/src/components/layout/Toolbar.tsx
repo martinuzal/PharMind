@@ -8,7 +8,17 @@ import './Toolbar.css';
 const Toolbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { notifications, removeNotification } = useNotifications();
-  const { pageTitle, pageIcon, pageColor, toolbarContent, toolbarCenterContent, toolbarRightContent } = usePage();
+  const {
+    pageTitle,
+    pageIcon,
+    pageColor,
+    toolbarContent,
+    toolbarCenterContent,
+    toolbarRightContent,
+    showFiltersButton,
+    activeFiltersCount,
+    onFiltersClick
+  } = usePage();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -57,6 +67,19 @@ const Toolbar: React.FC = () => {
 
       <div className="toolbar-right">
         {toolbarRightContent}
+        {/* Filtros */}
+        {showFiltersButton && (
+          <button
+            className={`toolbar-icon-btn ${activeFiltersCount > 0 ? 'active' : ''}`}
+            onClick={onFiltersClick}
+            title="Filtros"
+          >
+            <span className="material-icons">filter_list</span>
+            {activeFiltersCount > 0 && (
+              <span className="notification-badge">{activeFiltersCount}</span>
+            )}
+          </button>
+        )}
         {/* Notificaciones */}
         <div className="notification-wrapper" ref={notificationRef}>
           <button

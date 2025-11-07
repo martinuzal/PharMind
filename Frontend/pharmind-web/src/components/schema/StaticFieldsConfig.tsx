@@ -6,6 +6,7 @@ interface FieldConfig {
   requerido: boolean;
   autoload: boolean;
   label: string;
+  tablaMaestra?: string; // Para campos de segmentación que referencian tablas maestras
 }
 
 interface StaticFieldsConfigData {
@@ -45,6 +46,7 @@ const CAMPOS_ESTATICOS = {
     { name: 'DistritoId', label: 'Distrito', defaultRequired: false },
     { name: 'LineaNegocioId', label: 'Línea de Negocio', defaultRequired: false },
     { name: 'ManagerId', label: 'Manager', defaultRequired: false },
+    { name: 'TimelineId', label: 'Timeline', defaultRequired: false },
     { name: 'FechaIngreso', label: 'Fecha de Ingreso', defaultRequired: false },
     { name: 'Activo', label: 'Activo', defaultRequired: true },
     { name: 'Observaciones', label: 'Observaciones', defaultRequired: false }
@@ -61,7 +63,14 @@ const CAMPOS_ESTATICOS = {
     { name: 'Estado', label: 'Estado', defaultRequired: true },
     { name: 'FrecuenciaVisitas', label: 'Frecuencia de Visitas', defaultRequired: false },
     { name: 'Prioridad', label: 'Prioridad', defaultRequired: true },
-    { name: 'Observaciones', label: 'Observaciones', defaultRequired: false }
+    { name: 'Observaciones', label: 'Observaciones', defaultRequired: false },
+    { name: 'EspecialidadId', label: 'Especialidad', defaultRequired: false },
+    { name: 'CategoriaId', label: 'Categoría', defaultRequired: false },
+    { name: 'Segment1Id', label: 'Segmento 1', defaultRequired: false },
+    { name: 'Segment2Id', label: 'Segmento 2', defaultRequired: false },
+    { name: 'Segment3Id', label: 'Segmento 3', defaultRequired: false },
+    { name: 'Segment4Id', label: 'Segmento 4', defaultRequired: false },
+    { name: 'Segment5Id', label: 'Segmento 5', defaultRequired: false }
   ],
   Interaccion: [
     { name: 'CodigoInteraccion', label: 'Código Interacción', defaultRequired: true },
@@ -195,6 +204,7 @@ const StaticFieldsConfig = ({ entidadTipo, value, onChange }: StaticFieldsConfig
               <th>Visible</th>
               <th>Requerido</th>
               <th>Autoload</th>
+              {entidadTipo === 'Relacion' && <th>Tabla Maestra</th>}
             </tr>
           </thead>
           <tbody>
@@ -203,8 +213,12 @@ const StaticFieldsConfig = ({ entidadTipo, value, onChange }: StaticFieldsConfig
                 visible: true,
                 requerido: campo.defaultRequired,
                 autoload: false,
-                label: campo.label
+                label: campo.label,
+                tablaMaestra: ''
               };
+
+              const esSegmentacion = campo.name.includes('Id') &&
+                (campo.name === 'EspecialidadId' || campo.name === 'CategoriaId' || campo.name.startsWith('Segment'));
 
               return (
                 <tr key={campo.name} className={!fieldConfig.visible ? 'field-hidden' : ''}>
@@ -244,6 +258,29 @@ const StaticFieldsConfig = ({ entidadTipo, value, onChange }: StaticFieldsConfig
                       <span className="checkmark"></span>
                     </label>
                   </td>
+                  {entidadTipo === 'Relacion' && (
+                    <td>
+                      {esSegmentacion ? (
+                        <input
+                          type="text"
+                          className="tabla-maestra-input"
+                          value={fieldConfig.tablaMaestra || ''}
+                          onChange={(e) => handleFieldChange(campo.name, 'tablaMaestra', e.target.value)}
+                          placeholder="Ej: Especialidades"
+                          disabled={!fieldConfig.visible}
+                          style={{
+                            width: '100%',
+                            padding: '4px 8px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            fontSize: '13px'
+                          }}
+                        />
+                      ) : (
+                        <span style={{ color: '#999' }}>—</span>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}

@@ -42,6 +42,7 @@ public class UsuariosController : ControllerBase
         {
             var query = _context.Usuarios
                 .Include(u => u.Empresa)
+                .Include(u => u.Agente)
                 .Include(u => u.UsuarioRoles)
                     .ThenInclude(ur => ur.Rol)
                 .Where(u => u.Status == false); // Excluir eliminados
@@ -87,11 +88,15 @@ public class UsuariosController : ControllerBase
                 Avatar = u.Avatar,
                 Cargo = u.Cargo,
                 Departamento = u.Departamento,
+                AgenteId = u.AgenteId,
+                ManagerId = u.ManagerId,
+                TipoAgenteId = u.Agente?.TipoAgenteId,
                 Activo = u.Activo,
                 EmailVerificado = u.EmailVerificado,
                 ProveedorSSO = u.ProveedorSSO,
                 FechaCreacion = u.FechaCreacion,
-                Roles = u.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList()
+                Roles = u.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList(),
+                RoleIds = u.UsuarioRoles.Select(ur => ur.RolId).ToList()
             }).ToList();
 
             return Ok(new UsuarioListResponse
@@ -121,6 +126,7 @@ public class UsuariosController : ControllerBase
         {
             var usuario = await _context.Usuarios
                 .Include(u => u.Empresa)
+                .Include(u => u.Agente)
                 .Include(u => u.UsuarioRoles)
                     .ThenInclude(ur => ur.Rol)
                 .Where(u => u.Status == false)
@@ -142,11 +148,15 @@ public class UsuariosController : ControllerBase
                 Avatar = usuario.Avatar,
                 Cargo = usuario.Cargo,
                 Departamento = usuario.Departamento,
+                AgenteId = usuario.AgenteId,
+                ManagerId = usuario.ManagerId,
+                TipoAgenteId = usuario.Agente?.TipoAgenteId,
                 Activo = usuario.Activo,
                 EmailVerificado = usuario.EmailVerificado,
                 ProveedorSSO = usuario.ProveedorSSO,
                 FechaCreacion = usuario.FechaCreacion,
-                Roles = usuario.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList()
+                Roles = usuario.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList(),
+                RoleIds = usuario.UsuarioRoles.Select(ur => ur.RolId).ToList()
             };
 
             return Ok(usuarioDto);
@@ -208,6 +218,8 @@ public class UsuariosController : ControllerBase
                 Telefono = createDto.Telefono,
                 Cargo = createDto.Cargo,
                 Departamento = createDto.Departamento,
+                AgenteId = createDto.AgenteId,
+                ManagerId = createDto.ManagerId,
                 Activo = true,
                 EmailVerificado = false,
                 FechaCreacion = DateTime.Now,
@@ -239,6 +251,7 @@ public class UsuariosController : ControllerBase
             // Cargar el usuario completo con relaciones
             var usuarioCompleto = await _context.Usuarios
                 .Include(u => u.Empresa)
+                .Include(u => u.Agente)
                 .Include(u => u.UsuarioRoles)
                     .ThenInclude(ur => ur.Rol)
                 .FirstOrDefaultAsync(u => u.Id == usuario.Id);
@@ -259,11 +272,15 @@ public class UsuariosController : ControllerBase
                 Avatar = usuarioCompleto.Avatar,
                 Cargo = usuarioCompleto.Cargo,
                 Departamento = usuarioCompleto.Departamento,
+                AgenteId = usuarioCompleto.AgenteId,
+                ManagerId = usuarioCompleto.ManagerId,
+                TipoAgenteId = usuarioCompleto.Agente?.TipoAgenteId,
                 Activo = usuarioCompleto.Activo,
                 EmailVerificado = usuarioCompleto.EmailVerificado,
                 ProveedorSSO = usuarioCompleto.ProveedorSSO,
                 FechaCreacion = usuarioCompleto.FechaCreacion,
-                Roles = usuarioCompleto.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList()
+                Roles = usuarioCompleto.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList(),
+                RoleIds = usuarioCompleto.UsuarioRoles.Select(ur => ur.RolId).ToList()
             };
 
             return CreatedAtAction(nameof(GetUsuario), new { id = usuario.Id }, usuarioDto);
@@ -309,11 +326,22 @@ public class UsuariosController : ControllerBase
             }
 
             // Actualizar datos del usuario
-            usuario.NombreCompleto = updateDto.NombreCompleto;
-            usuario.Telefono = updateDto.Telefono;
-            usuario.Cargo = updateDto.Cargo;
-            usuario.Departamento = updateDto.Departamento;
-            usuario.Activo = updateDto.Activo;
+            if (updateDto.NombreCompleto != null)
+                usuario.NombreCompleto = updateDto.NombreCompleto;
+            if (updateDto.Email != null)
+                usuario.Email = updateDto.Email;
+            if (updateDto.Telefono != null)
+                usuario.Telefono = updateDto.Telefono;
+            if (updateDto.Cargo != null)
+                usuario.Cargo = updateDto.Cargo;
+            if (updateDto.Departamento != null)
+                usuario.Departamento = updateDto.Departamento;
+            if (updateDto.Activo.HasValue)
+                usuario.Activo = updateDto.Activo.Value;
+
+            // Actualizar campos de Manager/Agente (permitir null para limpiar)
+            usuario.AgenteId = updateDto.AgenteId;
+            usuario.ManagerId = updateDto.ManagerId;
 
             // Actualizar roles
             if (updateDto.RoleIds != null)
@@ -343,6 +371,7 @@ public class UsuariosController : ControllerBase
             // Recargar con todas las relaciones
             var usuarioActualizado = await _context.Usuarios
                 .Include(u => u.Empresa)
+                .Include(u => u.Agente)
                 .Include(u => u.UsuarioRoles)
                     .ThenInclude(ur => ur.Rol)
                 .FirstOrDefaultAsync(u => u.Id == id);
@@ -363,11 +392,15 @@ public class UsuariosController : ControllerBase
                 Avatar = usuarioActualizado.Avatar,
                 Cargo = usuarioActualizado.Cargo,
                 Departamento = usuarioActualizado.Departamento,
+                AgenteId = usuarioActualizado.AgenteId,
+                ManagerId = usuarioActualizado.ManagerId,
+                TipoAgenteId = usuarioActualizado.Agente?.TipoAgenteId,
                 Activo = usuarioActualizado.Activo,
                 EmailVerificado = usuarioActualizado.EmailVerificado,
                 ProveedorSSO = usuarioActualizado.ProveedorSSO,
                 FechaCreacion = usuarioActualizado.FechaCreacion,
-                Roles = usuarioActualizado.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList()
+                Roles = usuarioActualizado.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList(),
+                RoleIds = usuarioActualizado.UsuarioRoles.Select(ur => ur.RolId).ToList()
             };
 
             return Ok(usuarioDto);

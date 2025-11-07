@@ -153,6 +153,7 @@ const SchemaBuilder = ({ initialSchema = '{}', onChange, entidadTipo }: SchemaBu
         { name: 'DistritoId', label: 'Distrito', type: 'text' },
         { name: 'LineaNegocioId', label: 'Línea de Negocio', type: 'text' },
         { name: 'ManagerId', label: 'Manager', type: 'text' },
+        { name: 'TimelineId', label: 'Timeline', type: 'text' },
         { name: 'FechaIngreso', label: 'Fecha de Ingreso', type: 'date' },
         { name: 'Activo', label: 'Activo', type: 'checkbox' },
         { name: 'Observaciones', label: 'Observaciones', type: 'textarea' }

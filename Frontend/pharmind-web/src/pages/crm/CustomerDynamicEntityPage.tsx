@@ -554,6 +554,55 @@ const CustomerDynamicEntityPage: React.FC = () => {
     }
   };
 
+  // Helper functions for static fields configuration
+  const getStaticFieldConfig = (fieldName: string) => {
+    try {
+      const schema = JSON.parse(esquema!.schema);
+      return schema.staticFieldsConfig?.campos?.[fieldName] || {};
+    } catch {
+      return {};
+    }
+  };
+
+  const isStaticFieldVisible = (fieldName: string): boolean => {
+    const config = getStaticFieldConfig(fieldName);
+    return config.visible !== false; // Default to visible if not specified
+  };
+
+  const isStaticFieldRequired = (fieldName: string): boolean => {
+    const config = getStaticFieldConfig(fieldName);
+    return config.requerido === true; // Default to not required if not specified
+  };
+
+  const getStaticFieldLabel = (fieldName: string, defaultLabel: string): string => {
+    const config = getStaticFieldConfig(fieldName);
+    return config.label || defaultLabel;
+  };
+
+  // Helper function to get entity type (Persona or Entidad)
+  const getTipoEntidad = (): 'Persona' | 'Entidad' => {
+    try {
+      const schema = JSON.parse(esquema!.schema);
+      return schema.staticFieldsConfig?.tipoEntidad || 'Persona';
+    } catch {
+      return 'Persona';
+    }
+  };
+
+  // Helper function to get display name based on entity type
+  const getDisplayName = (cliente: Cliente): string => {
+    const tipoEntidad = getTipoEntidad();
+    if (tipoEntidad === 'Persona') {
+      // For Persona: concatenate nombre + apellido
+      const nombre = cliente.nombre || '';
+      const apellido = cliente.apellido || '';
+      return `${nombre} ${apellido}`.trim() || cliente.razonSocial;
+    } else {
+      // For Entidad (institution): use razonSocial
+      return cliente.razonSocial || `${cliente.nombre} ${cliente.apellido}`.trim();
+    }
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('es-AR', {
@@ -606,7 +655,7 @@ const CustomerDynamicEntityPage: React.FC = () => {
             <div key={cliente.id} className="entity-card">
               <div className="entity-body">
                 <div className="entity-title">
-                  <h3>{cliente.nombre} {cliente.apellido}</h3>
+                  <h3>{getDisplayName(cliente)}</h3>
                   <span className={`badge badge-${cliente.estado.toLowerCase()}`}>
                     {cliente.estado}
                   </span>
@@ -711,8 +760,8 @@ const CustomerDynamicEntityPage: React.FC = () => {
                   {filteredClientes.map((cliente) => (
                     <tr key={cliente.id}>
                       <td><strong>{cliente.codigoCliente}</strong></td>
-                      <td>{cliente.nombre} {cliente.apellido}</td>
-                      <td>{cliente.razonSocial}</td>
+                      <td><strong>{getDisplayName(cliente)}</strong></td>
+                      <td>{getTipoEntidad() === 'Persona' ? cliente.razonSocial : '-'}</td>
                       <td>{cliente.especialidad || '-'}</td>
                       <td>{cliente.email || '-'}</td>
                       <td>{cliente.telefono || '-'}</td>
@@ -780,134 +829,164 @@ const CustomerDynamicEntityPage: React.FC = () => {
                 <div className="form-section">
                   <h3 className="form-section-title">Información Base</h3>
                   <div className="form-grid">
-                    <div className="form-group">
-                      <label>Código de Cliente * (Autogenerado)</label>
-                      <input
-                        type="text"
-                        value={formData.codigoCliente}
-                        className="form-control"
-                        required
-                        readOnly
-                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
-                      />
-                    </div>
+                    {isStaticFieldVisible('CodigoCliente') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('CodigoCliente', 'Código de Cliente')}{isStaticFieldRequired('CodigoCliente') ? ' *' : ''} (Autogenerado)</label>
+                        <input
+                          type="text"
+                          value={formData.codigoCliente}
+                          className="form-control"
+                          required={isStaticFieldRequired('CodigoCliente')}
+                          readOnly
+                          style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Nombre *</label>
-                      <input
-                        type="text"
-                        value={formData.nombre}
-                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                        className="form-control"
-                        required
-                      />
-                    </div>
+                    {isStaticFieldVisible('Nombre') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('Nombre', 'Nombre')}{isStaticFieldRequired('Nombre') ? ' *' : ''}</label>
+                        <input
+                          type="text"
+                          value={formData.nombre}
+                          onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('Nombre')}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Apellido</label>
-                      <input
-                        type="text"
-                        value={formData.apellido}
-                        onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                        className="form-control"
-                      />
-                    </div>
+                    {isStaticFieldVisible('Apellido') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('Apellido', 'Apellido')}{isStaticFieldRequired('Apellido') ? ' *' : ''}</label>
+                        <input
+                          type="text"
+                          value={formData.apellido}
+                          onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('Apellido')}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Razón Social *</label>
-                      <input
-                        type="text"
-                        value={formData.razonSocial}
-                        onChange={(e) => setFormData({ ...formData, razonSocial: e.target.value })}
-                        className="form-control"
-                        required
-                      />
-                    </div>
+                    {isStaticFieldVisible('RazonSocial') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('RazonSocial', 'Razón Social')}{isStaticFieldRequired('RazonSocial') ? ' *' : ''}</label>
+                        <input
+                          type="text"
+                          value={formData.razonSocial}
+                          onChange={(e) => setFormData({ ...formData, razonSocial: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('RazonSocial')}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Email</label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="form-control"
-                      />
-                    </div>
+                    {isStaticFieldVisible('Email') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('Email', 'Email')}{isStaticFieldRequired('Email') ? ' *' : ''}</label>
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('Email')}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Teléfono</label>
-                      <input
-                        type="tel"
-                        value={formData.telefono}
-                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                        className="form-control"
-                      />
-                    </div>
+                    {isStaticFieldVisible('Telefono') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('Telefono', 'Teléfono')}{isStaticFieldRequired('Telefono') ? ' *' : ''}</label>
+                        <input
+                          type="tel"
+                          value={formData.telefono}
+                          onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('Telefono')}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Estado *</label>
-                      <select
-                        value={formData.estado}
-                        onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                        className="form-control"
-                        required
-                      >
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                        <option value="Suspendido">Suspendido</option>
-                      </select>
-                    </div>
+                    {isStaticFieldVisible('Estado') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('Estado', 'Estado')}{isStaticFieldRequired('Estado') ? ' *' : ''}</label>
+                        <select
+                          value={formData.estado}
+                          onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('Estado')}
+                        >
+                          <option value="Activo">Activo</option>
+                          <option value="Inactivo">Inactivo</option>
+                          <option value="Suspendido">Suspendido</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Section 2: Clasificación */}
-                <div className="form-section">
-                  <h3 className="form-section-title">Clasificación</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Especialidad</label>
-                      <input
-                        type="text"
-                        value={formData.especialidad}
-                        onChange={(e) => setFormData({ ...formData, especialidad: e.target.value })}
-                        className="form-control"
-                        placeholder="Ej: Cardiología, Pediatría..."
-                      />
-                    </div>
+                {(isStaticFieldVisible('Especialidad') || isStaticFieldVisible('Categoria') || isStaticFieldVisible('Segmento')) && (
+                  <div className="form-section">
+                    <h3 className="form-section-title">Clasificación</h3>
+                    <div className="form-grid">
+                      {isStaticFieldVisible('Especialidad') && (
+                        <div className="form-group">
+                          <label>{getStaticFieldLabel('Especialidad', 'Especialidad')}{isStaticFieldRequired('Especialidad') ? ' *' : ''}</label>
+                          <input
+                            type="text"
+                            value={formData.especialidad}
+                            onChange={(e) => setFormData({ ...formData, especialidad: e.target.value })}
+                            className="form-control"
+                            placeholder="Ej: Cardiología, Pediatría..."
+                            required={isStaticFieldRequired('Especialidad')}
+                          />
+                        </div>
+                      )}
 
-                    <div className="form-group">
-                      <label>Categoría</label>
-                      <input
-                        type="text"
-                        value={formData.categoria}
-                        onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                        className="form-control"
-                        placeholder="Ej: A, B, C..."
-                      />
-                    </div>
+                      {isStaticFieldVisible('Categoria') && (
+                        <div className="form-group">
+                          <label>{getStaticFieldLabel('Categoria', 'Categoría')}{isStaticFieldRequired('Categoria') ? ' *' : ''}</label>
+                          <input
+                            type="text"
+                            value={formData.categoria}
+                            onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                            className="form-control"
+                            placeholder="Ej: A, B, C..."
+                            required={isStaticFieldRequired('Categoria')}
+                          />
+                        </div>
+                      )}
 
-                    <div className="form-group">
-                      <label>Segmento</label>
-                      <input
-                        type="text"
-                        value={formData.segmento}
-                        onChange={(e) => setFormData({ ...formData, segmento: e.target.value })}
-                        className="form-control"
-                        placeholder="Ej: Premium, Estándar..."
-                      />
+                      {isStaticFieldVisible('Segmento') && (
+                        <div className="form-group">
+                          <label>{getStaticFieldLabel('Segmento', 'Segmento')}{isStaticFieldRequired('Segmento') ? ' *' : ''}</label>
+                          <input
+                            type="text"
+                            value={formData.segmento}
+                            onChange={(e) => setFormData({ ...formData, segmento: e.target.value })}
+                            className="form-control"
+                            placeholder="Ej: Premium, Estándar..."
+                            required={isStaticFieldRequired('Segmento')}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Section 3: Dirección */}
-                <div className="form-section">
-                  <h3 className="form-section-title">Dirección</h3>
-                  <DireccionForm
-                    value={direccionData}
-                    onChange={setDireccionData}
-                    required={false}
-                  />
-                </div>
+                {isStaticFieldVisible('Direccion') && (
+                  <div className="form-section">
+                    <h3 className="form-section-title">Dirección</h3>
+                    <DireccionForm
+                      value={direccionData}
+                      onChange={setDireccionData}
+                      required={isStaticFieldRequired('Direccion')}
+                    />
+                  </div>
+                )}
 
                 {/* Section 4: Campos Adicionales (Dynamic fields) */}
                 {getSchemaFields().length > 0 && (

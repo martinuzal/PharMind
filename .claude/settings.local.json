@@ -1,12 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(sqlcmd:*)",
-      "Bash(Select-String \"error\")",
-      "Bash(del \"Migrations\\20251103123258_AddAnalyticsNewDimensions.cs\")",
-      "Bash(del \"Migrations\\20251103123258_AddAnalyticsNewDimensions.Designer.cs\")",
-      "Bash(del \"C:\\Works\\PharMind\\Backend\\PharMind.API\\Controllers\\SeedController.cs\")",
-      "Bash(git log:*)"
+      "Bash(TASKKILL //F //PID 53200)",
+      "Bash(TASKKILL //F //PID 9684)"
     ],
     "deny": [],
     "ask": []

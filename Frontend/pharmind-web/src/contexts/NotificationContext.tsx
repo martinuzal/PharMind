@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Notification } from '../types/common';
+import { errorHandler } from '../services/errorHandler.service';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -37,6 +38,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       setNotifications(prev => prev.filter(n => n.id !== newNotification.id));
     }, 5000);
   };
+
+  // Registrar el callback de notificación con el error handler al montar el componente
+  useEffect(() => {
+    errorHandler.setNotificationCallback(addNotification);
+  }, []);
 
   const markAsRead = (id: string) => {
     setNotifications(prev =>

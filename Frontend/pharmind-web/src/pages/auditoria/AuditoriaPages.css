@@ -507,3 +507,279 @@ input.filter-select::placeholder {
     transform: scale(1.05);
   }
 }
+
+/* Médicos de Auditoría - Estilos específicos */
+.auditoria-page {
+  background: #f8f9fa;
+}
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.table-info {
+  padding: 16px 24px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-info p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table thead {
+  background: linear-gradient(to bottom, #f9fafb 0%, #f3f4f6 100%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.data-table th {
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: all 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+  background: linear-gradient(to right, #f9fafb 0%, #ffffff 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.data-table td {
+  padding: 14px 20px;
+  color: #1f2937;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.data-table td.nombre-cell {
+  font-weight: 600;
+  color: #111827;
+}
+
+.data-table td.codigo-cell {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.data-table td.especialidad-cell {
+  color: #2563eb;
+  font-size: 13px;
+}
+
+.data-table td.ubicacion-cell {
+  color: #059669;
+  font-size: 13px;
+}
+
+/* Columna de acciones */
+.data-table th.actions-column,
+.data-table td.actions-column {
+  text-align: center;
+  width: 120px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6b7280;
+}
+
+.action-button:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+}
+
+.action-button.view-button:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.action-button.edit-button:hover {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.action-button.delete-button:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.action-button .material-icons {
+  font-size: 18px;
+}
+
+/* Empty state mejorado */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: #d1d5db;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Paginación mejorada */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.pagination-btn {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled):not(.active) {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #eff6ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+.pagination-btn.active {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  border-color: #2563eb;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  font-weight: 600;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #f3f4f6;
+}
+
+.pagination-dots {
+  padding: 0 8px;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+/* Badge para CRM */
+.crm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.crm-badge .material-icons {
+  font-size: 14px;
+}
+
+/* Indicadores de estado */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-indicator.status-active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-indicator.status-inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-indicator .material-icons {
+  font-size: 14px;
+}

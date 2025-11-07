@@ -26,6 +26,8 @@ public class AgenteDto
     public string? LineaNegocioNombre { get; set; }
     public string? ManagerId { get; set; }
     public string? ManagerNombre { get; set; }
+    public Guid? TimelineId { get; set; }
+    public string? TimelineNombre { get; set; }
 
     public DateTime? FechaIngreso { get; set; }
     public bool Activo { get; set; }
@@ -53,6 +55,7 @@ public class CreateAgenteDto
     public string? DistritoId { get; set; }
     public string? LineaNegocioId { get; set; }
     public string? ManagerId { get; set; }
+    public Guid? TimelineId { get; set; }
 
     public DateTime? FechaIngreso { get; set; }
     public bool Activo { get; set; } = true;
@@ -72,6 +75,7 @@ public class UpdateAgenteDto
     public string? DistritoId { get; set; }
     public string? LineaNegocioId { get; set; }
     public string? ManagerId { get; set; }
+    public Guid? TimelineId { get; set; }
 
     public DateTime? FechaIngreso { get; set; }
     public bool Activo { get; set; } = true;

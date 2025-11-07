@@ -24,6 +24,8 @@ interface Agente {
   lineaNegocioNombre?: string;
   managerId?: string;
   managerNombre?: string;
+  timelineId?: string;
+  timelineNombre?: string;
   fechaIngreso?: string;
   activo: boolean;
   observaciones?: string;
@@ -43,6 +45,7 @@ interface CreateAgenteDto {
   distritoId?: string;
   lineaNegocioId?: string;
   managerId?: string;
+  timelineId?: string;
   fechaIngreso?: Date;
   activo: boolean;
   observaciones?: string;
@@ -58,6 +61,7 @@ interface UpdateAgenteDto {
   distritoId?: string;
   lineaNegocioId?: string;
   managerId?: string;
+  timelineId?: string;
   fechaIngreso?: Date;
   activo: boolean;
   observaciones?: string;
@@ -88,6 +92,12 @@ interface Manager {
   nombre: string;
 }
 
+interface Timeline {
+  id: string;
+  nombre: string;
+  anio: number;
+}
+
 const AgentDynamicEntityPage = () => {
   const { subtipo } = useParams<{ subtipo: string }>();
   const navigate = useNavigate();
@@ -112,6 +122,7 @@ const AgentDynamicEntityPage = () => {
   const [distritos, setDistritos] = useState<Distrito[]>([]);
   const [lineasNegocio, setLineasNegocio] = useState<LineaNegocio[]>([]);
   const [managers, setManagers] = useState<Manager[]>([]);
+  const [timelines, setTimelines] = useState<Timeline[]>([]);
 
   // Form state - Static fields
   const [formData, setFormData] = useState<CreateAgenteDto>({
@@ -140,6 +151,7 @@ const AgentDynamicEntityPage = () => {
     loadDistritos();
     loadLineasNegocio();
     loadManagers();
+    loadTimelines();
   }, [subtipo]);
 
   useEffect(() => {
@@ -351,6 +363,15 @@ const AgentDynamicEntityPage = () => {
     }
   };
 
+  const loadTimelines = async () => {
+    try {
+      const response = await api.get('/timelines');
+      setTimelines(response.data);
+    } catch (error) {
+      console.error('Error loading timelines:', error);
+    }
+  };
+
   const handleCreate = () => {
     setEditingAgente(null);
     setFormData({
@@ -364,6 +385,7 @@ const AgentDynamicEntityPage = () => {
       distritoId: '',
       lineaNegocioId: '',
       managerId: '',
+      timelineId: '',
       fechaIngreso: undefined,
       activo: true,
       observaciones: '',
@@ -386,6 +408,7 @@ const AgentDynamicEntityPage = () => {
       distritoId: agente.distritoId || '',
       lineaNegocioId: agente.lineaNegocioId || '',
       managerId: agente.managerId || '',
+      timelineId: agente.timelineId || '',
       fechaIngreso: agente.fechaIngreso ? new Date(agente.fechaIngreso) : undefined,
       activo: agente.activo,
       observaciones: agente.observaciones || '',
@@ -515,6 +538,7 @@ const AgentDynamicEntityPage = () => {
           distritoId: formData.distritoId || undefined,
           lineaNegocioId: formData.lineaNegocioId || undefined,
           managerId: formData.managerId || undefined,
+          timelineId: formData.timelineId || undefined,
           observaciones: formData.observaciones || undefined
         };
 
@@ -537,6 +561,7 @@ const AgentDynamicEntityPage = () => {
           distritoId: formData.distritoId || undefined,
           lineaNegocioId: formData.lineaNegocioId || undefined,
           managerId: formData.managerId || undefined,
+          timelineId: formData.timelineId || undefined,
           fechaIngreso: formData.fechaIngreso,
           activo: formData.activo,
           observaciones: formData.observaciones || undefined
@@ -584,6 +609,36 @@ const AgentDynamicEntityPage = () => {
     } catch {
       return [];
     }
+  };
+
+  // Helper functions for static fields configuration
+  const getStaticFieldConfig = (fieldName: string) => {
+    try {
+      const schema = JSON.parse(esquema!.schema);
+      return schema.staticFieldsConfig?.campos?.[fieldName] || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const isStaticFieldVisible = (fieldName: string): boolean => {
+    const config = getStaticFieldConfig(fieldName);
+    // Si no hay configuración, no mostrar el campo
+    if (!config) return false;
+    // Si hay configuración, verificar la propiedad visible (default true si existe config)
+    return config.visible !== false;
+  };
+
+  const isStaticFieldRequired = (fieldName: string): boolean => {
+    const config = getStaticFieldConfig(fieldName);
+    if (!config) return false;
+    return config.requerido === true;
+  };
+
+  const getStaticFieldLabel = (fieldName: string, defaultLabel: string): string => {
+    const config = getStaticFieldConfig(fieldName);
+    if (!config) return defaultLabel;
+    return config.label || defaultLabel;
   };
 
   const formatDate = (dateString?: string) => {
@@ -801,168 +856,222 @@ const AgentDynamicEntityPage = () => {
                 <div className="form-section">
                   <h3 className="form-section-title">Información Base</h3>
                   <div className="form-grid">
-                    <div className="form-group">
-                      <label>Código de Agente *</label>
-                      <input
-                        type="text"
-                        value={formData.codigoAgente}
-                        onChange={(e) => setFormData({ ...formData, codigoAgente: e.target.value })}
-                        className="form-control"
-                        required
-                        disabled={!!editingAgente}
-                      />
-                    </div>
+                    {isStaticFieldVisible('CodigoAgente') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('CodigoAgente', 'Código de Agente')}{isStaticFieldRequired('CodigoAgente') ? ' *' : ''}</label>
+                        <input
+                          type="text"
+                          value={formData.codigoAgente}
+                          onChange={(e) => setFormData({ ...formData, codigoAgente: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('CodigoAgente')}
+                          disabled={!!editingAgente}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Nombre *</label>
-                      <input
-                        type="text"
-                        value={formData.nombre}
-                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                        className="form-control"
-                        required
-                      />
-                    </div>
+                    {isStaticFieldVisible('Nombre') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('Nombre', 'Nombre')}{isStaticFieldRequired('Nombre') ? ' *' : ''}</label>
+                        <input
+                          type="text"
+                          value={formData.nombre}
+                          onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('Nombre')}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Apellido</label>
-                      <input
-                        type="text"
-                        value={formData.apellido}
-                        onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                        className="form-control"
-                      />
-                    </div>
+                    {isStaticFieldVisible('Apellido') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('Apellido', 'Apellido')}{isStaticFieldRequired('Apellido') ? ' *' : ''}</label>
+                        <input
+                          type="text"
+                          value={formData.apellido}
+                          onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('Apellido')}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Email</label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="form-control"
-                      />
-                    </div>
+                    {isStaticFieldVisible('Email') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('Email', 'Email')}{isStaticFieldRequired('Email') ? ' *' : ''}</label>
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('Email')}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Teléfono</label>
-                      <input
-                        type="tel"
-                        value={formData.telefono}
-                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                        className="form-control"
-                      />
-                    </div>
+                    {isStaticFieldVisible('Telefono') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('Telefono', 'Teléfono')}{isStaticFieldRequired('Telefono') ? ' *' : ''}</label>
+                        <input
+                          type="tel"
+                          value={formData.telefono}
+                          onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                          className="form-control"
+                          required={isStaticFieldRequired('Telefono')}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Fecha de Ingreso</label>
-                      <input
-                        type="date"
-                        value={formData.fechaIngreso ? new Date(formData.fechaIngreso).toISOString().split('T')[0] : ''}
-                        onChange={(e) => setFormData({ ...formData, fechaIngreso: e.target.value ? new Date(e.target.value) : undefined })}
-                        className="form-control"
-                      />
-                    </div>
+                    {isStaticFieldVisible('FechaIngreso') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('FechaIngreso', 'Fecha de Ingreso')}{isStaticFieldRequired('FechaIngreso') ? ' *' : ''}</label>
+                        <input
+                          type="date"
+                          value={formData.fechaIngreso ? new Date(formData.fechaIngreso).toISOString().split('T')[0] : ''}
+                          onChange={(e) => setFormData({ ...formData, fechaIngreso: e.target.value ? new Date(e.target.value) : undefined })}
+                          className="form-control"
+                          required={isStaticFieldRequired('FechaIngreso')}
+                        />
+                      </div>
+                    )}
 
-                    <div className="form-group">
-                      <label>Estado *</label>
-                      <select
-                        value={formData.activo ? 'true' : 'false'}
-                        onChange={(e) => setFormData({ ...formData, activo: e.target.value === 'true' })}
-                        className="form-control"
-                        required
-                      >
-                        <option value="true">Activo</option>
-                        <option value="false">Inactivo</option>
-                      </select>
-                    </div>
+                    {isStaticFieldVisible('Activo') && (
+                      <div className="form-group">
+                        <label>{getStaticFieldLabel('Activo', 'Estado')}{isStaticFieldRequired('Activo') ? ' *' : ''}</label>
+                        <select
+                          value={formData.activo ? 'true' : 'false'}
+                          onChange={(e) => setFormData({ ...formData, activo: e.target.value === 'true' })}
+                          className="form-control"
+                          required={isStaticFieldRequired('Activo')}
+                        >
+                          <option value="true">Activo</option>
+                          <option value="false">Inactivo</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Section 2: Asignaciones */}
-                <div className="form-section">
-                  <h3 className="form-section-title">Asignaciones</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Región</label>
-                      <select
-                        value={formData.regionId}
-                        onChange={(e) => setFormData({ ...formData, regionId: e.target.value })}
-                        className="form-control"
-                      >
-                        <option value="">Seleccione región</option>
-                        {regiones.map(region => (
-                          <option key={region.id} value={region.id}>
-                            {region.codigo} - {region.nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                {(isStaticFieldVisible('RegionId') || isStaticFieldVisible('DistritoId') || isStaticFieldVisible('LineaNegocioId') || isStaticFieldVisible('ManagerId') || isStaticFieldVisible('TimelineId')) && (
+                  <div className="form-section">
+                    <h3 className="form-section-title">Asignaciones</h3>
+                    <div className="form-grid">
+                      {isStaticFieldVisible('RegionId') && (
+                        <div className="form-group">
+                          <label>{getStaticFieldLabel('RegionId', 'Región')}{isStaticFieldRequired('RegionId') ? ' *' : ''}</label>
+                          <select
+                            value={formData.regionId}
+                            onChange={(e) => setFormData({ ...formData, regionId: e.target.value })}
+                            className="form-control"
+                            required={isStaticFieldRequired('RegionId')}
+                          >
+                            <option value="">Seleccione región</option>
+                            {regiones.map(region => (
+                              <option key={region.id} value={region.id}>
+                                {region.codigo} - {region.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
-                    <div className="form-group">
-                      <label>Distrito</label>
-                      <select
-                        value={formData.distritoId}
-                        onChange={(e) => setFormData({ ...formData, distritoId: e.target.value })}
-                        className="form-control"
-                      >
-                        <option value="">Seleccione distrito</option>
-                        {distritos.map(distrito => (
-                          <option key={distrito.id} value={distrito.id}>
-                            {distrito.codigo} - {distrito.nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      {isStaticFieldVisible('DistritoId') && (
+                        <div className="form-group">
+                          <label>{getStaticFieldLabel('DistritoId', 'Distrito')}{isStaticFieldRequired('DistritoId') ? ' *' : ''}</label>
+                          <select
+                            value={formData.distritoId}
+                            onChange={(e) => setFormData({ ...formData, distritoId: e.target.value })}
+                            className="form-control"
+                            required={isStaticFieldRequired('DistritoId')}
+                          >
+                            <option value="">Seleccione distrito</option>
+                            {distritos.map(distrito => (
+                              <option key={distrito.id} value={distrito.id}>
+                                {distrito.codigo} - {distrito.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
-                    <div className="form-group">
-                      <label>Línea de Negocio</label>
-                      <select
-                        value={formData.lineaNegocioId}
-                        onChange={(e) => setFormData({ ...formData, lineaNegocioId: e.target.value })}
-                        className="form-control"
-                      >
-                        <option value="">Seleccione línea de negocio</option>
-                        {lineasNegocio.map(linea => (
-                          <option key={linea.id} value={linea.id}>
-                            {linea.codigo} - {linea.nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      {isStaticFieldVisible('LineaNegocioId') && (
+                        <div className="form-group">
+                          <label>{getStaticFieldLabel('LineaNegocioId', 'Línea de Negocio')}{isStaticFieldRequired('LineaNegocioId') ? ' *' : ''}</label>
+                          <select
+                            value={formData.lineaNegocioId}
+                            onChange={(e) => setFormData({ ...formData, lineaNegocioId: e.target.value })}
+                            className="form-control"
+                            required={isStaticFieldRequired('LineaNegocioId')}
+                          >
+                            <option value="">Seleccione línea de negocio</option>
+                            {lineasNegocio.map(linea => (
+                              <option key={linea.id} value={linea.id}>
+                                {linea.codigo} - {linea.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
-                    <div className="form-group">
-                      <label>Manager</label>
-                      <select
-                        value={formData.managerId}
-                        onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
-                        className="form-control"
-                      >
-                        <option value="">Seleccione manager</option>
-                        {managers.map(manager => (
-                          <option key={manager.id} value={manager.id}>
-                            {manager.codigo} - {manager.nombre}
-                          </option>
-                        ))}
-                      </select>
+                      {isStaticFieldVisible('ManagerId') && (
+                        <div className="form-group">
+                          <label>{getStaticFieldLabel('ManagerId', 'Manager')}{isStaticFieldRequired('ManagerId') ? ' *' : ''}</label>
+                          <select
+                            value={formData.managerId}
+                            onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
+                            className="form-control"
+                            required={isStaticFieldRequired('ManagerId')}
+                          >
+                            <option value="">Seleccione manager</option>
+                            {managers.map(manager => (
+                              <option key={manager.id} value={manager.id}>
+                                {manager.codigo} - {manager.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {isStaticFieldVisible('TimelineId') && (
+                        <div className="form-group">
+                          <label>{getStaticFieldLabel('TimelineId', 'Timeline')}{isStaticFieldRequired('TimelineId') ? ' *' : ''}</label>
+                          <select
+                            value={formData.timelineId}
+                            onChange={(e) => setFormData({ ...formData, timelineId: e.target.value })}
+                            className="form-control"
+                            required={isStaticFieldRequired('TimelineId')}
+                          >
+                            <option value="">Seleccione timeline</option>
+                            {timelines.map(timeline => (
+                              <option key={timeline.id} value={timeline.id}>
+                                {timeline.nombre} ({timeline.anio})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Section 3: Observaciones */}
-                <div className="form-section">
-                  <h3 className="form-section-title">Observaciones</h3>
-                  <div className="form-group">
-                    <label>Observaciones</label>
-                    <textarea
-                      value={formData.observaciones}
-                      onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-                      className="form-control"
-                      rows={3}
-                      placeholder="Observaciones adicionales..."
-                    />
+                {isStaticFieldVisible('Observaciones') && (
+                  <div className="form-section">
+                    <h3 className="form-section-title">Observaciones</h3>
+                    <div className="form-group">
+                      <label>{getStaticFieldLabel('Observaciones', 'Observaciones')}{isStaticFieldRequired('Observaciones') ? ' *' : ''}</label>
+                      <textarea
+                        value={formData.observaciones}
+                        onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
+                        className="form-control"
+                        rows={3}
+                        placeholder="Observaciones adicionales..."
+                        required={isStaticFieldRequired('Observaciones')}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Section 4: Campos Adicionales (Dynamic fields) */}
                 {getSchemaFields().length > 0 && (

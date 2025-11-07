@@ -16,6 +16,10 @@ public class UsuarioDto
     public string? ProveedorSSO { get; set; }
     public DateTime FechaCreacion { get; set; }
     public List<string> Roles { get; set; } = new();
+    public List<string> RoleIds { get; set; } = new();
+    public string? AgenteId { get; set; }
+    public string? ManagerId { get; set; }
+    public string? TipoAgenteId { get; set; }  // Para mostrar el tipo de agente cuando es agente
 }
 
 public class CreateUsuarioDto
@@ -28,16 +32,23 @@ public class CreateUsuarioDto
     public string? Cargo { get; set; }
     public string? Departamento { get; set; }
     public List<string> RoleIds { get; set; } = new();
+    public string? AgenteId { get; set; }
+    public string? ManagerId { get; set; }
+    public string? TipoAgenteId { get; set; }  // Para crear el agente con tipo cuando se selecciona
 }
 
 public class UpdateUsuarioDto
 {
-    public string NombreCompleto { get; set; } = string.Empty;
+    public string? NombreCompleto { get; set; }
+    public string? Email { get; set; }
     public string? Telefono { get; set; }
     public string? Cargo { get; set; }
     public string? Departamento { get; set; }
-    public bool Activo { get; set; }
-    public List<string> RoleIds { get; set; } = new();
+    public bool? Activo { get; set; }
+    public List<string>? RoleIds { get; set; }
+    public string? AgenteId { get; set; }
+    public string? ManagerId { get; set; }
+    public string? TipoAgenteId { get; set; }
 }
 
 public class ChangePasswordDto

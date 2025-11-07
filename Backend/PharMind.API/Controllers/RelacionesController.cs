@@ -33,6 +33,7 @@ public class RelacionesController : ControllerBase
         try
         {
             var query = _context.Relaciones
+                .AsNoTracking()
                 .Include(r => r.TipoRelacionEsquema)
                 .Include(r => r.DatosExtendidos)
                 .Include(r => r.Agente)
@@ -81,6 +82,7 @@ public class RelacionesController : ControllerBase
         try
         {
             var relacion = await _context.Relaciones
+                .AsNoTracking()
                 .Include(r => r.TipoRelacionEsquema)
                 .Include(r => r.DatosExtendidos)
                 .Include(r => r.Agente)
@@ -191,6 +193,13 @@ public class RelacionesController : ControllerBase
                 FrecuenciaVisitas = dto.FrecuenciaVisitas,
                 Prioridad = dto.Prioridad,
                 Observaciones = dto.Observaciones,
+                EspecialidadId = dto.EspecialidadId,
+                CategoriaId = dto.CategoriaId,
+                Segment1Id = dto.Segment1Id,
+                Segment2Id = dto.Segment2Id,
+                Segment3Id = dto.Segment3Id,
+                Segment4Id = dto.Segment4Id,
+                Segment5Id = dto.Segment5Id,
                 Status = false,
                 FechaCreacion = DateTime.Now,
                 CreadoPor = "System"
@@ -227,6 +236,7 @@ public class RelacionesController : ControllerBase
         try
         {
             var relacion = await _context.Relaciones
+                .AsNoTracking()
                 .Include(r => r.TipoRelacionEsquema)
                 .Include(r => r.DatosExtendidos)
                 .Include(r => r.Agente)
@@ -302,6 +312,13 @@ public class RelacionesController : ControllerBase
             relacion.FrecuenciaVisitas = dto.FrecuenciaVisitas;
             relacion.Prioridad = dto.Prioridad;
             relacion.Observaciones = dto.Observaciones;
+            relacion.EspecialidadId = dto.EspecialidadId;
+            relacion.CategoriaId = dto.CategoriaId;
+            relacion.Segment1Id = dto.Segment1Id;
+            relacion.Segment2Id = dto.Segment2Id;
+            relacion.Segment3Id = dto.Segment3Id;
+            relacion.Segment4Id = dto.Segment4Id;
+            relacion.Segment5Id = dto.Segment5Id;
             relacion.FechaModificacion = DateTime.Now;
             relacion.ModificadoPor = "System";
 
@@ -384,6 +401,13 @@ public class RelacionesController : ControllerBase
             FrecuenciaVisitas = relacion.FrecuenciaVisitas,
             Prioridad = relacion.Prioridad,
             Observaciones = relacion.Observaciones,
+            EspecialidadId = relacion.EspecialidadId,
+            CategoriaId = relacion.CategoriaId,
+            Segment1Id = relacion.Segment1Id,
+            Segment2Id = relacion.Segment2Id,
+            Segment3Id = relacion.Segment3Id,
+            Segment4Id = relacion.Segment4Id,
+            Segment5Id = relacion.Segment5Id,
             FechaCreacion = relacion.FechaCreacion,
             CreadoPor = relacion.CreadoPor,
             FechaModificacion = relacion.FechaModificacion,

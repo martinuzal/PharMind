@@ -16,7 +16,6 @@ public class PermisoModuloDto
 {
     public string ModuloId { get; set; } = string.Empty;
     public string ModuloNombre { get; set; } = string.Empty;
-    public string NivelAcceso { get; set; } = string.Empty;
     public bool PuedeVer { get; set; }
     public bool PuedeCrear { get; set; }
     public bool PuedeEditar { get; set; }
@@ -37,14 +36,13 @@ public class CreateRolDto
 public class CreatePermisoModuloDto
 {
     public string ModuloId { get; set; } = string.Empty;
-    public string NivelAcceso { get; set; } = "Lectura";
     public bool PuedeVer { get; set; }
     public bool PuedeCrear { get; set; }
     public bool PuedeEditar { get; set; }
     public bool PuedeEliminar { get; set; }
-    public bool PuedeExportar { get; set; }
-    public bool PuedeImportar { get; set; }
-    public bool PuedeAprobar { get; set; }
+    public bool? PuedeExportar { get; set; }
+    public bool? PuedeImportar { get; set; }
+    public bool? PuedeAprobar { get; set; }
 }
 
 public class UpdateRolDto

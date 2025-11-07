@@ -158,7 +158,7 @@ namespace PharMind.API.Controllers
                             {
                                 laboratorios.Add(new LaboratorioPorMercadoDTO
                                 {
-                                    Ranking = (int)reader.GetInt64(reader.GetOrdinal("Ranking")),
+                                    Ranking = Convert.ToInt32(reader.GetInt64(reader.GetOrdinal("Ranking"))),
                                     Laboratorio = reader.GetString(reader.GetOrdinal("Laboratorio")),
                                     EsBEB = reader.GetInt32(reader.GetOrdinal("EsBEB")),
                                     Prescripciones = reader.GetInt32(reader.GetOrdinal("Prescripciones")),
@@ -212,7 +212,7 @@ namespace PharMind.API.Controllers
                             {
                                 productos.Add(new ProductoPorMercadoDTO
                                 {
-                                    Ranking = (int)reader.GetInt64(reader.GetOrdinal("Ranking")),
+                                    Ranking = Convert.ToInt32(reader.GetInt64(reader.GetOrdinal("Ranking"))),
                                     CDG_RAIZ = reader.GetString(reader.GetOrdinal("CDG_RAIZ")),
                                     CODIGO_PMIX = reader.GetString(reader.GetOrdinal("CODIGO_PMIX")),
                                     ProductoNombre = reader.GetString(reader.GetOrdinal("ProductoNombre")),
@@ -269,7 +269,7 @@ namespace PharMind.API.Controllers
                             {
                                 medicos.Add(new MedicoPorMercadoDTO
                                 {
-                                    Ranking = (int)reader.GetInt64(reader.GetOrdinal("Ranking")),
+                                    Ranking = Convert.ToInt32(reader.GetInt64(reader.GetOrdinal("Ranking"))),
                                     CDGMED_REG = reader.GetString(reader.GetOrdinal("CDGMED_REG")),
                                     MedicoNombre = reader.IsDBNull(reader.GetOrdinal("MedicoNombre")) ? null : reader.GetString(reader.GetOrdinal("MedicoNombre")),
                                     Especialidad = reader.IsDBNull(reader.GetOrdinal("Especialidad")) ? null : reader.GetString(reader.GetOrdinal("Especialidad")),

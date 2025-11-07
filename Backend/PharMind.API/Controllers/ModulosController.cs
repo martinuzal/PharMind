@@ -41,7 +41,7 @@ public class ModulosController : ControllerBase
             }
 
             var modulos = await query
-                .OrderBy(m => m.Orden)
+                .OrderBy(m => m.OrdenMenu)
                 .ToListAsync();
 
             // Mapear a DTOs recursivamente
@@ -135,7 +135,7 @@ public class ModulosController : ControllerBase
                 Descripcion = createDto.Descripcion,
                 Icono = createDto.Icono,
                 Ruta = createDto.Ruta,
-                Orden = createDto.Orden,
+                OrdenMenu = createDto.Orden,
                 ModuloPadreId = createDto.ModuloPadreId,
                 Activo = true,
                 FechaCreacion = DateTime.Now,
@@ -236,7 +236,7 @@ public class ModulosController : ControllerBase
             modulo.Descripcion = updateDto.Descripcion;
             modulo.Icono = updateDto.Icono;
             modulo.Ruta = updateDto.Ruta;
-            modulo.Orden = updateDto.Orden;
+            modulo.OrdenMenu = updateDto.Orden;
             modulo.ModuloPadreId = updateDto.ModuloPadreId;
             modulo.Activo = updateDto.Activo;
             modulo.FechaModificacion = DateTime.Now;
@@ -315,13 +315,90 @@ public class ModulosController : ControllerBase
     }
 
     /// <summary>
+    /// Obtiene los módulos disponibles para un usuario específico con sus permisos
+    /// </summary>
+    /// <param name="usuarioId">ID del usuario</param>
+    /// <returns>Lista de módulos con permisos del usuario</returns>
+    [HttpGet("usuario/{usuarioId}")]
+    public async Task<ActionResult<List<ModuloConPermisosDto>>> GetModulosUsuario(string usuarioId)
+    {
+        try
+        {
+            // Obtener el usuario con su rol
+            var usuario = await _context.Usuarios
+                .Include(u => u.Rol)
+                    .ThenInclude(r => r!.RolModulos)
+                        .ThenInclude(rm => rm.Modulo)
+                .FirstOrDefaultAsync(u => u.Id == usuarioId && u.Status == false);
+
+            if (usuario == null)
+            {
+                return NotFound("Usuario no encontrado");
+            }
+
+            List<ModuloConPermisosDto> modulosConPermisos;
+
+            // Si es administrador, devolver todos los módulos con permisos completos
+            if (usuario.EsAdministrador)
+            {
+                var todosModulos = await _context.Modulos
+                    .Include(m => m.SubModulos.Where(sm => sm.Status == false && sm.Activo))
+                    .Where(m => m.Status == false && m.Activo && m.ModuloPadreId == null)
+                    .OrderBy(m => m.OrdenMenu)
+                    .ToListAsync();
+
+                modulosConPermisos = todosModulos
+                    .Select(m => MapToPermisosDto(m, null, true))
+                    .ToList();
+            }
+            else
+            {
+                // Si no tiene rol asignado, devolver lista vacía
+                if (usuario.Rol == null)
+                {
+                    return Ok(new List<ModuloConPermisosDto>());
+                }
+
+                // Obtener módulos del rol con permisos
+                var modulosRol = usuario.Rol.RolModulos
+                    .Where(rm => rm.Status == false && rm.Modulo.Status == false && rm.Modulo.Activo)
+                    .ToList();
+
+                // Crear diccionario de permisos por módulo
+                var permisosDict = modulosRol
+                    .ToDictionary(rm => rm.ModuloId, rm => rm);
+
+                // Obtener solo los módulos principales permitidos
+                var modulosPrincipales = await _context.Modulos
+                    .Include(m => m.SubModulos.Where(sm => sm.Status == false && sm.Activo))
+                    .Where(m => m.Status == false && m.Activo && m.ModuloPadreId == null)
+                    .OrderBy(m => m.OrdenMenu)
+                    .ToListAsync();
+
+                // Filtrar solo los módulos que el usuario tiene permiso para ver
+                modulosConPermisos = modulosPrincipales
+                    .Where(m => permisosDict.ContainsKey(m.Id) && permisosDict[m.Id].PuedeVer)
+                    .Select(m => MapToPermisosDto(m, permisosDict, false))
+                    .ToList();
+            }
+
+            return Ok(modulosConPermisos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener módulos del usuario {UsuarioId}", usuarioId);
+            return StatusCode(500, "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
     /// Mapea un módulo a DTO recursivamente (incluye submódulos)
     /// </summary>
     private ModuloDto MapToDto(Modulo modulo, bool includeInactive)
     {
         var subModulos = modulo.SubModulos
             .Where(sm => includeInactive || sm.Activo)
-            .OrderBy(sm => sm.Orden)
+            .OrderBy(sm => sm.OrdenMenu)
             .Select(sm => MapToDto(sm, includeInactive))
             .ToList();
 
@@ -332,9 +409,50 @@ public class ModulosController : ControllerBase
             Descripcion = modulo.Descripcion,
             Icono = modulo.Icono,
             Ruta = modulo.Ruta,
-            Orden = modulo.Orden,
+            Orden = modulo.OrdenMenu,
             Activo = modulo.Activo,
             ModuloPadreId = modulo.ModuloPadreId,
+            SubModulos = subModulos
+        };
+    }
+
+    /// <summary>
+    /// Mapea un módulo a DTO con permisos recursivamente
+    /// </summary>
+    private ModuloConPermisosDto MapToPermisosDto(
+        Modulo modulo,
+        Dictionary<string, RolModulo>? permisosDict,
+        bool esAdmin)
+    {
+        // Mapear submódulos con permisos
+        var subModulos = modulo.SubModulos
+            .Where(sm => sm.Activo && (esAdmin || (permisosDict != null && permisosDict.ContainsKey(sm.Id) && permisosDict[sm.Id].PuedeVer)))
+            .OrderBy(sm => sm.OrdenMenu)
+            .Select(sm => MapToPermisosDto(sm, permisosDict, esAdmin))
+            .ToList();
+
+        // Obtener permisos del módulo
+        var permisos = esAdmin
+            ? new { PuedeVer = true, PuedeCrear = true, PuedeEditar = true, PuedeEliminar = true }
+            : permisosDict != null && permisosDict.TryGetValue(modulo.Id, out var rolModulo)
+                ? new { rolModulo.PuedeVer, rolModulo.PuedeCrear, rolModulo.PuedeEditar, rolModulo.PuedeEliminar }
+                : new { PuedeVer = false, PuedeCrear = false, PuedeEditar = false, PuedeEliminar = false };
+
+        return new ModuloConPermisosDto
+        {
+            Id = modulo.Id,
+            Codigo = modulo.Codigo,
+            Nombre = modulo.Nombre,
+            Descripcion = modulo.Descripcion,
+            Icono = modulo.Icono,
+            Ruta = modulo.Ruta,
+            OrdenMenu = modulo.OrdenMenu,
+            Activo = modulo.Activo,
+            ModuloPadreId = modulo.ModuloPadreId,
+            PuedeVer = permisos.PuedeVer,
+            PuedeCrear = permisos.PuedeCrear,
+            PuedeEditar = permisos.PuedeEditar,
+            PuedeEliminar = permisos.PuedeEliminar,
             SubModulos = subModulos
         };
     }

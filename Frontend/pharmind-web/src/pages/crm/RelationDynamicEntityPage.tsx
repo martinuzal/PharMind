@@ -5,6 +5,7 @@ import DynamicFormField from '../../components/dynamic/DynamicFormField';
 import InteractionFormModal from '../../components/modals/InteractionFormModal';
 import DireccionForm from '../../components/direccion/DireccionForm';
 import type { DireccionData } from '../../components/direccion/DireccionForm';
+import EntityFilterBuilder, { type ActiveFilter } from '../../components/filters/EntityFilterBuilder';
 import { usePage } from '../../contexts/PageContext';
 import './CRMPages.css';
 
@@ -38,7 +39,7 @@ interface Relation {
   fechaInicio: string;
   fechaFin?: string;
   estado: string;
-  frecuenciaVisitas?: string;
+  frecuenciaVisitas?: number;
   prioridad?: string;
   observaciones?: string;
 }
@@ -63,6 +64,7 @@ interface TipoCliente {
   id: string;
   nombre: string;
   subTipo: string;
+  schema?: string;
 }
 
 interface ClientFieldConfig {
@@ -89,7 +91,7 @@ interface TipoInteraccion {
 const RelationDynamicEntityPage: React.FC = () => {
   const { subtipo } = useParams<{ subtipo: string }>();
   const navigate = useNavigate();
-  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
+  const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, setFiltersButton, clearToolbarContent } = usePage();
 
   const [esquema, setEsquema] = useState<Schema | null>(null);
   const [relaciones, setRelaciones] = useState<Relation[]>([]);
@@ -110,7 +112,7 @@ const RelationDynamicEntityPage: React.FC = () => {
     fechaInicio: new Date().toISOString().split('T')[0],
     fechaFin: '',
     estado: 'Activa',
-    frecuenciaVisitas: '',
+    frecuenciaVisitas: 1,
     prioridad: 'Media',
     observaciones: ''
   });
@@ -123,6 +125,8 @@ const RelationDynamicEntityPage: React.FC = () => {
   const [showInteractionModal, setShowInteractionModal] = useState(false);
   const [modalPrefilledData, setModalPrefilledData] = useState<any>(null);
   const [selectedTipoInteraccion, setSelectedTipoInteraccion] = useState<TipoInteraccion | null>(null);
+  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     loadEsquema();
@@ -217,12 +221,13 @@ const RelationDynamicEntityPage: React.FC = () => {
       setToolbarContent(toolbarLeft);
       setToolbarCenterContent(toolbarCenter);
       setToolbarRightContent(toolbarRight);
+      setFiltersButton(true, activeFilters.length, () => setShowFilters(!showFilters));
     }
 
     return () => {
       clearToolbarContent();
     };
-  }, [esquema, searchQuery, viewMode]);
+  }, [esquema, searchQuery, viewMode, activeFilters.length, showFilters]);
 
   const loadEsquema = async () => {
     try {
@@ -315,7 +320,7 @@ const RelationDynamicEntityPage: React.FC = () => {
       fechaInicio: new Date().toISOString().split('T')[0],
       fechaFin: '',
       estado: 'Activa',
-      frecuenciaVisitas: '',
+      frecuenciaVisitas: 1,
       prioridad: 'Media',
       observaciones: ''
     });
@@ -335,7 +340,7 @@ const RelationDynamicEntityPage: React.FC = () => {
       fechaInicio: relacion.fechaInicio.split('T')[0],
       fechaFin: relacion.fechaFin ? relacion.fechaFin.split('T')[0] : '',
       estado: relacion.estado,
-      frecuenciaVisitas: relacion.frecuenciaVisitas || '',
+      frecuenciaVisitas: relacion.frecuenciaVisitas || 1,
       prioridad: relacion.prioridad || 'Media',
       observaciones: relacion.observaciones || ''
     });
@@ -611,6 +616,29 @@ const RelationDynamicEntityPage: React.FC = () => {
   };
 
   const getClientDisplayName = (client: Client) => {
+    // Find the client's tipo (schema)
+    const tipoCliente = tiposCliente.find(t => t.id === client.tipoClienteId);
+
+    if (tipoCliente?.schema) {
+      try {
+        const schema = JSON.parse(tipoCliente.schema);
+        const tipoEntidad = schema.staticFieldsConfig?.tipoEntidad || 'Persona';
+
+        if (tipoEntidad === 'Persona') {
+          // For Persona: concatenate nombre + apellido
+          const nombre = client.nombre || '';
+          const apellido = client.apellido || '';
+          return `${nombre} ${apellido}`.trim() || client.razonSocial || client.codigoCliente;
+        } else {
+          // For Entidad (institution): use razonSocial
+          return client.razonSocial || `${client.nombre || ''} ${client.apellido || ''}`.trim() || client.codigoCliente;
+        }
+      } catch {
+        // Fallback if schema parsing fails
+      }
+    }
+
+    // Fallback logic if no schema or error
     if (client.nombre && client.apellido) {
       return `${client.nombre} ${client.apellido}`;
     }
@@ -657,14 +685,102 @@ const RelationDynamicEntityPage: React.FC = () => {
     return getClientTypeLabel(allowedTypes, fallbacks[fieldName]);
   };
 
+  const handleFiltersChange = (filters: ActiveFilter[]) => {
+    setActiveFilters(filters);
+  };
+
+  const applyFilters = (relacion: Relation): boolean => {
+    // Si no hay filtros activos, mostrar todo
+    if (activeFilters.length === 0) return true;
+
+    // Aplicar cada filtro
+    for (const filter of activeFilters) {
+      let fieldValue: any;
+      let matches = false;
+
+      // Obtener el valor del campo
+      if (filter.field.startsWith('dynamic.')) {
+        const dynamicField = filter.field.replace('dynamic.', '');
+        fieldValue = relacion.datosDinamicos?.[dynamicField];
+      } else {
+        // Campo estático
+        fieldValue = (relacion as any)[filter.field];
+      }
+
+      // Aplicar operador
+      switch (filter.operator) {
+        case 'eq':
+          matches = fieldValue == filter.value;
+          break;
+        case 'neq':
+          matches = fieldValue != filter.value;
+          break;
+        case 'contains':
+          matches = fieldValue?.toString().toLowerCase().includes(filter.value?.toString().toLowerCase());
+          break;
+        case 'startsWith':
+          matches = fieldValue?.toString().toLowerCase().startsWith(filter.value?.toString().toLowerCase());
+          break;
+        case 'endsWith':
+          matches = fieldValue?.toString().toLowerCase().endsWith(filter.value?.toString().toLowerCase());
+          break;
+        case 'gt':
+          matches = fieldValue > filter.value;
+          break;
+        case 'gte':
+          matches = fieldValue >= filter.value;
+          break;
+        case 'lt':
+          matches = fieldValue < filter.value;
+          break;
+        case 'lte':
+          matches = fieldValue <= filter.value;
+          break;
+        case 'between':
+          matches = fieldValue >= filter.value && fieldValue <= filter.value2;
+          break;
+        case 'in':
+          matches = Array.isArray(filter.value) && filter.value.includes(fieldValue);
+          break;
+        case 'notIn':
+          matches = Array.isArray(filter.value) && !filter.value.includes(fieldValue);
+          break;
+        case 'isNull':
+          matches = fieldValue == null || fieldValue === '';
+          break;
+        case 'isNotNull':
+          matches = fieldValue != null && fieldValue !== '';
+          break;
+        default:
+          matches = true;
+      }
+
+      // Si es el primer filtro o el operador lógico es AND, aplicar AND
+      if (filter.logicalOperator === 'AND' || !filter.logicalOperator) {
+        if (!matches) return false;
+      } else {
+        // Si el operador lógico es OR, aplicar OR (TODO: mejorar lógica para grupos)
+        if (matches) return true;
+      }
+    }
+
+    return true;
+  };
+
   const filteredRelaciones = relaciones.filter(rel => {
+    // Aplicar búsqueda de texto
     const searchLower = searchQuery.toLowerCase();
-    return (
+    const matchesSearch = !searchQuery || (
       rel.codigoRelacion.toLowerCase().includes(searchLower) ||
       rel.agenteNombre?.toLowerCase().includes(searchLower) ||
       rel.clientePrincipalNombre?.toLowerCase().includes(searchLower) ||
       rel.estado.toLowerCase().includes(searchLower)
     );
+
+    // Aplicar filtros avanzados
+    const matchesFilters = applyFilters(rel);
+
+    return matchesSearch && matchesFilters;
   });
 
   if (loading) {
@@ -692,6 +808,17 @@ const RelationDynamicEntityPage: React.FC = () => {
 
   return (
     <div className="dynamic-entity-page" style={{ paddingTop: '2rem' }}>
+      {/* Panel de Filtros */}
+      {showFilters && esquema && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <EntityFilterBuilder
+            esquema={esquema}
+            onFiltersChange={handleFiltersChange}
+            initialFilters={activeFilters}
+          />
+        </div>
+      )}
+
       {viewMode === 'grid' ? (
         <div className="entities-grid">
           {filteredRelaciones.map((relacion) => (
@@ -1196,18 +1323,19 @@ const RelationDynamicEntityPage: React.FC = () => {
                   </div>
 
                   <div className="form-field">
-                    <label>Frecuencia de Visitas</label>
-                    <select
+                    <label>Frecuencia de Visitas al Mes *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="30"
                       value={formData.frecuenciaVisitas}
-                      onChange={(e) => handleStaticFieldChange('frecuenciaVisitas', e.target.value)}
-                    >
-                      <option value="">Seleccione una frecuencia</option>
-                      <option value="Semanal">Semanal</option>
-                      <option value="Quincenal">Quincenal</option>
-                      <option value="Mensual">Mensual</option>
-                      <option value="Bimensual">Bimensual</option>
-                      <option value="Trimestral">Trimestral</option>
-                    </select>
+                      onChange={(e) => handleStaticFieldChange('frecuenciaVisitas', parseInt(e.target.value) || 1)}
+                      placeholder="Ej: 1, 2, 4..."
+                      required
+                    />
+                    <small style={{ fontSize: '12px', color: '#666', marginTop: '4px', display: 'block' }}>
+                      Cantidad de veces que la cartera debe ser visitada al mes
+                    </small>
                   </div>
 
                   <div className="form-field">

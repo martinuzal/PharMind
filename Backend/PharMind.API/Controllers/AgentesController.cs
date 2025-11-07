@@ -40,6 +40,7 @@ public class AgentesController : ControllerBase
                 .Include(a => a.Distrito)
                 .Include(a => a.LineaNegocio)
                 .Include(a => a.Manager)
+                .Include(a => a.Timeline)
                 .Where(a => a.Status == false); // Excluir eliminados
 
             // Filtrar por tipo de agente si se especifica
@@ -456,6 +457,8 @@ public class AgentesController : ControllerBase
             LineaNegocioNombre = agente.LineaNegocio?.Nombre,
             ManagerId = agente.ManagerId,
             ManagerNombre = agente.Manager?.Nombre,
+            TimelineId = agente.TimelineId,
+            TimelineNombre = agente.Timeline?.Nombre,
             FechaIngreso = agente.FechaIngreso,
             Activo = agente.Activo,
             Observaciones = agente.Observaciones,

@@ -61,6 +61,10 @@ public class PharMindDbContext : DbContext
     // Process Logs
     public DbSet<ProcessLog> ProcessLogs { get; set; }
 
+    // Timelines y Períodos
+    public DbSet<Timeline> Timelines { get; set; }
+    public DbSet<Period> Periods { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -87,7 +91,7 @@ public class PharMindDbContext : DbContext
 
         modelBuilder.Entity<UsuarioRol>()
             .HasOne(ur => ur.Rol)
-            .WithMany(r => r.UsuarioRoles)
+            .WithMany()
             .HasForeignKey(ur => ur.RolId)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -308,11 +312,12 @@ public class PharMindDbContext : DbContext
             new Modulo
             {
                 Id = moduloUsuariosId,
+                Codigo = "USUARIOS",
                 Nombre = "Usuarios",
                 Descripcion = "Gestión de usuarios del sistema",
                 Icono = "people",
                 Ruta = "/usuarios",
-                Orden = 1,
+                OrdenMenu = 1,
                 Activo = true,
                 FechaCreacion = seedDate,
                 Status = false
@@ -320,11 +325,12 @@ public class PharMindDbContext : DbContext
             new Modulo
             {
                 Id = moduloRolesId,
+                Codigo = "ROLES",
                 Nombre = "Roles",
                 Descripcion = "Gestión de roles y permisos",
                 Icono = "admin_panel_settings",
                 Ruta = "/roles",
-                Orden = 2,
+                OrdenMenu = 2,
                 Activo = true,
                 FechaCreacion = seedDate,
                 Status = false
@@ -332,11 +338,12 @@ public class PharMindDbContext : DbContext
             new Modulo
             {
                 Id = moduloEmpresasId,
+                Codigo = "EMPRESAS",
                 Nombre = "Empresas",
                 Descripcion = "Gestión de empresas",
                 Icono = "business",
                 Ruta = "/empresas",
-                Orden = 3,
+                OrdenMenu = 3,
                 Activo = true,
                 FechaCreacion = seedDate,
                 Status = false
@@ -350,14 +357,10 @@ public class PharMindDbContext : DbContext
                 Id = "ROLMOD-ADMIN-USR-001",
                 RolId = rolAdminId,
                 ModuloId = moduloUsuariosId,
-                NivelAcceso = "Administracion",
                 PuedeVer = true,
                 PuedeCrear = true,
                 PuedeEditar = true,
                 PuedeEliminar = true,
-                PuedeExportar = true,
-                PuedeImportar = true,
-                PuedeAprobar = true,
                 FechaCreacion = seedDate,
                 Status = false
             },
@@ -366,14 +369,10 @@ public class PharMindDbContext : DbContext
                 Id = "ROLMOD-ADMIN-ROL-001",
                 RolId = rolAdminId,
                 ModuloId = moduloRolesId,
-                NivelAcceso = "Administracion",
                 PuedeVer = true,
                 PuedeCrear = true,
                 PuedeEditar = true,
                 PuedeEliminar = true,
-                PuedeExportar = true,
-                PuedeImportar = true,
-                PuedeAprobar = true,
                 FechaCreacion = seedDate,
                 Status = false
             },
@@ -382,14 +381,10 @@ public class PharMindDbContext : DbContext
                 Id = "ROLMOD-ADMIN-EMP-001",
                 RolId = rolAdminId,
                 ModuloId = moduloEmpresasId,
-                NivelAcceso = "Administracion",
                 PuedeVer = true,
                 PuedeCrear = true,
                 PuedeEditar = true,
                 PuedeEliminar = true,
-                PuedeExportar = true,
-                PuedeImportar = true,
-                PuedeAprobar = true,
                 FechaCreacion = seedDate,
                 Status = false
             }

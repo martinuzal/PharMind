@@ -11,6 +11,11 @@ public class Rol : AuditableEntity
     public string EmpresaId { get; set; } = string.Empty;
 
     [Required]
+    [Column("Codigo")]
+    [MaxLength(50)]
+    public string Codigo { get; set; } = string.Empty;
+
+    [Required]
     [Column("Nombre")]
     [MaxLength(100)]
     public string Nombre { get; set; } = string.Empty;
@@ -29,6 +34,6 @@ public class Rol : AuditableEntity
     [ForeignKey("EmpresaId")]
     public virtual Empresa? Empresa { get; set; }
 
-    public virtual ICollection<UsuarioRol> UsuarioRoles { get; set; } = new List<UsuarioRol>();
+    public virtual ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
     public virtual ICollection<RolModulo> RolModulos { get; set; } = new List<RolModulo>();
 }

@@ -33,6 +33,7 @@ public class InteraccionesController : ControllerBase
         try
         {
             var query = _context.Interacciones
+                .AsNoTracking()
                 .Include(i => i.TipoInteraccionEsquema)
                 .Include(i => i.DatosExtendidos)
                 .Include(i => i.Relacion)
@@ -80,6 +81,7 @@ public class InteraccionesController : ControllerBase
         try
         {
             var interaccion = await _context.Interacciones
+                .AsNoTracking()
                 .Include(i => i.TipoInteraccionEsquema)
                 .Include(i => i.DatosExtendidos)
                 .Include(i => i.Relacion)
@@ -215,6 +217,7 @@ public class InteraccionesController : ControllerBase
         try
         {
             var interaccion = await _context.Interacciones
+                .AsNoTracking()
                 .Include(i => i.TipoInteraccionEsquema)
                 .Include(i => i.DatosExtendidos)
                 .Include(i => i.Relacion)

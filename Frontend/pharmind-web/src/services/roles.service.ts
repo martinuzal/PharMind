@@ -1,5 +1,17 @@
 import api from './api';
 
+export interface PermisoModulo {
+  moduloId: string;
+  moduloNombre?: string;
+  puedeVer: boolean;
+  puedeCrear: boolean;
+  puedeEditar: boolean;
+  puedeEliminar: boolean;
+  puedeExportar?: boolean;
+  puedeImportar?: boolean;
+  puedeAprobar?: boolean;
+}
+
 export interface Rol {
   id: string;
   empresaId: string;
@@ -8,21 +20,21 @@ export interface Rol {
   esSistema: boolean;
   activo: boolean;
   fechaCreacion: Date;
-  permisos?: string[];
+  permisos: PermisoModulo[];
 }
 
 export interface CreateRolDto {
   empresaId: string;
   nombre: string;
   descripcion?: string;
-  moduloIds?: string[];
+  permisos: PermisoModulo[];
 }
 
 export interface UpdateRolDto {
-  nombre?: string;
+  nombre: string;
   descripcion?: string;
-  activo?: boolean;
-  moduloIds?: string[];
+  activo: boolean;
+  permisos: PermisoModulo[];
 }
 
 const rolesService = {

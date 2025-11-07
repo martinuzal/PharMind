@@ -7,10 +7,14 @@ interface PageContextType {
   toolbarContent: ReactNode | null;
   toolbarCenterContent: ReactNode | null;
   toolbarRightContent: ReactNode | null;
+  showFiltersButton: boolean;
+  activeFiltersCount: number;
+  onFiltersClick?: () => void;
   setPageInfo: (title: string, icon: string, color?: string) => void;
   setToolbarContent: (content: ReactNode | null) => void;
   setToolbarCenterContent: (content: ReactNode | null) => void;
   setToolbarRightContent: (content: ReactNode | null) => void;
+  setFiltersButton: (show: boolean, count: number, onClick?: () => void) => void;
   clearToolbarContent: () => void;
 }
 
@@ -23,6 +27,9 @@ export const PageProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [toolbarContent, setToolbarContentState] = useState<ReactNode | null>(null);
   const [toolbarCenterContent, setToolbarCenterContentState] = useState<ReactNode | null>(null);
   const [toolbarRightContent, setToolbarRightContentState] = useState<ReactNode | null>(null);
+  const [showFiltersButton, setShowFiltersButton] = useState(false);
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+  const [onFiltersClick, setOnFiltersClick] = useState<(() => void) | undefined>(undefined);
 
   const setPageInfo = useCallback((title: string, icon: string, color?: string) => {
     setPageTitle(title);
@@ -42,6 +49,12 @@ export const PageProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setToolbarRightContentState(content);
   }, []);
 
+  const setFiltersButton = useCallback((show: boolean, count: number, onClick?: () => void) => {
+    setShowFiltersButton(show);
+    setActiveFiltersCount(count);
+    setOnFiltersClick(() => onClick);
+  }, []);
+
   const clearToolbarContent = useCallback(() => {
     setToolbarContentState(null);
     setToolbarCenterContentState(null);
@@ -49,6 +62,9 @@ export const PageProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPageTitle('');
     setPageIcon('');
     setPageColor(undefined);
+    setShowFiltersButton(false);
+    setActiveFiltersCount(0);
+    setOnFiltersClick(undefined);
   }, []);
 
   const contextValue = useMemo(
@@ -59,10 +75,14 @@ export const PageProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toolbarContent,
       toolbarCenterContent,
       toolbarRightContent,
+      showFiltersButton,
+      activeFiltersCount,
+      onFiltersClick,
       setPageInfo,
       setToolbarContent,
       setToolbarCenterContent,
       setToolbarRightContent,
+      setFiltersButton,
       clearToolbarContent,
     }),
     [
@@ -72,10 +92,14 @@ export const PageProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toolbarContent,
       toolbarCenterContent,
       toolbarRightContent,
+      showFiltersButton,
+      activeFiltersCount,
+      onFiltersClick,
       setPageInfo,
       setToolbarContent,
       setToolbarCenterContent,
       setToolbarRightContent,
+      setFiltersButton,
       clearToolbarContent,
     ]
   );

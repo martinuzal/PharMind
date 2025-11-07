@@ -18,6 +18,7 @@ builder.Services.AddDbContext<PharMindDbContext>(options =>
 
 // Services
 builder.Services.AddScoped<DynamicTableService>();
+builder.Services.AddScoped<EntityFilterService>();
 builder.Services.AddSingleton<IChunkedUploadService, ChunkedUploadService>();
 builder.Services.AddScoped<IAuditoriaPrescripcionesService, AuditoriaPrescripcionesService>();
 builder.Services.AddScoped<IProcessLogService, ProcessLogService>();

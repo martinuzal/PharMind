@@ -2,32 +2,22 @@ import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { usePage } from '../../contexts/PageContext';
 import rolesService from '../../services/roles.service';
-import type { Rol, CreateRolDto, UpdateRolDto } from '../../services/roles.service';
-import modulosService from '../../services/modulos.service';
-import type { Modulo } from '../../services/modulos.service';
+import type { Rol } from '../../services/roles.service';
 import empresasService from '../../services/empresas.service';
 import type { Empresa } from '../../services/empresas.service';
+import RolFormModal, { type RolFormData } from '../../components/modals/RolFormModal';
 import '../usuarios/UsuariosPage.css';
 
 const RolesPage = () => {
   const { addNotification } = useNotifications();
   const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [roles, setRoles] = useState<Rol[]>([]);
-  const [modulos, setModulos] = useState<Modulo[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [selectedRol, setSelectedRol] = useState<Rol | null>(null);
-
-  // Form state
-  const [formData, setFormData] = useState({
-    nombre: '',
-    descripcion: '',
-    empresaId: '',
-    moduloIds: [] as string[]
-  });
+  const [selectedRol, setSelectedRol] = useState<RolFormData | null>(null);
 
   useEffect(() => {
     loadData();
@@ -99,13 +89,11 @@ const RolesPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [rolesData, modulosData, empresasData] = await Promise.all([
+      const [rolesData, empresasData] = await Promise.all([
         rolesService.getAll(),
-        modulosService.getAll(),
         empresasService.getAll()
       ]);
       setRoles(rolesData);
-      setModulos(modulosData);
       setEmpresas(empresasData);
     } catch (error: any) {
       addNotification({
@@ -119,40 +107,34 @@ const RolesPage = () => {
     }
   };
 
-  const handleOpenModal = (mode: 'create' | 'edit', rol?: Rol) => {
+  const handleOpenModal = async (mode: 'create' | 'edit', rol?: Rol) => {
     setModalMode(mode);
     if (mode === 'edit' && rol) {
-      setSelectedRol(rol);
-      setFormData({
-        nombre: rol.nombre,
-        descripcion: rol.descripcion || '',
-        empresaId: rol.empresaId,
-        moduloIds: [] // Se cargarán los módulos asignados
-      });
-      // Cargar módulos asignados al rol
-      loadRolModulos(rol.id);
+      try {
+        // Cargar el rol completo con permisos desde el backend
+        const rolCompleto = await rolesService.getById(rol.id);
+        setSelectedRol({
+          id: rolCompleto.id,
+          nombre: rolCompleto.nombre,
+          descripcion: rolCompleto.descripcion || '',
+          empresaId: rolCompleto.empresaId,
+          activo: rolCompleto.activo,
+          permisos: rolCompleto.permisos || []
+        });
+      } catch (error) {
+        console.error('Error al cargar rol:', error);
+        addNotification({
+          title: 'Error',
+          message: 'No se pudo cargar el rol',
+          type: 'error',
+          category: 'roles'
+        });
+        return;
+      }
     } else {
       setSelectedRol(null);
-      setFormData({
-        nombre: '',
-        descripcion: '',
-        empresaId: '',
-        moduloIds: []
-      });
     }
     setShowModal(true);
-  };
-
-  const loadRolModulos = async (rolId: string) => {
-    try {
-      const modulosAsignados = await rolesService.getModulos(rolId);
-      setFormData(prev => ({
-        ...prev,
-        moduloIds: modulosAsignados.map(m => m.id)
-      }));
-    } catch (error: any) {
-      console.error('Error al cargar módulos del rol:', error);
-    }
   };
 
   const handleCloseModal = () => {
@@ -160,30 +142,28 @@ const RolesPage = () => {
     setSelectedRol(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (data: RolFormData) => {
     try {
       if (modalMode === 'create') {
-        const createDto: CreateRolDto = {
-          empresaId: formData.empresaId,
-          nombre: formData.nombre,
-          descripcion: formData.descripcion || undefined,
-          moduloIds: formData.moduloIds
-        };
-        await rolesService.create(createDto);
+        await rolesService.create({
+          empresaId: data.empresaId,
+          nombre: data.nombre,
+          descripcion: data.descripcion || undefined,
+          permisos: data.permisos
+        });
         addNotification({
           title: 'Rol creado',
           message: 'El rol se creó correctamente',
           type: 'success',
           category: 'roles'
         });
-      } else if (selectedRol) {
-        const updateDto: UpdateRolDto = {
-          nombre: formData.nombre,
-          descripcion: formData.descripcion || undefined,
-          moduloIds: formData.moduloIds
-        };
-        await rolesService.update(selectedRol.id, updateDto);
+      } else if (data.id) {
+        await rolesService.update(data.id, {
+          nombre: data.nombre,
+          descripcion: data.descripcion || undefined,
+          activo: data.activo,
+          permisos: data.permisos
+        });
         addNotification({
           title: 'Rol actualizado',
           message: 'El rol se actualizó correctamente',
@@ -191,7 +171,6 @@ const RolesPage = () => {
           category: 'roles'
         });
       }
-      handleCloseModal();
       loadData();
     } catch (error: any) {
       addNotification({
@@ -200,6 +179,7 @@ const RolesPage = () => {
         type: 'error',
         category: 'roles'
       });
+      throw error;
     }
   };
 
@@ -334,99 +314,13 @@ const RolesPage = () => {
       </div>
 
       {/* Modal de crear/editar rol */}
-      {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{modalMode === 'create' ? 'Nuevo Rol' : 'Editar Rol'}</h2>
-              <button className="modal-close" onClick={handleCloseModal}>
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Nombre *</label>
-                    <input
-                      type="text"
-                      value={formData.nombre}
-                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Descripción</label>
-                    <textarea
-                      value={formData.descripcion}
-                      onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                      placeholder="Descripción del rol..."
-                    />
-                  </div>
-                </div>
-
-                {modalMode === 'create' && (
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Empresa *</label>
-                      <select
-                        value={formData.empresaId}
-                        onChange={(e) => setFormData({ ...formData, empresaId: e.target.value })}
-                        required
-                      >
-                        <option value="">Seleccione una empresa</option>
-                        {empresas.map((empresa) => (
-                          <option key={empresa.id} value={empresa.id}>
-                            {empresa.nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Módulos</label>
-                    <div className="checkbox-group">
-                      {modulos.map((modulo) => (
-                        <label key={modulo.id} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={formData.moduloIds.includes(modulo.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFormData({ ...formData, moduloIds: [...formData.moduloIds, modulo.id] });
-                              } else {
-                                setFormData({ ...formData, moduloIds: formData.moduloIds.filter(id => id !== modulo.id) });
-                              }
-                            }}
-                          />
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            {modulo.icono && <span className="material-icons" style={{ fontSize: '1rem' }}>{modulo.icono}</span>}
-                            {modulo.nombre}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary">
-                  {modalMode === 'create' ? 'Crear' : 'Guardar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <RolFormModal
+        isOpen={showModal}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}
+        initialData={selectedRol}
+        mode={modalMode}
+      />
     </div>
   );
 };

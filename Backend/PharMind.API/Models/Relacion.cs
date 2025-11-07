@@ -52,7 +52,7 @@ public class Relacion : AuditableEntity
 
     [Column("FrecuenciaVisitas")]
     [MaxLength(50)]
-    public string? FrecuenciaVisitas { get; set; } // 'Semanal', 'Quincenal', 'Mensual'
+    public string? FrecuenciaVisitas { get; set; } // Frecuencia: 'Semanal', 'Quincenal', 'Mensual', 'Bimensual', 'Trimestral'
 
     [Column("Prioridad")]
     [MaxLength(50)]
@@ -61,6 +61,28 @@ public class Relacion : AuditableEntity
     [Column("Observaciones")]
     [MaxLength(2000)]
     public string? Observaciones { get; set; }
+
+    // Campos de segmentación
+    [Column("EspecialidadId")]
+    public Guid? EspecialidadId { get; set; }
+
+    [Column("CategoriaId")]
+    public Guid? CategoriaId { get; set; }
+
+    [Column("Segment1Id")]
+    public Guid? Segment1Id { get; set; }
+
+    [Column("Segment2Id")]
+    public Guid? Segment2Id { get; set; }
+
+    [Column("Segment3Id")]
+    public Guid? Segment3Id { get; set; }
+
+    [Column("Segment4Id")]
+    public Guid? Segment4Id { get; set; }
+
+    [Column("Segment5Id")]
+    public Guid? Segment5Id { get; set; }
 
     // Navigation properties
     [ForeignKey("TipoRelacionId")]

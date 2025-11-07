@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { usePreferences } from '../../contexts/PreferencesContext';
 import { useAuth } from '../../contexts/AuthContext';
 import Logo from '../common/Logo';
+import modulosService, { type ModuloConPermisos } from '../../services/modulos.service';
 import './Sidebar.css';
 
 interface MenuItem {
@@ -41,6 +42,8 @@ const Sidebar = () => {
   const [atlasExpanded, setAtlasExpanded] = useState(false);
   const [auditoriasExpanded, setAuditoriasExpanded] = useState(false);
   const [adminExpanded, setAdminExpanded] = useState(false);
+  const [modulosPermitidos, setModulosPermitidos] = useState<ModuloConPermisos[]>([]);
+  const [loadingModulos, setLoadingModulos] = useState(true);
 
   const menuItems: MenuItem[] = [
     {
@@ -122,6 +125,12 @@ const Sidebar = () => {
       path: '/auditoria/importaciones'
     },
     {
+      id: 'medicos-auditoria',
+      label: 'Médicos de Auditoría',
+      icon: 'medical_services',
+      path: '/auditoria/medicos'
+    },
+    {
       id: 'portfolio-beb',
       label: 'Portfolio BEB',
       icon: 'folder_special',
@@ -171,10 +180,28 @@ const Sidebar = () => {
       label: 'Tablas Maestras',
       icon: 'table_view',
       path: '/admin/tablas-maestras'
+    },
+    {
+      id: 'periodos',
+      label: 'Períodos',
+      icon: 'schedule',
+      path: '/admin/periodos'
     }
   ];
 
-  // Fetch entity schemas
+  // Helper function to check if a module code is allowed
+  const isModuloPermitido = (codigo: string): boolean => {
+    const findModulo = (modulos: ModuloConPermisos[], cod: string): boolean => {
+      for (const modulo of modulos) {
+        if (modulo.codigo === cod && modulo.puedeVer) return true;
+        if (modulo.subModulos.length > 0 && findModulo(modulo.subModulos, cod)) return true;
+      }
+      return false;
+    };
+    return findModulo(modulosPermitidos, codigo);
+  };
+
+  // Fetch entity schemas and user modules
   useEffect(() => {
     const fetchEsquemas = async () => {
       try {
@@ -210,8 +237,22 @@ const Sidebar = () => {
       }
     };
 
+    const fetchModulosPermitidos = async () => {
+      if (!user?.id) return;
+      try {
+        setLoadingModulos(true);
+        const modulos = await modulosService.getModulosUsuario(user.id);
+        setModulosPermitidos(modulos);
+      } catch (error) {
+        console.error('Error fetching módulos:', error);
+      } finally {
+        setLoadingModulos(false);
+      }
+    };
+
     fetchEsquemas();
-  }, []);
+    fetchModulosPermitidos();
+  }, [user?.id]);
 
   const handleLogout = () => {
     logout();
@@ -246,8 +287,15 @@ const Sidebar = () => {
 
       {/* Menú */}
       <nav className="sidebar-menu">
+        {/* Loading state */}
+        {loadingModulos && (
+          <div className="sidebar-loading">
+            {!sidebarCollapsed && <span>Cargando permisos...</span>}
+          </div>
+        )}
+
         {/* Dashboard */}
-        {menuItems.map((item) => {
+        {!loadingModulos && menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <Link
@@ -263,141 +311,167 @@ const Sidebar = () => {
         })}
 
         {/* Mi Cartera */}
-        <Link
-          to="/mi-cartera"
-          className={`sidebar-menu-item sidebar-menu-item-highlight ${location.pathname === '/mi-cartera' ? 'active' : ''}`}
-          title={sidebarCollapsed ? 'MI CARTERA' : undefined}
-        >
-          <span className="material-icons">folder_shared</span>
-          {!sidebarCollapsed && <span>MI CARTERA</span>}
-        </Link>
+        {!loadingModulos && isModuloPermitido('CRM') && (
+          <Link
+            to="/mi-cartera"
+            className={`sidebar-menu-item sidebar-menu-item-highlight ${location.pathname === '/mi-cartera' ? 'active' : ''}`}
+            title={sidebarCollapsed ? 'MI CARTERA' : undefined}
+          >
+            <span className="material-icons">folder_shared</span>
+            {!sidebarCollapsed && <span>MI CARTERA</span>}
+          </Link>
+        )}
 
         {/* Auditorías Section */}
-        <div
-          className="sidebar-section-header"
-          onClick={() => setAuditoriasExpanded(!auditoriasExpanded)}
-        >
-          <span className="material-icons">assessment</span>
-          {!sidebarCollapsed && <span>AUDITORÍAS</span>}
-          {!sidebarCollapsed && (
-            <span className="material-icons sidebar-expand-icon">
-              {auditoriasExpanded ? 'expand_less' : 'expand_more'}
-            </span>
-          )}
-        </div>
-        {auditoriasExpanded && !sidebarCollapsed && (
-          <div className="sidebar-subsection">
-            {auditoriasMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.id}
-                  to={item.path}
-                  className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
-                >
-                  <span className="material-icons">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+        {!loadingModulos && isModuloPermitido('AUDITORIA') && (
+          <>
+            <div
+              className="sidebar-section-header"
+              onClick={() => setAuditoriasExpanded(!auditoriasExpanded)}
+            >
+              <span className="material-icons">assessment</span>
+              {!sidebarCollapsed && <span>AUDITORÍAS</span>}
+              {!sidebarCollapsed && (
+                <span className="material-icons sidebar-expand-icon">
+                  {auditoriasExpanded ? 'expand_less' : 'expand_more'}
+                </span>
+              )}
+            </div>
+            {auditoriasExpanded && !sidebarCollapsed && (
+              <div className="sidebar-subsection">
+                {auditoriasMenuItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  // Check permission for Importaciones submenu
+                  if (item.id === 'importaciones' && !isModuloPermitido('AUDITORIA_IMPORTACION')) {
+                    return null;
+                  }
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
+                    >
+                      <span className="material-icons">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
         {/* Analytics Section */}
-        <div
-          className="sidebar-section-header"
-          onClick={() => setAnalyticsExpanded(!analyticsExpanded)}
-        >
-          <span className="material-icons">bar_chart</span>
-          {!sidebarCollapsed && <span>Analytics</span>}
-          {!sidebarCollapsed && (
-            <span className="material-icons sidebar-expand-icon">
-              {analyticsExpanded ? 'expand_less' : 'expand_more'}
-            </span>
-          )}
-        </div>
-        {analyticsExpanded && !sidebarCollapsed && (
-          <div className="sidebar-subsection">
-            {analyticsMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.id}
-                  to={item.path}
-                  className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
-                >
-                  <span className="material-icons">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+        {!loadingModulos && isModuloPermitido('ANALYTICS') && (
+          <>
+            <div
+              className="sidebar-section-header"
+              onClick={() => setAnalyticsExpanded(!analyticsExpanded)}
+            >
+              <span className="material-icons">bar_chart</span>
+              {!sidebarCollapsed && <span>Analytics</span>}
+              {!sidebarCollapsed && (
+                <span className="material-icons sidebar-expand-icon">
+                  {analyticsExpanded ? 'expand_less' : 'expand_more'}
+                </span>
+              )}
+            </div>
+            {analyticsExpanded && !sidebarCollapsed && (
+              <div className="sidebar-subsection">
+                {analyticsMenuItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  // Check permission for Analytics submenus
+                  if (item.id === 'actividad-visitas' && !isModuloPermitido('ANALYTICS_VISITAS')) {
+                    return null;
+                  }
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
+                    >
+                      <span className="material-icons">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
-        {/* Gestión Section */}
-        <div
-          className="sidebar-section-header"
-          onClick={() => setGestionExpanded(!gestionExpanded)}
-        >
-          <span className="material-icons">business_center</span>
-          {!sidebarCollapsed && <span>Gestión</span>}
-          {!sidebarCollapsed && (
-            <span className="material-icons sidebar-expand-icon">
-              {gestionExpanded ? 'expand_less' : 'expand_more'}
-            </span>
-          )}
-        </div>
-        {gestionExpanded && !sidebarCollapsed && (
-          <div className="sidebar-subsection">
-            {gestionMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.id}
-                  to={item.path}
-                  className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
-                >
-                  <span className="material-icons">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+        {/* Gestión Section - No permission check as per requirements */}
+        {!loadingModulos && (
+          <>
+            <div
+              className="sidebar-section-header"
+              onClick={() => setGestionExpanded(!gestionExpanded)}
+            >
+              <span className="material-icons">business_center</span>
+              {!sidebarCollapsed && <span>Gestión</span>}
+              {!sidebarCollapsed && (
+                <span className="material-icons sidebar-expand-icon">
+                  {gestionExpanded ? 'expand_less' : 'expand_more'}
+                </span>
+              )}
+            </div>
+            {gestionExpanded && !sidebarCollapsed && (
+              <div className="sidebar-subsection">
+                {gestionMenuItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
+                    >
+                      <span className="material-icons">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
-        {/* Atlas Section */}
-        <div
-          className="sidebar-section-header"
-          onClick={() => setAtlasExpanded(!atlasExpanded)}
-        >
-          <span className="material-icons">travel_explore</span>
-          {!sidebarCollapsed && <span>Atlas</span>}
-          {!sidebarCollapsed && (
-            <span className="material-icons sidebar-expand-icon">
-              {atlasExpanded ? 'expand_less' : 'expand_more'}
-            </span>
-          )}
-        </div>
-        {atlasExpanded && !sidebarCollapsed && (
-          <div className="sidebar-subsection">
-            {atlasMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.id}
-                  to={item.path}
-                  className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
-                >
-                  <span className="material-icons">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+        {/* Atlas Section - No permission check as per requirements */}
+        {!loadingModulos && (
+          <>
+            <div
+              className="sidebar-section-header"
+              onClick={() => setAtlasExpanded(!atlasExpanded)}
+            >
+              <span className="material-icons">travel_explore</span>
+              {!sidebarCollapsed && <span>Atlas</span>}
+              {!sidebarCollapsed && (
+                <span className="material-icons sidebar-expand-icon">
+                  {atlasExpanded ? 'expand_less' : 'expand_more'}
+                </span>
+              )}
+            </div>
+            {atlasExpanded && !sidebarCollapsed && (
+              <div className="sidebar-subsection">
+                {atlasMenuItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
+                    >
+                      <span className="material-icons">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
         {/* Clientes Section */}
-        {clientesEsquemas.length > 0 && (
+        {!loadingModulos && isModuloPermitido('CRM_CLIENTES') && clientesEsquemas.length > 0 && (
           <>
             <div
               className="sidebar-section-header"
@@ -431,77 +505,81 @@ const Sidebar = () => {
         )}
 
         {/* Agentes Section */}
-        <div
-          className="sidebar-section-header"
-          onClick={() => setAgentesExpanded(!agentesExpanded)}
-        >
-          <span className="material-icons">badge</span>
-          {!sidebarCollapsed && <span>Agentes</span>}
-          {!sidebarCollapsed && (
-            <span className="material-icons sidebar-expand-icon">
-              {agentesExpanded ? 'expand_less' : 'expand_more'}
-            </span>
-          )}
-        </div>
-        {agentesExpanded && !sidebarCollapsed && (
-          <div className="sidebar-subsection">
+        {!loadingModulos && isModuloPermitido('CRM_AGENTES') && (
+          <>
+            <div
+              className="sidebar-section-header"
+              onClick={() => setAgentesExpanded(!agentesExpanded)}
+            >
+              <span className="material-icons">badge</span>
+              {!sidebarCollapsed && <span>Agentes</span>}
+              {!sidebarCollapsed && (
+                <span className="material-icons sidebar-expand-icon">
+                  {agentesExpanded ? 'expand_less' : 'expand_more'}
+                </span>
+              )}
+            </div>
+            {agentesExpanded && !sidebarCollapsed && (
+              <div className="sidebar-subsection">
 
-            {/* Módulos fijos de gestión */}
-            <Link
-              to="/gestion/regiones"
-              className={`sidebar-menu-item sidebar-submenu-item ${
-                location.pathname === '/gestion/regiones' ? 'active' : ''
-              }`}
-            >
-              <span className="material-icons">public</span>
-              <span>Regiones</span>
-            </Link>
-            <Link
-              to="/gestion/distritos"
-              className={`sidebar-menu-item sidebar-submenu-item ${
-                location.pathname === '/gestion/distritos' ? 'active' : ''
-              }`}
-            >
-              <span className="material-icons">location_city</span>
-              <span>Distritos</span>
-            </Link>
-            <Link
-              to="/gestion/lineas-negocio"
-              className={`sidebar-menu-item sidebar-submenu-item ${
-                location.pathname === '/gestion/lineas-negocio' ? 'active' : ''
-              }`}
-            >
-              <span className="material-icons">business_center</span>
-              <span>Líneas de Negocio</span>
-            </Link>
-            <Link
-              to="/gestion/managers"
-              className={`sidebar-menu-item sidebar-submenu-item ${
-                location.pathname === '/gestion/managers' ? 'active' : ''
-              }`}
-            >
-              <span className="material-icons">manage_accounts</span>
-              <span>Managers</span>
-            </Link>
+                {/* Módulos fijos de gestión */}
+                <Link
+                  to="/gestion/regiones"
+                  className={`sidebar-menu-item sidebar-submenu-item ${
+                    location.pathname === '/gestion/regiones' ? 'active' : ''
+                  }`}
+                >
+                  <span className="material-icons">public</span>
+                  <span>Regiones</span>
+                </Link>
+                <Link
+                  to="/gestion/distritos"
+                  className={`sidebar-menu-item sidebar-submenu-item ${
+                    location.pathname === '/gestion/distritos' ? 'active' : ''
+                  }`}
+                >
+                  <span className="material-icons">location_city</span>
+                  <span>Distritos</span>
+                </Link>
+                <Link
+                  to="/gestion/lineas-negocio"
+                  className={`sidebar-menu-item sidebar-submenu-item ${
+                    location.pathname === '/gestion/lineas-negocio' ? 'active' : ''
+                  }`}
+                >
+                  <span className="material-icons">business_center</span>
+                  <span>Líneas de Negocio</span>
+                </Link>
+                <Link
+                  to="/gestion/managers"
+                  className={`sidebar-menu-item sidebar-submenu-item ${
+                    location.pathname === '/gestion/managers' ? 'active' : ''
+                  }`}
+                >
+                  <span className="material-icons">manage_accounts</span>
+                  <span>Managers</span>
+                </Link>
 
-            {/* Entidades dinámicas de tipo Agente */}
-            {agentesEsquemas.map((esquema) => (
-              <Link
-                key={esquema.id}
-                to={`/agentes/${esquema.subTipo || esquema.id}`}
-                className={`sidebar-menu-item sidebar-submenu-item ${
-                  location.pathname === `/agentes/${esquema.subTipo || esquema.id}` ? 'active' : ''
-                }`}
-              >
-                <span className="material-icons">{esquema.icono || 'badge'}</span>
-                <span>{esquema.nombre}</span>
-              </Link>
-            ))}
-          </div>
+                {/* Entidades dinámicas de tipo Agente */}
+                {agentesEsquemas.map((esquema) => (
+                  <Link
+                    key={esquema.id}
+                    to={`/agentes/${esquema.subTipo || esquema.id}`}
+                    className={`sidebar-menu-item sidebar-submenu-item ${
+                      location.pathname === `/agentes/${esquema.subTipo || esquema.id}` ? 'active' : ''
+                    }`}
+                  >
+                    <span className="material-icons">{esquema.icono || 'badge'}</span>
+                    <span>{esquema.nombre}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {/* Relaciones Section */}
-        {relacionesEsquemas.length > 0 && (
+        {!loadingModulos && isModuloPermitido('CRM_RELACIONES') && relacionesEsquemas.length > 0 && (
           <>
             <div
               className="sidebar-section-header"
@@ -535,7 +613,7 @@ const Sidebar = () => {
         )}
 
         {/* Interacciones Section */}
-        {interaccionesEsquemas.length > 0 && (
+        {!loadingModulos && isModuloPermitido('CRM_INTERACCIONES') && interaccionesEsquemas.length > 0 && (
           <>
             <div
               className="sidebar-section-header"
@@ -569,34 +647,48 @@ const Sidebar = () => {
         )}
 
         {/* Administración Section */}
-        <div
-          className="sidebar-section-header"
-          onClick={() => setAdminExpanded(!adminExpanded)}
-        >
-          <span className="material-icons">settings</span>
-          {!sidebarCollapsed && <span>Administración</span>}
-          {!sidebarCollapsed && (
-            <span className="material-icons sidebar-expand-icon">
-              {adminExpanded ? 'expand_less' : 'expand_more'}
-            </span>
-          )}
-        </div>
-        {adminExpanded && !sidebarCollapsed && (
-          <div className="sidebar-subsection">
-            {adminMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.id}
-                  to={item.path}
-                  className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
-                >
-                  <span className="material-icons">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+        {!loadingModulos && isModuloPermitido('CONFIG') && (
+          <>
+            <div
+              className="sidebar-section-header"
+              onClick={() => setAdminExpanded(!adminExpanded)}
+            >
+              <span className="material-icons">settings</span>
+              {!sidebarCollapsed && <span>Administración</span>}
+              {!sidebarCollapsed && (
+                <span className="material-icons sidebar-expand-icon">
+                  {adminExpanded ? 'expand_less' : 'expand_more'}
+                </span>
+              )}
+            </div>
+            {adminExpanded && !sidebarCollapsed && (
+              <div className="sidebar-subsection">
+                {adminMenuItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  // Check permission for specific admin submenus
+                  if (item.id === 'usuarios' && !isModuloPermitido('CONFIG_USUARIOS')) {
+                    return null;
+                  }
+                  if (item.id === 'roles' && !isModuloPermitido('CONFIG_ROLES')) {
+                    return null;
+                  }
+                  if (item.id === 'entidades' && !isModuloPermitido('CONFIG_SCHEMAS')) {
+                    return null;
+                  }
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      className={`sidebar-menu-item sidebar-submenu-item ${isActive ? 'active' : ''}`}
+                    >
+                      <span className="material-icons">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </nav>
 

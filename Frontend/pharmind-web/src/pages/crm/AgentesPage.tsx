@@ -24,6 +24,8 @@ interface Agente {
   lineaNegocioNombre?: string;
   managerId?: string;
   managerNombre?: string;
+  timelineId?: string;
+  timelineNombre?: string;
   fechaIngreso?: string;
   activo: boolean;
   observaciones?: string;
@@ -43,6 +45,7 @@ interface CreateAgenteDto {
   distritoId?: string;
   lineaNegocioId?: string;
   managerId?: string;
+  timelineId?: string;
   fechaIngreso?: Date;
   activo: boolean;
   observaciones?: string;
@@ -58,6 +61,7 @@ interface UpdateAgenteDto {
   distritoId?: string;
   lineaNegocioId?: string;
   managerId?: string;
+  timelineId?: string;
   fechaIngreso?: Date;
   activo: boolean;
   observaciones?: string;
@@ -87,6 +91,12 @@ interface Manager {
   nombre: string;
 }
 
+interface Timeline {
+  id: string;
+  nombre: string;
+  anio: number;
+}
+
 const AgentesPage = () => {
   const { addNotification } = useNotifications();
   const [items, setItems] = useState<Agente[]>([]);
@@ -104,6 +114,7 @@ const AgentesPage = () => {
   const [distritos, setDistritos] = useState<Distrito[]>([]);
   const [lineasNegocio, setLineasNegocio] = useState<LineaNegocio[]>([]);
   const [managers, setManagers] = useState<Manager[]>([]);
+  const [timelines, setTimelines] = useState<Timeline[]>([]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -128,6 +139,7 @@ const AgentesPage = () => {
     distritoId: '',
     lineaNegocioId: '',
     managerId: '',
+    timelineId: '',
     fechaIngreso: undefined,
     activo: true,
     observaciones: '',
@@ -143,6 +155,7 @@ const AgentesPage = () => {
     loadDistritos();
     loadLineasNegocio();
     loadManagers();
+    loadTimelines();
   }, []);
 
   useEffect(() => {
@@ -194,6 +207,15 @@ const AgentesPage = () => {
     }
   };
 
+  const loadTimelines = async () => {
+    try {
+      const response = await api.get('/timelines');
+      setTimelines(response.data);
+    } catch (error) {
+      console.error('Error loading timelines:', error);
+    }
+  };
+
   const loadItems = async () => {
     try {
       setLoading(true);
@@ -234,6 +256,7 @@ const AgentesPage = () => {
         distritoId: item.distritoId || '',
         lineaNegocioId: item.lineaNegocioId || '',
         managerId: item.managerId || '',
+        timelineId: item.timelineId || '',
         fechaIngreso: item.fechaIngreso ? new Date(item.fechaIngreso) : undefined,
         activo: item.activo,
         observaciones: item.observaciones || '',
@@ -257,6 +280,7 @@ const AgentesPage = () => {
         distritoId: '',
         lineaNegocioId: '',
         managerId: '',
+        timelineId: '',
         fechaIngreso: undefined,
         activo: true,
         observaciones: '',
@@ -302,6 +326,7 @@ const AgentesPage = () => {
           distritoId: formData.distritoId || undefined,
           lineaNegocioId: formData.lineaNegocioId || undefined,
           managerId: formData.managerId || undefined,
+          timelineId: formData.timelineId || undefined,
           observaciones: formData.observaciones || undefined
         };
         await api.post('/agentes', createDto);
@@ -322,6 +347,7 @@ const AgentesPage = () => {
           distritoId: formData.distritoId || undefined,
           lineaNegocioId: formData.lineaNegocioId || undefined,
           managerId: formData.managerId || undefined,
+          timelineId: formData.timelineId || undefined,
           fechaIngreso: formData.fechaIngreso,
           activo: formData.activo,
           observaciones: formData.observaciones || undefined
@@ -732,6 +758,22 @@ const AgentesPage = () => {
                         {managers.map(manager => (
                           <option key={manager.id} value={manager.id}>
                             {manager.codigo} - {manager.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Timeline</label>
+                      <select
+                        value={formData.timelineId}
+                        onChange={(e) => setFormData({ ...formData, timelineId: e.target.value })}
+                        className="form-control"
+                      >
+                        <option value="">Seleccione timeline</option>
+                        {timelines.map(timeline => (
+                          <option key={timeline.id} value={timeline.id}>
+                            {timeline.nombre} ({timeline.anio})
                           </option>
                         ))}
                       </select>

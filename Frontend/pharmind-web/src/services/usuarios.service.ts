@@ -15,6 +15,10 @@ export interface Usuario {
   proveedorSSO?: string;
   fechaCreacion: Date;
   roles: string[];
+  roleIds: string[];
+  agenteId?: string;
+  managerId?: string;
+  tipoAgenteId?: string;
 }
 
 export interface CreateUsuarioDto {
@@ -26,6 +30,9 @@ export interface CreateUsuarioDto {
   cargo?: string;
   departamento?: string;
   roleIds: string[];
+  agenteId?: string;
+  managerId?: string;
+  tipoAgenteId?: string;
 }
 
 export interface UpdateUsuarioDto {
@@ -36,6 +43,9 @@ export interface UpdateUsuarioDto {
   departamento?: string;
   activo?: boolean;
   roleIds?: string[];
+  agenteId?: string;
+  managerId?: string;
+  tipoAgenteId?: string;
 }
 
 export const usuariosService = {

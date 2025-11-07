@@ -51,6 +51,9 @@ public class Agente : AuditableEntity
     [Column("ManagerId")]
     public string? ManagerId { get; set; }
 
+    [Column("TimelineId")]
+    public Guid? TimelineId { get; set; }
+
     [Column("FechaIngreso")]
     public DateTime? FechaIngreso { get; set; }
 
@@ -80,6 +83,9 @@ public class Agente : AuditableEntity
 
     [ForeignKey("ManagerId")]
     public virtual Manager? Manager { get; set; }
+
+    [ForeignKey("TimelineId")]
+    public virtual Timeline? Timeline { get; set; }
 
     public virtual ICollection<Relacion> Relaciones { get; set; } = new List<Relacion>();
     public virtual ICollection<Interaccion> Interacciones { get; set; } = new List<Interaccion>();

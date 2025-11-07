@@ -35,9 +35,11 @@ import LocalidadesPage from './pages/atlas/LocalidadesPage';
 import CallesPage from './pages/atlas/CallesPage';
 import CodigosPostalesPage from './pages/atlas/CodigosPostalesPage';
 import ImportacionesPage from './pages/auditoria/ImportacionesPage';
+import MedicosAuditoriaPage from './pages/auditoria/MedicosAuditoriaPage';
 import PortfolioBEBPage from './pages/auditoria/PortfolioBEBPage';
 import AnalisisMercadoPage from './pages/auditoria/AnalisisMercadoPage';
 import MapaGeograficoPage from './pages/auditoria/MapaGeograficoPage';
+import TimelinesPage from './pages/admin/TimelinesPage';
 import './styles/App.css';
 import './styles/dark-mode.css';
 
@@ -150,6 +152,16 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <TablasMaestrasPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/periodos"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <TimelinesPage />
               </AppLayout>
             </ProtectedRoute>
           }
@@ -290,6 +302,16 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <ImportacionesPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/auditoria/medicos"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <MedicosAuditoriaPage />
               </AppLayout>
             </ProtectedRoute>
           }

@@ -74,9 +74,30 @@ public class Usuario
     [Column("Status")]
     public bool? Status { get; set; } = false;
 
+    [Column("RolId")]
+    public string? RolId { get; set; }
+
+    [Column("AgenteId")]
+    public string? AgenteId { get; set; }
+
+    [Column("ManagerId")]
+    public string? ManagerId { get; set; }
+
+    [Column("EsAdministrador")]
+    public bool EsAdministrador { get; set; } = false;
+
     // Navigation properties
     [ForeignKey("EmpresaId")]
     public virtual Empresa? Empresa { get; set; }
+
+    [ForeignKey("RolId")]
+    public virtual Rol? Rol { get; set; }
+
+    [ForeignKey("AgenteId")]
+    public virtual Agente? Agente { get; set; }
+
+    [ForeignKey("ManagerId")]
+    public virtual Manager? Manager { get; set; }
 
     public virtual ICollection<UsuarioRol> UsuarioRoles { get; set; } = new List<UsuarioRol>();
 }

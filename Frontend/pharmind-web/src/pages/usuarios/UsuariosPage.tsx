@@ -2,36 +2,19 @@ import { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { usePage } from '../../contexts/PageContext';
 import { usuariosService } from '../../services/usuarios.service';
-import type { Usuario, CreateUsuarioDto, UpdateUsuarioDto } from '../../services/usuarios.service';
-import type { Rol } from '../../services/roles.service';
-import rolesService from '../../services/roles.service';
-import type { Empresa } from '../../services/empresas.service';
-import empresasService from '../../services/empresas.service';
+import type { Usuario } from '../../services/usuarios.service';
+import UsuarioFormModal, { type UsuarioFormData } from '../../components/modals/UsuarioFormModal';
 import './UsuariosPage.css';
 
 const UsuariosPage = () => {
   const { addNotification } = useNotifications();
   const { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent } = usePage();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [roles, setRoles] = useState<Rol[]>([]);
-  const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null);
-
-  // Form state
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    nombreCompleto: '',
-    empresaId: '',
-    telefono: '',
-    cargo: '',
-    departamento: '',
-    roleIds: [] as string[]
-  });
+  const [selectedUsuario, setSelectedUsuario] = useState<UsuarioFormData | null>(null);
 
   useEffect(() => {
     loadData();
@@ -106,14 +89,8 @@ const UsuariosPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usuariosData, rolesData, empresasData] = await Promise.all([
-        usuariosService.getAll(),
-        rolesService.getAll(),
-        empresasService.getAll()
-      ]);
+      const usuariosData = await usuariosService.getAll();
       setUsuarios(usuariosData);
-      setRoles(rolesData);
-      setEmpresas(empresasData);
     } catch (error: any) {
       addNotification({
         title: 'Error',
@@ -129,29 +106,22 @@ const UsuariosPage = () => {
   const handleOpenModal = (mode: 'create' | 'edit', usuario?: Usuario) => {
     setModalMode(mode);
     if (mode === 'edit' && usuario) {
-      setSelectedUsuario(usuario);
-      setFormData({
+      setSelectedUsuario({
+        id: usuario.id,
         email: usuario.email,
-        password: '',
         nombreCompleto: usuario.nombreCompleto,
         empresaId: usuario.empresaId,
-        telefono: usuario.telefono || '',
-        cargo: usuario.cargo || '',
-        departamento: usuario.departamento || '',
-        roleIds: usuario.roles || []
+        telefono: usuario.telefono,
+        cargo: usuario.cargo,
+        departamento: usuario.departamento,
+        roleIds: usuario.roleIds || [],
+        activo: usuario.activo,
+        agenteId: usuario.agenteId,
+        managerId: usuario.managerId,
+        tipoAgenteId: usuario.tipoAgenteId
       });
     } else {
       setSelectedUsuario(null);
-      setFormData({
-        email: '',
-        password: '',
-        nombreCompleto: '',
-        empresaId: '',
-        telefono: '',
-        cargo: '',
-        departamento: '',
-        roleIds: []
-      });
     }
     setShowModal(true);
   };
@@ -161,37 +131,40 @@ const UsuariosPage = () => {
     setSelectedUsuario(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (data: UsuarioFormData) => {
     try {
       if (modalMode === 'create') {
-        const createDto: CreateUsuarioDto = {
-          email: formData.email,
-          password: formData.password,
-          nombreCompleto: formData.nombreCompleto,
-          empresaId: formData.empresaId,
-          telefono: formData.telefono || undefined,
-          cargo: formData.cargo || undefined,
-          departamento: formData.departamento || undefined,
-          roleIds: formData.roleIds
-        };
-        await usuariosService.create(createDto);
+        await usuariosService.create({
+          email: data.email,
+          password: data.password!,
+          nombreCompleto: data.nombreCompleto,
+          empresaId: data.empresaId,
+          telefono: data.telefono,
+          cargo: data.cargo,
+          departamento: data.departamento,
+          roleIds: data.roleIds,
+          agenteId: data.agenteId,
+          managerId: data.managerId,
+          tipoAgenteId: data.tipoAgenteId
+        });
         addNotification({
           title: 'Usuario creado',
           message: 'El usuario se creó correctamente',
           type: 'success',
           category: 'usuarios'
         });
-      } else if (selectedUsuario) {
-        const updateDto: UpdateUsuarioDto = {
-          email: formData.email,
-          nombreCompleto: formData.nombreCompleto,
-          telefono: formData.telefono || undefined,
-          cargo: formData.cargo || undefined,
-          departamento: formData.departamento || undefined,
-          roleIds: formData.roleIds
-        };
-        await usuariosService.update(selectedUsuario.id, updateDto);
+      } else if (data.id) {
+        await usuariosService.update(data.id, {
+          email: data.email,
+          nombreCompleto: data.nombreCompleto,
+          telefono: data.telefono,
+          cargo: data.cargo,
+          departamento: data.departamento,
+          roleIds: data.roleIds,
+          agenteId: data.agenteId,
+          managerId: data.managerId,
+          tipoAgenteId: data.tipoAgenteId
+        });
         addNotification({
           title: 'Usuario actualizado',
           message: 'El usuario se actualizó correctamente',
@@ -199,7 +172,6 @@ const UsuariosPage = () => {
           category: 'usuarios'
         });
       }
-      handleCloseModal();
       loadData();
     } catch (error: any) {
       addNotification({
@@ -208,6 +180,7 @@ const UsuariosPage = () => {
         type: 'error',
         category: 'usuarios'
       });
+      throw error;
     }
   };
 
@@ -327,140 +300,13 @@ const UsuariosPage = () => {
       </div>
 
       {/* Modal de crear/editar usuario */}
-      {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{modalMode === 'create' ? 'Nuevo Usuario' : 'Editar Usuario'}</h2>
-              <button className="modal-close" onClick={handleCloseModal}>
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Nombre Completo *</label>
-                    <input
-                      type="text"
-                      value={formData.nombreCompleto}
-                      onChange={(e) => setFormData({ ...formData, nombreCompleto: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Email *</label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {modalMode === 'create' && (
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Contraseña *</label>
-                      <input
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        required={modalMode === 'create'}
-                        minLength={6}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Empresa *</label>
-                    <select
-                      value={formData.empresaId}
-                      onChange={(e) => setFormData({ ...formData, empresaId: e.target.value })}
-                      required
-                    >
-                      <option value="">Seleccione una empresa</option>
-                      {empresas.map((empresa) => (
-                        <option key={empresa.id} value={empresa.id}>
-                          {empresa.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Teléfono</label>
-                    <input
-                      type="text"
-                      value={formData.telefono}
-                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Cargo</label>
-                    <input
-                      type="text"
-                      value={formData.cargo}
-                      onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Departamento</label>
-                    <input
-                      type="text"
-                      value={formData.departamento}
-                      onChange={(e) => setFormData({ ...formData, departamento: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Roles</label>
-                    <div className="checkbox-group">
-                      {roles.map((rol) => (
-                        <label key={rol.id} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={formData.roleIds.includes(rol.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFormData({ ...formData, roleIds: [...formData.roleIds, rol.id] });
-                              } else {
-                                setFormData({ ...formData, roleIds: formData.roleIds.filter(id => id !== rol.id) });
-                              }
-                            }}
-                          />
-                          {rol.nombre}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary">
-                  {modalMode === 'create' ? 'Crear' : 'Guardar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <UsuarioFormModal
+        isOpen={showModal}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}
+        initialData={selectedUsuario}
+        mode={modalMode}
+      />
     </div>
   );
 };

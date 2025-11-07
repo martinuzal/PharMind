@@ -24,6 +24,16 @@ public class RelacionDto
     public string? FrecuenciaVisitas { get; set; }
     public string? Prioridad { get; set; }
     public string? Observaciones { get; set; }
+
+    // Campos de segmentación
+    public Guid? EspecialidadId { get; set; }
+    public Guid? CategoriaId { get; set; }
+    public Guid? Segment1Id { get; set; }
+    public Guid? Segment2Id { get; set; }
+    public Guid? Segment3Id { get; set; }
+    public Guid? Segment4Id { get; set; }
+    public Guid? Segment5Id { get; set; }
+
     public DateTime FechaCreacion { get; set; }
     public string? CreadoPor { get; set; }
     public DateTime? FechaModificacion { get; set; }
@@ -47,6 +57,15 @@ public class CreateRelacionDto
     public string? FrecuenciaVisitas { get; set; }
     public string? Prioridad { get; set; }
     public string? Observaciones { get; set; }
+
+    // Campos de segmentación
+    public Guid? EspecialidadId { get; set; }
+    public Guid? CategoriaId { get; set; }
+    public Guid? Segment1Id { get; set; }
+    public Guid? Segment2Id { get; set; }
+    public Guid? Segment3Id { get; set; }
+    public Guid? Segment4Id { get; set; }
+    public Guid? Segment5Id { get; set; }
 }
 
 public class UpdateRelacionDto
@@ -62,6 +81,15 @@ public class UpdateRelacionDto
     public string? FrecuenciaVisitas { get; set; }
     public string? Prioridad { get; set; }
     public string? Observaciones { get; set; }
+
+    // Campos de segmentación
+    public Guid? EspecialidadId { get; set; }
+    public Guid? CategoriaId { get; set; }
+    public Guid? Segment1Id { get; set; }
+    public Guid? Segment2Id { get; set; }
+    public Guid? Segment3Id { get; set; }
+    public Guid? Segment4Id { get; set; }
+    public Guid? Segment5Id { get; set; }
 }
 
 public class RelacionListResponse

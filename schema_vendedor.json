@@ -1,0 +1,13 @@
+{
+  "fields": [],
+  "version": 1,
+  "staticFieldsConfig": {
+    "campos": {
+      "CodigoAgente": {
+        "visible": true,
+        "requerido": true,
+        "autoload": true,
+        "label": "Código Agente"
+      },
+      "Nombre": {
+        "visible":
