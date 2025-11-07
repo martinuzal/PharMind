@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import DynamicFormField from '../../components/dynamic/DynamicFormField';
 import InteractionFormModal from '../../components/modals/InteractionFormModal';
+import DireccionForm from '../../components/direccion/DireccionForm';
+import type { DireccionData } from '../../components/direccion/DireccionForm';
 import { usePage } from '../../contexts/PageContext';
 import './CRMPages.css';
 
@@ -113,6 +115,7 @@ const RelationDynamicEntityPage: React.FC = () => {
     observaciones: ''
   });
   const [dynamicFormData, setDynamicFormData] = useState<Record<string, any>>({});
+  const [direccionData, setDireccionData] = useState<DireccionData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
@@ -987,8 +990,8 @@ const RelationDynamicEntityPage: React.FC = () => {
       )}
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay">
+          <div className="modal-content">
             <form onSubmit={handleSubmit}>
               <div className="modal-header">
                 <h2>
@@ -1216,6 +1219,16 @@ const RelationDynamicEntityPage: React.FC = () => {
                       placeholder="Notas adicionales sobre la relación"
                     />
                   </div>
+                </div>
+
+                {/* Dirección */}
+                <div className="form-section">
+                  <h3 className="form-section-title">Dirección</h3>
+                  <DireccionForm
+                    value={direccionData}
+                    onChange={setDireccionData}
+                    required={false}
+                  />
                 </div>
 
                 {/* Dynamic Fields */}

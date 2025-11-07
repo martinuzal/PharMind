@@ -4,7 +4,7 @@
   top: 0;
   left: 260px; /* Ancho del sidebar */
   right: 0;
-  height: 60px;
+  height: 70px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -167,7 +167,7 @@
 
 /* Ajuste del contenido de la app para compensar el toolbar */
 .app-content-with-toolbar {
-  padding-top: 60px;
+  padding-top: 70px;
 }
 
 /* Notificaciones */

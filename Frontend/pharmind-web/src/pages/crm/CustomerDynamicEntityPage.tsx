@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import DynamicFormField from '../../components/dynamic/DynamicFormField';
+import DireccionForm from '../../components/direccion/DireccionForm';
+import type { DireccionData } from '../../components/direccion/DireccionForm';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { usePage } from '../../contexts/PageContext';
 import './CRMPages.css';
@@ -131,6 +133,9 @@ const CustomerDynamicEntityPage: React.FC = () => {
 
   // Form state - Dynamic fields
   const [dynamicFormData, setDynamicFormData] = useState<Record<string, any>>({});
+
+  // Form state - Dirección
+  const [direccionData, setDireccionData] = useState<DireccionData>({});
 
   useEffect(() => {
     fetchEsquema();
@@ -745,8 +750,8 @@ const CustomerDynamicEntityPage: React.FC = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay">
+          <div className="modal-content modal-large">
             <div className="modal-header">
               <h2>
                 {editingCliente ? 'Editar' : 'Nuevo'} {esquema.nombre}
@@ -894,7 +899,17 @@ const CustomerDynamicEntityPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Section 3: Campos Adicionales (Dynamic fields) */}
+                {/* Section 3: Dirección */}
+                <div className="form-section">
+                  <h3 className="form-section-title">Dirección</h3>
+                  <DireccionForm
+                    value={direccionData}
+                    onChange={setDireccionData}
+                    required={false}
+                  />
+                </div>
+
+                {/* Section 4: Campos Adicionales (Dynamic fields) */}
                 {getSchemaFields().length > 0 && (
                   <div className="form-section">
                     <h3 className="form-section-title">Campos Adicionales</h3>

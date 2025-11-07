@@ -376,7 +376,17 @@ const InteractionDynamicEntityPage: React.FC = () => {
       longitud: interaccion.longitud || null,
       observaciones: interaccion.observaciones || ''
     });
-    setDynamicFormData(interaccion.datosDinamicos || {});
+
+    // Cargar datos dinámicos - soportar formato antiguo (solo valores) y nuevo (valores + schema)
+    const dynamicData = interaccion.datosDinamicos || {};
+    if (dynamicData.values) {
+      // Nuevo formato con schema
+      setDynamicFormData(dynamicData.values);
+    } else {
+      // Formato antiguo - solo valores
+      setDynamicFormData(dynamicData);
+    }
+
     setEditingInteraccion(interaccion);
     setShowModal(true);
   };
@@ -694,8 +704,8 @@ const InteractionDynamicEntityPage: React.FC = () => {
       )}
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay">
+          <div className="modal-content">
             <form onSubmit={handleSubmit}>
               <div className="modal-header">
                 <h2>

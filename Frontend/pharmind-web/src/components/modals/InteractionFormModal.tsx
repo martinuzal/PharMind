@@ -169,7 +169,17 @@ const InteractionFormModal: React.FC<InteractionFormModalProps> = ({
         longitud: editingInteraction.longitud || null,
         observaciones: editingInteraction.observaciones || ''
       });
-      setDynamicFormData(editingInteraction.datosDinamicos || {});
+
+      // Cargar datos dinámicos - soportar formato antiguo (solo valores) y nuevo (valores + schema)
+      const dynamicData = editingInteraction.datosDinamicos || {};
+      if (dynamicData.values) {
+        // Nuevo formato con schema
+        setDynamicFormData(dynamicData.values);
+      } else {
+        // Formato antiguo - solo valores
+        setDynamicFormData(dynamicData);
+      }
+
       setIsPrefilledForm(false);
     } else if (isOpen && !editingInteraction) {
       const code = generateInteractionCode();
@@ -270,25 +280,44 @@ const InteractionFormModal: React.FC<InteractionFormModalProps> = ({
     }
 
     try {
+      // Preparar datos dinámicos con valores y definiciones de campos
+      const schemaFields = getSchemaFields();
+      const dynamicDataWithSchema = {
+        values: dynamicFormData,
+        schema: {
+          fields: schemaFields.map(field => ({
+            name: field.name,
+            label: field.label,
+            type: field.type,
+            required: field.required,
+            options: field.options,
+            dataSource: field.dataSource,
+            helpText: field.helpText
+          })),
+          version: esquema.version || '1.0',
+          capturedAt: new Date().toISOString()
+        }
+      };
+
       if (editingInteraction) {
         // Actualizar
         const updatePayload = {
-          DatosDinamicos: dynamicFormData,
+          DatosDinamicos: dynamicDataWithSchema,
           CodigoInteraccion: formData.codigoInteraccion,
           RelacionId: formData.relacionId,
           AgenteId: formData.agenteId,
           ClienteId: formData.clienteId,
-          TipoInteraccion: formData.tipoInteraccion,
+          TipoInteraccion: formData.tipoInteraccion || esquema.id,
           Fecha: formData.fecha,
           Turno: formData.turno || null,
-          DuracionMinutos: formData.duracionMinutos || null,
+          DuracionMinutos: formData.duracionMinutos ? parseInt(formData.duracionMinutos) : null,
           Resultado: formData.resultado || null,
           ObjetivoVisita: formData.objetivoVisita || null,
           ResumenVisita: formData.resumenVisita || null,
           ProximaAccion: formData.proximaAccion || null,
           FechaProximaAccion: formData.fechaProximaAccion || null,
-          Latitud: formData.latitud || null,
-          Longitud: formData.longitud || null,
+          Latitud: formData.latitud ? parseFloat(formData.latitud) : null,
+          Longitud: formData.longitud ? parseFloat(formData.longitud) : null,
           Observaciones: formData.observaciones || null
         };
 
@@ -297,22 +326,22 @@ const InteractionFormModal: React.FC<InteractionFormModalProps> = ({
         // Crear
         const createPayload = {
           TipoInteraccionId: esquema.id,
-          DatosDinamicos: dynamicFormData,
+          DatosDinamicos: dynamicDataWithSchema,
           CodigoInteraccion: formData.codigoInteraccion,
           RelacionId: formData.relacionId,
           AgenteId: formData.agenteId,
           ClienteId: formData.clienteId,
-          TipoInteraccion: formData.tipoInteraccion,
+          TipoInteraccion: formData.tipoInteraccion || esquema.id,
           Fecha: formData.fecha,
           Turno: formData.turno || null,
-          DuracionMinutos: formData.duracionMinutos || null,
+          DuracionMinutos: formData.duracionMinutos ? parseInt(formData.duracionMinutos) : null,
           Resultado: formData.resultado || null,
           ObjetivoVisita: formData.objetivoVisita || null,
           ResumenVisita: formData.resumenVisita || null,
           ProximaAccion: formData.proximaAccion || null,
           FechaProximaAccion: formData.fechaProximaAccion || null,
-          Latitud: formData.latitud || null,
-          Longitud: formData.longitud || null,
+          Latitud: formData.latitud ? parseFloat(formData.latitud) : null,
+          Longitud: formData.longitud ? parseFloat(formData.longitud) : null,
           Observaciones: formData.observaciones || null
         };
 
@@ -347,8 +376,8 @@ const InteractionFormModal: React.FC<InteractionFormModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content interaction-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay">
+      <div className="modal-content interaction-modal">
         <form onSubmit={handleSubmit}>
           <div className="modal-header">
             <h2>
@@ -550,7 +579,7 @@ const InteractionFormModal: React.FC<InteractionFormModalProps> = ({
                     key={field.name}
                     field={field}
                     value={dynamicFormData[field.name]}
-                    onChange={(value) => handleDynamicFieldChange(field.name, value)}
+                    onChange={(fieldName, value) => handleDynamicFieldChange(fieldName, value)}
                   />
                 ))}
               </div>
