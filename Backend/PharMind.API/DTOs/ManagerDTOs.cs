@@ -3,8 +3,6 @@ namespace PharMind.API.DTOs;
 public class ManagerDto
 {
     public string Id { get; set; } = string.Empty;
-    public string UsuarioId { get; set; } = string.Empty;
-    public string UsuarioNombre { get; set; } = string.Empty;
     public string Codigo { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
     public string? Apellido { get; set; }
@@ -30,7 +28,6 @@ public class ManagerDto
 
 public class CreateManagerDto
 {
-    public string UsuarioId { get; set; } = string.Empty;
     public string Codigo { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
     public string? Apellido { get; set; }

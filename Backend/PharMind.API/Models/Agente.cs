@@ -1,92 +1,87 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PharMind.API.Models;
 
-[Table("Agentes")]
-public class Agente : AuditableEntity
+public partial class Agente
 {
-    // Relación con esquema personalizado (define el tipo de agente)
-    [Required]
-    [Column("TipoAgenteId")]
-    public string TipoAgenteId { get; set; } = string.Empty;
+    public string Id { get; set; } = null!;
 
-    // Relación con entidad dinámica (datos extendidos)
-    [Column("EntidadDinamicaId")]
-    public string? EntidadDinamicaId { get; set; }
+    public string CodigoAgente { get; set; } = null!;
 
-    // Datos base del agente
-    [Required]
-    [Column("CodigoAgente")]
-    [MaxLength(50)]
-    public string CodigoAgente { get; set; } = string.Empty;
+    public string Nombre { get; set; } = null!;
 
-    [Required]
-    [Column("Nombre")]
-    [MaxLength(200)]
-    public string Nombre { get; set; } = string.Empty;
+    public string? CodigoDistrito { get; set; }
 
-    [Column("Apellido")]
-    [MaxLength(200)]
-    public string? Apellido { get; set; }
+    public string? DistritoNombre { get; set; }
 
-    [Column("Email")]
-    [MaxLength(255)]
+    public string? CodigoLineaNegocio { get; set; }
+
+    public string? LineaNegocioNombre { get; set; }
+
     public string? Email { get; set; }
 
-    [Column("Telefono")]
-    [MaxLength(50)]
     public string? Telefono { get; set; }
 
-    // Relaciones con tablas fijas
-    [Column("RegionId")]
-    public string? RegionId { get; set; }
+    public string? ZonaGeografica { get; set; }
 
-    [Column("DistritoId")]
+    public string? SupervisorId { get; set; }
+
+    public DateOnly? FechaIngreso { get; set; }
+
+    public string Estado { get; set; } = null!;
+
+    public DateTime FechaCreacion { get; set; }
+
+    public string? CreadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public bool Status { get; set; }
+
     public string? DistritoId { get; set; }
 
-    [Column("LineaNegocioId")]
     public string? LineaNegocioId { get; set; }
 
-    [Column("ManagerId")]
+    public string TipoAgenteId { get; set; } = null!;
+
+    public string? EntidadDinamicaId { get; set; }
+
+    public string? Apellido { get; set; }
+
+    public string? RegionId { get; set; }
+
     public string? ManagerId { get; set; }
 
-    [Column("TimelineId")]
-    public Guid? TimelineId { get; set; }
+    public bool Activo { get; set; }
 
-    [Column("FechaIngreso")]
-    public DateTime? FechaIngreso { get; set; }
-
-    [Required]
-    [Column("Activo")]
-    public bool Activo { get; set; } = true;
-
-    [Column("Observaciones")]
-    [MaxLength(1000)]
     public string? Observaciones { get; set; }
 
-    // Navigation properties
-    [ForeignKey("TipoAgenteId")]
-    public virtual EsquemaPersonalizado? TipoAgente { get; set; }
+    public Guid? TimelineId { get; set; }
 
-    [ForeignKey("EntidadDinamicaId")]
-    public virtual EntidadDinamica? DatosExtendidos { get; set; }
+    public virtual ICollection<AuditoriaAgente> AuditoriaAgentes { get; set; } = new List<AuditoriaAgente>();
 
-    [ForeignKey("RegionId")]
-    public virtual Region? Region { get; set; }
-
-    [ForeignKey("DistritoId")]
     public virtual Distrito? Distrito { get; set; }
 
-    [ForeignKey("LineaNegocioId")]
-    public virtual LineaNegocio? LineaNegocio { get; set; }
+    public virtual EntidadesDinamica? EntidadesDinamica { get; set; }
 
-    [ForeignKey("ManagerId")]
+    public virtual ICollection<Interaccione> Interacciones { get; set; } = new List<Interaccione>();
+
+    public virtual LineasNegocio? LineaNegocio { get; set; }
+
     public virtual Manager? Manager { get; set; }
 
-    [ForeignKey("TimelineId")]
+    public virtual Regiones? Region { get; set; }
+
+    public virtual ICollection<Relacione> Relaciones { get; set; } = new List<Relacione>();
+
+    public virtual Usuario? Supervisor { get; set; }
+
     public virtual Timeline? Timeline { get; set; }
 
-    public virtual ICollection<Relacion> Relaciones { get; set; } = new List<Relacion>();
-    public virtual ICollection<Interaccion> Interacciones { get; set; } = new List<Interaccion>();
+    public virtual EsquemasPersonalizado TipoAgente { get; set; } = null!;
+
+    public virtual ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
 }

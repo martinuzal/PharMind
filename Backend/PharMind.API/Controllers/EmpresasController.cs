@@ -50,7 +50,7 @@ public class EmpresasController : ControllerBase
                 Id = e.Id,
                 Nombre = e.Nombre,
                 RazonSocial = e.RazonSocial,
-                CUIT = e.CUIT,
+                Cuit = e.Cuit,
                 Telefono = e.Telefono,
                 Email = e.Email,
                 Direccion = e.Direccion,
@@ -91,7 +91,7 @@ public class EmpresasController : ControllerBase
                 Id = empresa.Id,
                 Nombre = empresa.Nombre,
                 RazonSocial = empresa.RazonSocial,
-                CUIT = empresa.CUIT,
+                Cuit = empresa.Cuit,
                 Telefono = empresa.Telefono,
                 Email = empresa.Email,
                 Direccion = empresa.Direccion,
@@ -118,17 +118,17 @@ public class EmpresasController : ControllerBase
     {
         try
         {
-            // Validar que el CUIT no esté duplicado si se proporciona
-            if (!string.IsNullOrWhiteSpace(createDto.CUIT))
+            // Validar que el Cuit no esté duplicado si se proporciona
+            if (!string.IsNullOrWhiteSpace(createDto.Cuit))
             {
                 var empresaExistente = await _context.Empresas
                     .FirstOrDefaultAsync(e =>
-                        e.CUIT == createDto.CUIT &&
+                        e.Cuit == createDto.Cuit &&
                         e.Status == false);
 
                 if (empresaExistente != null)
                 {
-                    return BadRequest("Ya existe una empresa con ese CUIT");
+                    return BadRequest("Ya existe una empresa con ese Cuit");
                 }
             }
 
@@ -149,7 +149,7 @@ public class EmpresasController : ControllerBase
                 Id = Guid.NewGuid().ToString(),
                 Nombre = createDto.Nombre,
                 RazonSocial = createDto.RazonSocial,
-                CUIT = createDto.CUIT,
+                Cuit = createDto.Cuit,
                 Telefono = createDto.Telefono,
                 Email = createDto.Email,
                 Direccion = createDto.Direccion,
@@ -167,7 +167,7 @@ public class EmpresasController : ControllerBase
                 Id = empresa.Id,
                 Nombre = empresa.Nombre,
                 RazonSocial = empresa.RazonSocial,
-                CUIT = empresa.CUIT,
+                Cuit = empresa.Cuit,
                 Telefono = empresa.Telefono,
                 Email = empresa.Email,
                 Direccion = empresa.Direccion,
@@ -203,18 +203,18 @@ public class EmpresasController : ControllerBase
                 return NotFound("Empresa no encontrada");
             }
 
-            // Validar que el CUIT no esté duplicado (excepto la misma empresa)
-            if (!string.IsNullOrWhiteSpace(updateDto.CUIT))
+            // Validar que el Cuit no esté duplicado (excepto la misma empresa)
+            if (!string.IsNullOrWhiteSpace(updateDto.Cuit))
             {
                 var cuitDuplicado = await _context.Empresas
                     .FirstOrDefaultAsync(e =>
                         e.Id != id &&
-                        e.CUIT == updateDto.CUIT &&
+                        e.Cuit == updateDto.Cuit &&
                         e.Status == false);
 
                 if (cuitDuplicado != null)
                 {
-                    return BadRequest("Ya existe otra empresa con ese CUIT");
+                    return BadRequest("Ya existe otra empresa con ese Cuit");
                 }
             }
 
@@ -233,7 +233,7 @@ public class EmpresasController : ControllerBase
             // Actualizar datos de la empresa
             empresa.Nombre = updateDto.Nombre;
             empresa.RazonSocial = updateDto.RazonSocial;
-            empresa.CUIT = updateDto.CUIT;
+            empresa.Cuit = updateDto.Cuit;
             empresa.Telefono = updateDto.Telefono;
             empresa.Email = updateDto.Email;
             empresa.Direccion = updateDto.Direccion;
@@ -248,7 +248,7 @@ public class EmpresasController : ControllerBase
                 Id = empresa.Id,
                 Nombre = empresa.Nombre,
                 RazonSocial = empresa.RazonSocial,
-                CUIT = empresa.CUIT,
+                Cuit = empresa.Cuit,
                 Telefono = empresa.Telefono,
                 Email = empresa.Email,
                 Direccion = empresa.Direccion,

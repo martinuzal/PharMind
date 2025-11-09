@@ -1,27 +1,31 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PharMind.API.Models;
 
-[Table("Estados")]
-public class Estado : AuditableEntity
+public partial class Estado
 {
-    [Column("Nombre")]
-    [Required]
-    [MaxLength(100)]
-    public string Nombre { get; set; } = string.Empty;
+    public string Id { get; set; } = null!;
 
-    [Column("PaisId")]
+    public string Nombre { get; set; } = null!;
+
     public string? PaisId { get; set; }
 
-    [Column("Codigo")]
-    [MaxLength(10)]
-    public string? Codigo { get; set; } // Código del estado (ej: JAL, CDMX)
+    public string? Codigo { get; set; }
 
-    [Column("Activo")]
-    public bool Activo { get; set; } = true;
+    public bool Activo { get; set; }
 
-    // Relaciones
-    [ForeignKey("PaisId")]
-    public Pais? Pais { get; set; }
+    public DateTime FechaCreacion { get; set; }
+
+    public string? CreadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public bool? Status { get; set; }
+
+    public virtual ICollection<Ciudade> Ciudades { get; set; } = new List<Ciudade>();
+
+    public virtual Paise? Pais { get; set; }
 }

@@ -86,10 +86,10 @@ public class Relacion : AuditableEntity
 
     // Navigation properties
     [ForeignKey("TipoRelacionId")]
-    public virtual EsquemaPersonalizado? TipoRelacionEsquema { get; set; }
+    public virtual EsquemasPersonalizado? TipoRelacionEsquema { get; set; }
 
     [ForeignKey("EntidadDinamicaId")]
-    public virtual EntidadDinamica? DatosExtendidos { get; set; }
+    public virtual EntidadesDinamica? DatosExtendidos { get; set; }
 
     [ForeignKey("AgenteId")]
     public virtual Agente? Agente { get; set; }

@@ -1,44 +1,43 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PharMind.API.Models;
 
-[Table("RolesModulos")]
-public class RolModulo : AuditableEntity
+public partial class RolModulo
 {
-    [Required]
-    [Column("RolId")]
-    public string RolId { get; set; } = string.Empty;
+    public string Id { get; set; } = null!;
 
-    [Required]
-    [Column("ModuloId")]
-    public string ModuloId { get; set; } = string.Empty;
+    public string RolId { get; set; } = null!;
 
-    [Column("PuedeVer")]
-    public bool PuedeVer { get; set; } = true;
+    public string ModuloId { get; set; } = null!;
 
-    [Column("PuedeCrear")]
-    public bool PuedeCrear { get; set; } = false;
+    public string NivelAcceso { get; set; } = null!;
 
-    [Column("PuedeEditar")]
-    public bool PuedeEditar { get; set; } = false;
+    public bool PuedeVer { get; set; }
 
-    [Column("PuedeEliminar")]
-    public bool PuedeEliminar { get; set; } = false;
+    public bool PuedeCrear { get; set; }
 
-    [Column("PuedeExportar")]
-    public bool PuedeExportar { get; set; } = false;
+    public bool PuedeEditar { get; set; }
 
-    [Column("PuedeImportar")]
-    public bool PuedeImportar { get; set; } = false;
+    public bool PuedeEliminar { get; set; }
 
-    [Column("PuedeAprobar")]
-    public bool PuedeAprobar { get; set; } = false;
+    public bool PuedeExportar { get; set; }
 
-    // Navigation properties
-    [ForeignKey("RolId")]
-    public virtual Rol? Rol { get; set; }
+    public bool PuedeImportar { get; set; }
 
-    [ForeignKey("ModuloId")]
-    public virtual Modulo? Modulo { get; set; }
+    public bool PuedeAprobar { get; set; }
+
+    public DateTime FechaCreacion { get; set; }
+
+    public string? CreadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public bool? Status { get; set; }
+
+    public virtual Modulo Modulo { get; set; } = null!;
+
+    public virtual Rol Rol { get; set; } = null!;
 }

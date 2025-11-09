@@ -1,32 +1,19 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace PharMind.API.Models
+namespace PharMind.API.Models;
+
+public partial class AuditMarketMarca
 {
-    [Table("auditMarketMarcas")]
-    public class AuditMarketMarca
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        [StringLength(100)]
-        [Column("CODIGO")]
-        public string? CODIGO { get; set; }
+    public string? Codigo { get; set; }
 
-        [StringLength(100)]
-        [Column("CODIGO_PMIX")]
-        public string? CODIGO_PMIX { get; set; }
+    public string? CodigoPmix { get; set; }
 
-        [StringLength(500)]
-        [Column("NOME")]
-        public string? NOME { get; set; }
+    public string? Nome { get; set; }
 
-        [StringLength(100)]
-        [Column("SIGLALAB")]
-        public string? SIGLALAB { get; set; }
+    public string? Siglalab { get; set; }
 
-        [StringLength(1000)]
-        public string? RawData { get; set; }
-    }
+    public string? RawData { get; set; }
 }

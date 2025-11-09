@@ -1,39 +1,43 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PharMind.API.Models;
 
-[Table("Empresas")]
-public class Empresa : AuditableEntity
+public partial class Empresa
 {
-    [Required]
-    [Column("Nombre")]
-    [MaxLength(200)]
-    public string Nombre { get; set; } = string.Empty;
+    public string Id { get; set; } = null!;
 
-    [Column("RazonSocial")]
-    [MaxLength(200)]
+    public string Nombre { get; set; } = null!;
+
     public string? RazonSocial { get; set; }
 
-    [Column("CUIT")]
-    [MaxLength(20)]
-    public string? CUIT { get; set; }
+    public string? Cuit { get; set; }
 
-    [Column("Telefono")]
-    [MaxLength(50)]
     public string? Telefono { get; set; }
 
-    [Column("Email")]
-    [MaxLength(255)]
     public string? Email { get; set; }
 
-    [Column("Direccion")]
-    [MaxLength(500)]
     public string? Direccion { get; set; }
 
-    [Column("Logo")]
     public string? Logo { get; set; }
 
-    [Column("Activo")]
-    public bool Activo { get; set; } = true;
+    public bool Activo { get; set; }
+
+    public DateTime FechaCreacion { get; set; }
+
+    public string? CreadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public bool? Status { get; set; }
+
+    public virtual ICollection<EntidadesDinamica> EntidadesDinamicas { get; set; } = new List<EntidadesDinamica>();
+
+    public virtual ICollection<EsquemasPersonalizado> EsquemasPersonalizados { get; set; } = new List<EsquemasPersonalizado>();
+
+    public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+
+    public virtual ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
 }

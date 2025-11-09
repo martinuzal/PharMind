@@ -1,103 +1,71 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PharMind.API.Models;
 
-[Table("Usuarios")]
-public class Usuario
+public partial class Usuario
 {
-    [Key]
-    [Column("Id")]
-    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Id { get; set; } = null!;
 
-    [Required]
-    [Column("EmpresaId")]
-    public string EmpresaId { get; set; } = string.Empty;
+    public string EmpresaId { get; set; } = null!;
 
-    [Required]
-    [Column("Email")]
-    [MaxLength(255)]
-    public string Email { get; set; } = string.Empty;
+    public string Email { get; set; } = null!;
 
-    [Column("PasswordHash")]
-    [MaxLength(255)]
     public string? PasswordHash { get; set; }
 
-    [Required]
-    [Column("NombreCompleto")]
-    [MaxLength(200)]
-    public string NombreCompleto { get; set; } = string.Empty;
+    public string NombreCompleto { get; set; } = null!;
 
-    [Column("Telefono")]
-    [MaxLength(50)]
     public string? Telefono { get; set; }
 
-    [Column("Avatar")]
     public string? Avatar { get; set; }
 
-    [Column("Cargo")]
-    [MaxLength(100)]
     public string? Cargo { get; set; }
 
-    [Column("Departamento")]
-    [MaxLength(100)]
     public string? Departamento { get; set; }
 
-    [Column("EmailVerificado")]
-    public bool EmailVerificado { get; set; } = false;
+    public bool EmailVerificado { get; set; }
 
-    [Column("TokenVerificacion")]
     public string? TokenVerificacion { get; set; }
 
-    [Column("TokenRecuperacion")]
     public string? TokenRecuperacion { get; set; }
 
-    [Column("TokenRecuperacionExpira")]
     public DateTime? TokenRecuperacionExpira { get; set; }
 
-    [Column("ProveedorSSO")]
-    [MaxLength(50)]
-    public string? ProveedorSSO { get; set; }
+    public string? ProveedorSso { get; set; }
 
-    [Column("SSOId")]
-    public string? SSOId { get; set; }
+    public string? Ssoid { get; set; }
 
-    [Column("Activo")]
-    public bool Activo { get; set; } = true;
+    public bool Activo { get; set; }
 
-    [Column("UltimoAcceso")]
     public DateTime? UltimoAcceso { get; set; }
 
-    [Column("FechaCreacion")]
-    public DateTime FechaCreacion { get; set; } = DateTime.Now;
+    public DateTime FechaCreacion { get; set; }
 
-    [Column("Status")]
-    public bool? Status { get; set; } = false;
+    public bool? Status { get; set; }
 
-    [Column("RolId")]
     public string? RolId { get; set; }
 
-    [Column("AgenteId")]
     public string? AgenteId { get; set; }
 
-    [Column("ManagerId")]
+    public bool EsAdministrador { get; set; }
+
     public string? ManagerId { get; set; }
 
-    [Column("EsAdministrador")]
-    public bool EsAdministrador { get; set; } = false;
-
-    // Navigation properties
-    [ForeignKey("EmpresaId")]
-    public virtual Empresa? Empresa { get; set; }
-
-    [ForeignKey("RolId")]
-    public virtual Rol? Rol { get; set; }
-
-    [ForeignKey("AgenteId")]
     public virtual Agente? Agente { get; set; }
 
-    [ForeignKey("ManagerId")]
+    public virtual ICollection<Agente> Agentes { get; set; } = new List<Agente>();
+
+    public virtual Empresa Empresa { get; set; } = null!;
+
+    public virtual ICollection<EntidadesDinamica> EntidadesDinamicas { get; set; } = new List<EntidadesDinamica>();
+
     public virtual Manager? Manager { get; set; }
+
+    public virtual ICollection<Manager> Managers { get; set; } = new List<Manager>();
+
+    public virtual Rol? Rol { get; set; }
+
+    public virtual ICollection<TiempoUtilizado> TiempoUtilizados { get; set; } = new List<TiempoUtilizado>();
 
     public virtual ICollection<UsuarioRol> UsuarioRoles { get; set; } = new List<UsuarioRol>();
 }

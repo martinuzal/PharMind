@@ -93,7 +93,7 @@ public class UsuariosController : ControllerBase
                 TipoAgenteId = u.Agente?.TipoAgenteId,
                 Activo = u.Activo,
                 EmailVerificado = u.EmailVerificado,
-                ProveedorSSO = u.ProveedorSSO,
+                ProveedorSso = u.ProveedorSso,
                 FechaCreacion = u.FechaCreacion,
                 Roles = u.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList(),
                 RoleIds = u.UsuarioRoles.Select(ur => ur.RolId).ToList()
@@ -153,7 +153,7 @@ public class UsuariosController : ControllerBase
                 TipoAgenteId = usuario.Agente?.TipoAgenteId,
                 Activo = usuario.Activo,
                 EmailVerificado = usuario.EmailVerificado,
-                ProveedorSSO = usuario.ProveedorSSO,
+                ProveedorSso = usuario.ProveedorSso,
                 FechaCreacion = usuario.FechaCreacion,
                 Roles = usuario.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList(),
                 RoleIds = usuario.UsuarioRoles.Select(ur => ur.RolId).ToList()
@@ -277,7 +277,7 @@ public class UsuariosController : ControllerBase
                 TipoAgenteId = usuarioCompleto.Agente?.TipoAgenteId,
                 Activo = usuarioCompleto.Activo,
                 EmailVerificado = usuarioCompleto.EmailVerificado,
-                ProveedorSSO = usuarioCompleto.ProveedorSSO,
+                ProveedorSso = usuarioCompleto.ProveedorSso,
                 FechaCreacion = usuarioCompleto.FechaCreacion,
                 Roles = usuarioCompleto.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList(),
                 RoleIds = usuarioCompleto.UsuarioRoles.Select(ur => ur.RolId).ToList()
@@ -397,7 +397,7 @@ public class UsuariosController : ControllerBase
                 TipoAgenteId = usuarioActualizado.Agente?.TipoAgenteId,
                 Activo = usuarioActualizado.Activo,
                 EmailVerificado = usuarioActualizado.EmailVerificado,
-                ProveedorSSO = usuarioActualizado.ProveedorSSO,
+                ProveedorSso = usuarioActualizado.ProveedorSso,
                 FechaCreacion = usuarioActualizado.FechaCreacion,
                 Roles = usuarioActualizado.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList(),
                 RoleIds = usuarioActualizado.UsuarioRoles.Select(ur => ur.RolId).ToList()

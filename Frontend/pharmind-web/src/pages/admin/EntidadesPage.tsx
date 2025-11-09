@@ -20,6 +20,7 @@ interface EsquemaPersonalizado {
   version?: number;
   activo: boolean;
   orden?: number;
+  cruceAudit?: boolean;
 }
 
 const EntidadesPage = () => {
@@ -40,7 +41,8 @@ const EntidadesPage = () => {
     color: '#4db8b8',
     schema: '{}',
     activo: true,
-    orden: 0
+    orden: 0,
+    cruceAudit: false
   });
 
   // Tab state for form/JSON/Preview view
@@ -282,7 +284,8 @@ const EntidadesPage = () => {
       color: '#4db8b8',
       schema: '{}',
       activo: true,
-      orden: 0
+      orden: 0,
+      cruceAudit: false
     });
     setJsonText('{}');
     setJsonError(null);
@@ -458,6 +461,23 @@ const EntidadesPage = () => {
                 <p className="entidad-descripcion">
                   {esquema.descripcion || 'Sin descripción'}
                 </p>
+                {esquema.entidadTipo === 'Cliente' && esquema.cruceAudit && (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    padding: '0.25rem 0.5rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    marginTop: '0.5rem'
+                  }}>
+                    <span className="material-icons" style={{ fontSize: '0.875rem' }}>verified</span>
+                    Con Auditoría
+                  </div>
+                )}
               </div>
 
               <div className="entidad-footer">
@@ -697,6 +717,29 @@ const EntidadesPage = () => {
                       />
                       <label htmlFor="activo">Entidad activa</label>
                     </div>
+
+                    {formData.entidadTipo === 'Cliente' && (
+                      <div className="form-group-checkbox" style={{ marginTop: '0.75rem' }}>
+                        <input
+                          id="cruceAudit"
+                          type="checkbox"
+                          checked={formData.cruceAudit || false}
+                          onChange={(e) => setFormData({ ...formData, cruceAudit: e.target.checked })}
+                        />
+                        <label htmlFor="cruceAudit">
+                          Tiene cruce con auditoría
+                          <span style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--text-secondary)',
+                            display: 'block',
+                            marginTop: '0.25rem',
+                            fontWeight: 'normal'
+                          }}>
+                            Permite vincular este tipo de cliente con la base de datos de auditoría
+                          </span>
+                        </label>
+                      </div>
+                    )}
                   </div>
                 </div>
 

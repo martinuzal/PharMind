@@ -35,7 +35,7 @@ public class ClientesController : ControllerBase
         {
             var query = _context.Clientes
                 .Include(c => c.TipoCliente)
-                .Include(c => c.DatosExtendidos)
+                .Include(c => c.EntidadesDinamica)
                 .Include(c => c.Institucion)
                 .Include(c => c.Direccion)
                 .Where(c => c.Status == false); // Excluir eliminados
@@ -87,7 +87,7 @@ public class ClientesController : ControllerBase
         {
             var cliente = await _context.Clientes
                 .Include(c => c.TipoCliente)
-                .Include(c => c.DatosExtendidos)
+                .Include(c => c.EntidadesDinamica)
                 .Include(c => c.Institucion)
                 .Include(c => c.Direccion)
                 .FirstOrDefaultAsync(c => c.Id == id && c.Status == false);
@@ -144,10 +144,10 @@ public class ClientesController : ControllerBase
             }
 
             // Crear entidad dinámica si hay datos dinámicos
-            EntidadDinamica? entidadDinamica = null;
+            EntidadesDinamica? EntidadesDinamica = null;
             if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
             {
-                entidadDinamica = new EntidadDinamica
+                EntidadesDinamica = new EntidadesDinamica
                 {
                     Id = Guid.NewGuid().ToString(),
                     EsquemaId = dto.TipoClienteId,
@@ -157,7 +157,7 @@ public class ClientesController : ControllerBase
                     Status = false
                 };
 
-                _context.EntidadesDinamicas.Add(entidadDinamica);
+                _context.EntidadesDinamicas.Add(EntidadesDinamica);
             }
 
             // Crear cliente
@@ -165,7 +165,7 @@ public class ClientesController : ControllerBase
             {
                 Id = Guid.NewGuid().ToString(),
                 TipoClienteId = dto.TipoClienteId,
-                EntidadDinamicaId = entidadDinamica?.Id,
+                EntidadDinamicaId = EntidadesDinamica?.Id,
                 CodigoCliente = dto.CodigoCliente,
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
@@ -188,7 +188,7 @@ public class ClientesController : ControllerBase
 
             // Recargar con datos relacionados
             await _context.Entry(cliente).Reference(c => c.TipoCliente).LoadAsync();
-            await _context.Entry(cliente).Reference(c => c.DatosExtendidos).LoadAsync();
+            await _context.Entry(cliente).Reference(c => c.EntidadesDinamica).LoadAsync();
             await _context.Entry(cliente).Reference(c => c.Institucion).LoadAsync();
             await _context.Entry(cliente).Reference(c => c.Direccion).LoadAsync();
 
@@ -213,7 +213,7 @@ public class ClientesController : ControllerBase
         {
             var cliente = await _context.Clientes
                 .Include(c => c.TipoCliente)
-                .Include(c => c.DatosExtendidos)
+                .Include(c => c.EntidadesDinamica)
                 .Include(c => c.Institucion)
                 .Include(c => c.Direccion)
                 .FirstOrDefaultAsync(c => c.Id == id && c.Status == false);
@@ -245,17 +245,17 @@ public class ClientesController : ControllerBase
             // Actualizar o crear entidad dinámica si hay datos dinámicos
             if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
             {
-                if (cliente.EntidadDinamicaId != null && cliente.DatosExtendidos != null)
+                if (cliente.EntidadDinamicaId != null && cliente.EntidadesDinamica != null)
                 {
                     // Actualizar entidad existente
-                    cliente.DatosExtendidos.Datos = JsonSerializer.Serialize(dto.DatosDinamicos);
-                    cliente.DatosExtendidos.FechaModificacion = DateTime.Now;
-                    cliente.DatosExtendidos.ModificadoPor = "System";
+                    cliente.EntidadesDinamica.Datos = JsonSerializer.Serialize(dto.DatosDinamicos);
+                    cliente.EntidadesDinamica.FechaModificacion = DateTime.Now;
+                    cliente.EntidadesDinamica.ModificadoPor = "System";
                 }
                 else
                 {
                     // Crear nueva entidad dinámica
-                    var entidadDinamica = new EntidadDinamica
+                    var EntidadesDinamica = new EntidadesDinamica
                     {
                         Id = Guid.NewGuid().ToString(),
                         EsquemaId = cliente.TipoClienteId,
@@ -265,8 +265,8 @@ public class ClientesController : ControllerBase
                         Status = false
                     };
 
-                    _context.EntidadesDinamicas.Add(entidadDinamica);
-                    cliente.EntidadDinamicaId = entidadDinamica.Id;
+                    _context.EntidadesDinamicas.Add(EntidadesDinamica);
+                    cliente.EntidadDinamicaId = EntidadesDinamica.Id;
                 }
             }
 
@@ -289,7 +289,7 @@ public class ClientesController : ControllerBase
 
             // Recargar con datos relacionados
             await _context.Entry(cliente).Reference(c => c.TipoCliente).LoadAsync();
-            await _context.Entry(cliente).Reference(c => c.DatosExtendidos).LoadAsync();
+            await _context.Entry(cliente).Reference(c => c.EntidadesDinamica).LoadAsync();
             await _context.Entry(cliente).Reference(c => c.Institucion).LoadAsync();
             await _context.Entry(cliente).Reference(c => c.Direccion).LoadAsync();
 
@@ -378,11 +378,11 @@ public class ClientesController : ControllerBase
     {
         Dictionary<string, object?>? datosDinamicos = null;
 
-        if (cliente.DatosExtendidos != null && !string.IsNullOrWhiteSpace(cliente.DatosExtendidos.Datos))
+        if (cliente.EntidadesDinamica != null && !string.IsNullOrWhiteSpace(cliente.EntidadesDinamica.Datos))
         {
             try
             {
-                datosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(cliente.DatosExtendidos.Datos);
+                datosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(cliente.EntidadesDinamica.Datos);
             }
             catch (Exception ex)
             {

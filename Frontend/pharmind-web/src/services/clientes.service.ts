@@ -24,6 +24,7 @@ export interface Cliente {
   telefono?: string;
   direccionId?: string;
   direccion?: Direccion;
+  codigoAudit?: string;
   estado: string;
   fechaCreacion: Date;
   creadoPor?: string;
@@ -42,6 +43,7 @@ export interface CreateClienteDto {
   email?: string;
   telefono?: string;
   direccionId?: string;
+  codigoAudit?: string;
   estado?: string;
 }
 
@@ -55,6 +57,7 @@ export interface UpdateClienteDto {
   email?: string;
   telefono?: string;
   direccionId?: string;
+  codigoAudit?: string;
   estado?: string;
 }
 

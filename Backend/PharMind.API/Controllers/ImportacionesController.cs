@@ -68,7 +68,7 @@ namespace PharMind.API.Controllers
         [HttpPost("upload-chunk")]
         [RequestSizeLimit(5 * 1024 * 1024)] // 5MB por chunk
         [RequestFormLimits(MultipartBodyLengthLimit = 5 * 1024 * 1024)]
-        public async Task<IActionResult> UploadChunk([FromForm] string uploadId, [FromForm] int chunkIndex, [FromForm] IFormFile chunk)
+        public async Task<IActionResult> UploadChunk([FromForm] string uploadId, [FromForm] int chunkIndex, IFormFile chunk)
         {
             try
             {

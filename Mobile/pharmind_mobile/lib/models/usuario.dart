@@ -3,6 +3,7 @@ class Usuario {
   final String nombre;
   final String email;
   final String rol;
+  final String? agenteId;
   final DateTime? fechaCreacion;
   final DateTime? ultimoAcceso;
 
@@ -11,6 +12,7 @@ class Usuario {
     required this.nombre,
     required this.email,
     required this.rol,
+    this.agenteId,
     this.fechaCreacion,
     this.ultimoAcceso,
   });
@@ -24,6 +26,7 @@ class Usuario {
       rol: (json['roles'] != null && json['roles'] is List && (json['roles'] as List).isNotEmpty)
           ? (json['roles'] as List).first.toString()
           : json['rol']?.toString() ?? 'Usuario',
+      agenteId: json['agenteId']?.toString(),
       fechaCreacion: json['fechaCreacion'] != null
           ? DateTime.parse(json['fechaCreacion'])
           : null,
@@ -40,6 +43,7 @@ class Usuario {
       'nombre': nombre,
       'email': email,
       'rol': rol,
+      'agenteId': agenteId,
       'fechaCreacion': fechaCreacion?.toIso8601String(),
       'ultimoAcceso': ultimoAcceso?.toIso8601String(),
     };
@@ -52,6 +56,7 @@ class Usuario {
       nombre: map['nombre'] ?? '',
       email: map['email'] ?? '',
       rol: map['rol'] ?? 'Usuario',
+      agenteId: map['agenteId']?.toString(),
       fechaCreacion: map['fechaCreacion'] != null
           ? DateTime.parse(map['fechaCreacion'])
           : null,
@@ -68,6 +73,7 @@ class Usuario {
       'nombre': nombre,
       'email': email,
       'rol': rol,
+      'agenteId': agenteId,
       'fechaCreacion': fechaCreacion?.toIso8601String(),
       'ultimoAcceso': ultimoAcceso?.toIso8601String(),
     };
@@ -79,6 +85,7 @@ class Usuario {
     String? nombre,
     String? email,
     String? rol,
+    String? agenteId,
     DateTime? fechaCreacion,
     DateTime? ultimoAcceso,
   }) {
@@ -87,6 +94,7 @@ class Usuario {
       nombre: nombre ?? this.nombre,
       email: email ?? this.email,
       rol: rol ?? this.rol,
+      agenteId: agenteId ?? this.agenteId,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       ultimoAcceso: ultimoAcceso ?? this.ultimoAcceso,
     );

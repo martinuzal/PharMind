@@ -1,28 +1,17 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace PharMind.API.Models
+namespace PharMind.API.Models;
+
+public partial class AuditPeriod
 {
-    [Table("auditPeriod")]
-    public class AuditPeriod
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        [StringLength(100)]
-        [Column("CDG_PERUSER")]
-        public string? CDG_PERUSER { get; set; }
+    public string? CdgPeruser { get; set; }
 
-        [StringLength(500)]
-        [Column("DESC")]
-        public string? DESC { get; set; }
+    public string? Desc { get; set; }
 
-        [StringLength(100)]
-        [Column("BLANK")]
-        public string? BLANK { get; set; }
+    public string? Blank { get; set; }
 
-        [StringLength(1000)]
-        public string? RawData { get; set; }
-    }
+    public string? RawData { get; set; }
 }

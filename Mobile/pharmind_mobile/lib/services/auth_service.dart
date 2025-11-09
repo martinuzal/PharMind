@@ -232,15 +232,32 @@ class AuthService {
         return null;
       }
 
-      // Verificar conectividad
+      // PRIORIDAD 1: Intentar obtener usuario del cache local primero (más rápido y preserva sesión)
+      if (!kIsWeb) {
+        final usuariosCache = await _dbService.getAllUsuarios();
+        if (usuariosCache.isNotEmpty) {
+          print('Usuario obtenido del cache local (SQLite)');
+          return usuariosCache.first;
+        }
+      } else {
+        // En web, intentar obtener de SharedPreferences
+        final usuarioWeb = await getUserWeb();
+        if (usuarioWeb != null) {
+          print('Usuario obtenido del cache web (SharedPreferences)');
+          return usuarioWeb;
+        }
+      }
+
+      // PRIORIDAD 2: Si no hay usuario en cache, verificar conectividad e intentar con servidor
       final hasInternet = await hasInternetConnection();
 
       if (hasInternet) {
-        // Modo ONLINE - Obtener usuario del servidor
+        // Modo ONLINE - Obtener usuario del servidor solo si no hay cache
         return await _getCurrentUserOnline();
       } else {
-        // Modo OFFLINE - Obtener usuario del cache local
-        return await _getCurrentUserOffline();
+        // Sin internet y sin cache
+        print('Sin usuario en cache y sin conexión');
+        return null;
       }
     } catch (e) {
       print('Error al obtener usuario actual: $e');

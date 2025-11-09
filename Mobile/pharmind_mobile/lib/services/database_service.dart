@@ -26,7 +26,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 2, // Incrementado de 1 a 2 para incluir nuevas tablas
+      version: 3, // Incrementado de 2 a 3 para incluir agenteId en usuarios
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -41,6 +41,7 @@ class DatabaseService {
         nombre TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
         rol TEXT NOT NULL,
+        agenteId TEXT,
         fechaCreacion TEXT,
         ultimoAcceso TEXT,
         isSynced INTEGER DEFAULT 1,
@@ -145,6 +146,12 @@ class DatabaseService {
       ''');
 
       print('Tablas de sincronización offline creadas exitosamente');
+    }
+
+    if (oldVersion < 3) {
+      // Migración de versión 2 a 3: Agregar agenteId a tabla usuarios
+      await db.execute('ALTER TABLE usuarios ADD COLUMN agenteId TEXT');
+      print('Columna agenteId agregada a tabla usuarios');
     }
   }
 

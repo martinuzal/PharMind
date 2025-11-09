@@ -31,6 +31,30 @@ export interface AuditCustomerEstadisticas {
   medicosConEspecialidad2: number;
 }
 
+export interface PerfilPorMercado {
+  mercado: string;
+  totalPrescripciones: number;
+  prescripcionesLaboratorio: number;
+  prescripcionesMercado: number;
+  marketShare: number;
+  categorias: number;
+}
+
+export interface TopCategoria {
+  categoria: string;
+  prescripciones: number;
+}
+
+export interface PerfilPrescriptivo {
+  resumen: {
+    totalPrescripciones: number;
+    totalMercados: number;
+    promedioMarketShare: number;
+  };
+  perfilPorMercado: PerfilPorMercado[];
+  topCategorias: TopCategoria[];
+}
+
 export const auditCustomerService = {
   // Obtener todos los médicos con paginación y filtros
   getAll: async (page: number = 1, pageSize: number = 50, searchName?: string, searchOther?: string): Promise<AuditCustomerResponse> => {
@@ -57,6 +81,12 @@ export const auditCustomerService = {
   // Obtener estadísticas
   getEstadisticas: async (): Promise<AuditCustomerEstadisticas> => {
     const response = await api.get('/AuditCustomer/estadisticas');
+    return response.data;
+  },
+
+  // Obtener perfil prescriptivo del médico
+  getPerfilPrescriptivo: async (cdgmedReg: string): Promise<PerfilPrescriptivo> => {
+    const response = await api.get(`/AuditCustomer/${cdgmedReg}/perfil-prescriptivo`);
     return response.data;
   }
 };

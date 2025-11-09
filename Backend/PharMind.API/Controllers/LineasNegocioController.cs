@@ -142,7 +142,7 @@ public class LineasNegocioController : ControllerBase
     {
         try
         {
-            var lineaNegocio = new LineaNegocio
+            var lineaNegocio = new LineasNegocio
             {
                 Codigo = dto.Codigo,
                 Nombre = dto.Nombre,

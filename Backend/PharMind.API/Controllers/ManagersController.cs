@@ -34,7 +34,6 @@ public class ManagersController : ControllerBase
         try
         {
             var query = _context.Managers
-                .Include(m => m.Usuario)
                 .Include(m => m.ManagerRegiones)
                 .Include(m => m.ManagerDistritos)
                 .Include(m => m.ManagerLineasNegocio)
@@ -67,8 +66,6 @@ public class ManagersController : ControllerBase
             var itemDtos = items.Select(m => new ManagerDto
             {
                 Id = m.Id,
-                UsuarioId = m.UsuarioId,
-                UsuarioNombre = m.Usuario?.NombreCompleto ?? "N/A",
                 Codigo = m.Codigo,
                 Nombre = m.Nombre,
                 Apellido = m.Apellido,
@@ -124,7 +121,6 @@ public class ManagersController : ControllerBase
         try
         {
             var manager = await _context.Managers
-                .Include(m => m.Usuario)
                 .Include(m => m.ManagerRegiones)
                 .Include(m => m.ManagerDistritos)
                 .Include(m => m.ManagerLineasNegocio)
@@ -138,8 +134,6 @@ public class ManagersController : ControllerBase
             var dto = new ManagerDto
             {
                 Id = manager.Id,
-                UsuarioId = manager.UsuarioId,
-                UsuarioNombre = manager.Usuario?.NombreCompleto ?? "N/A",
                 Codigo = manager.Codigo,
                 Nombre = manager.Nombre,
                 Apellido = manager.Apellido,
@@ -186,16 +180,8 @@ public class ManagersController : ControllerBase
     {
         try
         {
-            // Verificar que el usuario existe
-            var usuario = await _context.Usuarios.FindAsync(dto.UsuarioId);
-            if (usuario == null)
-            {
-                return BadRequest(new { message = "Usuario no encontrado" });
-            }
-
             var manager = new Manager
             {
-                UsuarioId = dto.UsuarioId,
                 Codigo = dto.Codigo,
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
@@ -218,7 +204,7 @@ public class ManagersController : ControllerBase
             // Agregar relaciones con regiones
             foreach (var regionId in dto.RegionIds)
             {
-                var managerRegion = new ManagerRegion
+                var managerRegion = new ManagerRegione
                 {
                     ManagerId = manager.Id,
                     RegionId = regionId,
@@ -246,7 +232,7 @@ public class ManagersController : ControllerBase
             // Agregar relaciones con líneas de negocio
             foreach (var lineaNegocioId in dto.LineaNegocioIds)
             {
-                var managerLineaNegocio = new ManagerLineaNegocio
+                var managerLineaNegocio = new ManagerLineasNegocio
                 {
                     ManagerId = manager.Id,
                     LineaNegocioId = lineaNegocioId,
@@ -260,7 +246,6 @@ public class ManagersController : ControllerBase
             await _context.SaveChangesAsync();
 
             // Recargar con datos relacionados
-            await _context.Entry(manager).Reference(m => m.Usuario).LoadAsync();
             await _context.Entry(manager).Collection(m => m.ManagerRegiones).LoadAsync();
             await _context.Entry(manager).Collection(m => m.ManagerDistritos).LoadAsync();
             await _context.Entry(manager).Collection(m => m.ManagerLineasNegocio).LoadAsync();
@@ -268,8 +253,6 @@ public class ManagersController : ControllerBase
             var result = new ManagerDto
             {
                 Id = manager.Id,
-                UsuarioId = manager.UsuarioId,
-                UsuarioNombre = manager.Usuario?.NombreCompleto ?? "N/A",
                 Codigo = manager.Codigo,
                 Nombre = manager.Nombre,
                 Apellido = manager.Apellido,
@@ -308,7 +291,6 @@ public class ManagersController : ControllerBase
         try
         {
             var manager = await _context.Managers
-                .Include(m => m.Usuario)
                 .Include(m => m.ManagerRegiones)
                 .Include(m => m.ManagerDistritos)
                 .Include(m => m.ManagerLineasNegocio)
@@ -350,7 +332,7 @@ public class ManagersController : ControllerBase
             {
                 if (!regionIdsActuales.Contains(regionId))
                 {
-                    var managerRegion = new ManagerRegion
+                    var managerRegion = new ManagerRegione
                     {
                         ManagerId = manager.Id,
                         RegionId = regionId,
@@ -404,7 +386,7 @@ public class ManagersController : ControllerBase
             {
                 if (!lineaIdsActuales.Contains(lineaNegocioId))
                 {
-                    var managerLineaNegocio = new ManagerLineaNegocio
+                    var managerLineaNegocio = new ManagerLineasNegocio
                     {
                         ManagerId = manager.Id,
                         LineaNegocioId = lineaNegocioId,
@@ -426,8 +408,6 @@ public class ManagersController : ControllerBase
             var result = new ManagerDto
             {
                 Id = manager.Id,
-                UsuarioId = manager.UsuarioId,
-                UsuarioNombre = manager.Usuario?.NombreCompleto ?? "N/A",
                 Codigo = manager.Codigo,
                 Nombre = manager.Nombre,
                 Apellido = manager.Apellido,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePage } from '../../contexts/PageContext';
 import auditCustomerService, { type AuditCustomer, type AuditCustomerEstadisticas } from '../../services/auditCustomer.service';
+import PerfilPrescriptivoModal from '../../components/modals/PerfilPrescriptivoModal';
 import './AuditoriaPages.css';
 
 const MedicosAuditoriaPage: React.FC = () => {
@@ -17,6 +18,8 @@ const MedicosAuditoriaPage: React.FC = () => {
   const [searchOther, setSearchOther] = useState('');
   const [searchNameInput, setSearchNameInput] = useState('');
   const [searchOtherInput, setSearchOtherInput] = useState('');
+  const [selectedMedico, setSelectedMedico] = useState<AuditCustomer | null>(null);
+  const [showPerfilModal, setShowPerfilModal] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -349,8 +352,11 @@ const MedicosAuditoriaPage: React.FC = () => {
                         <div className="action-buttons">
                           <button
                             className="action-button view-button"
-                            title="Ver detalles"
-                            onClick={() => console.log('Ver médico:', medico.id)}
+                            title="Ver perfil prescriptivo"
+                            onClick={() => {
+                              setSelectedMedico(medico);
+                              setShowPerfilModal(true);
+                            }}
                           >
                             <span className="material-icons">visibility</span>
                           </button>
@@ -407,6 +413,18 @@ const MedicosAuditoriaPage: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Modal de Perfil Prescriptivo */}
+      {selectedMedico && (
+        <PerfilPrescriptivoModal
+          isOpen={showPerfilModal}
+          onClose={() => {
+            setShowPerfilModal(false);
+            setSelectedMedico(null);
+          }}
+          medico={selectedMedico}
+        />
+      )}
     </div>
   );
 };

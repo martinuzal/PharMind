@@ -1,46 +1,43 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PharMind.API.Models;
 
-[Table("Modulos")]
-public class Modulo : AuditableEntity
+public partial class Modulo
 {
-    [Required]
-    [Column("Codigo")]
-    [MaxLength(50)]
-    public string Codigo { get; set; } = string.Empty;
+    public string Id { get; set; } = null!;
 
-    [Required]
-    [Column("Nombre")]
-    [MaxLength(100)]
-    public string Nombre { get; set; } = string.Empty;
+    public string Nombre { get; set; } = null!;
 
-    [Column("Descripcion")]
-    [MaxLength(500)]
     public string? Descripcion { get; set; }
 
-    [Column("Icono")]
-    [MaxLength(50)]
     public string? Icono { get; set; }
 
-    [Column("Ruta")]
-    [MaxLength(200)]
     public string? Ruta { get; set; }
 
-    [Column("OrdenMenu")]
-    public int OrdenMenu { get; set; } = 0;
+    public int OrdenMenu { get; set; }
 
-    [Column("Activo")]
-    public bool Activo { get; set; } = true;
+    public bool Activo { get; set; }
 
-    [Column("ModuloPadreId")]
     public string? ModuloPadreId { get; set; }
 
-    // Navigation properties
-    [ForeignKey("ModuloPadreId")]
+    public DateTime FechaCreacion { get; set; }
+
+    public string? CreadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public bool? Status { get; set; }
+
+    public string Codigo { get; set; } = null!;
+
+    public virtual ICollection<Modulo> InverseModuloPadre { get; set; } = new List<Modulo>();
+
     public virtual Modulo? ModuloPadre { get; set; }
 
-    public virtual ICollection<Modulo> SubModulos { get; set; } = new List<Modulo>();
     public virtual ICollection<RolModulo> RolModulos { get; set; } = new List<RolModulo>();
+
+    public virtual ICollection<RolesModulo> RolesModulos { get; set; } = new List<RolesModulo>();
 }

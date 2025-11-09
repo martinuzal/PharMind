@@ -13,7 +13,7 @@ public class UsuarioDto
     public string? Departamento { get; set; }
     public bool Activo { get; set; }
     public bool EmailVerificado { get; set; }
-    public string? ProveedorSSO { get; set; }
+    public string? ProveedorSso { get; set; }
     public DateTime FechaCreacion { get; set; }
     public List<string> Roles { get; set; } = new();
     public List<string> RoleIds { get; set; } = new();

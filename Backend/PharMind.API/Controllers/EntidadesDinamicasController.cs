@@ -19,7 +19,7 @@ public class EntidadesDinamicasController : ControllerBase
 
     // GET: api/EntidadesDinamicas
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<EntidadDinamica>>> GetEntidadesDinamicas()
+    public async Task<ActionResult<IEnumerable<EntidadesDinamica>>> GetEntidadesDinamicas()
     {
         return await _context.EntidadesDinamicas
             .Include(e => e.Esquema)
@@ -28,7 +28,7 @@ public class EntidadesDinamicasController : ControllerBase
 
     // GET: api/EntidadesDinamicas/esquema/{esquemaId}
     [HttpGet("esquema/{esquemaId}")]
-    public async Task<ActionResult<IEnumerable<EntidadDinamica>>> GetEntidadesByEsquema(string esquemaId)
+    public async Task<ActionResult<IEnumerable<EntidadesDinamica>>> GetEntidadesByEsquema(string esquemaId)
     {
         var entidades = await _context.EntidadesDinamicas
             .Include(e => e.Esquema)
@@ -40,7 +40,7 @@ public class EntidadesDinamicasController : ControllerBase
 
     // GET: api/EntidadesDinamicas/tipo/{entidadTipo}/subtipo/{subTipo}
     [HttpGet("tipo/{entidadTipo}/subtipo/{subTipo}")]
-    public async Task<ActionResult<IEnumerable<EntidadDinamica>>> GetEntidadesByTipoSubTipo(string entidadTipo, string subTipo)
+    public async Task<ActionResult<IEnumerable<EntidadesDinamica>>> GetEntidadesByTipoSubTipo(string entidadTipo, string subTipo)
     {
         var entidades = await _context.EntidadesDinamicas
             .Include(e => e.Esquema)
@@ -52,7 +52,7 @@ public class EntidadesDinamicasController : ControllerBase
 
     // GET: api/EntidadesDinamicas/{id}
     [HttpGet("{id}")]
-    public async Task<ActionResult<EntidadDinamica>> GetEntidadDinamica(string id)
+    public async Task<ActionResult<EntidadesDinamica>> GetEntidadesDinamica(string id)
     {
         var entidad = await _context.EntidadesDinamicas
             .Include(e => e.Esquema)
@@ -68,7 +68,7 @@ public class EntidadesDinamicasController : ControllerBase
 
     // POST: api/EntidadesDinamicas
     [HttpPost]
-    public async Task<ActionResult<EntidadDinamica>> PostEntidadDinamica(EntidadDinamica entidad)
+    public async Task<ActionResult<EntidadesDinamica>> PostEntidadesDinamica(EntidadesDinamica entidad)
     {
         // Generar ID si no existe
         if (string.IsNullOrEmpty(entidad.Id))
@@ -92,12 +92,12 @@ public class EntidadesDinamicasController : ControllerBase
         _context.EntidadesDinamicas.Add(entidad);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetEntidadDinamica), new { id = entidad.Id }, entidad);
+        return CreatedAtAction(nameof(GetEntidadesDinamica), new { id = entidad.Id }, entidad);
     }
 
     // PUT: api/EntidadesDinamicas/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutEntidadDinamica(string id, EntidadDinamica entidad)
+    public async Task<IActionResult> PutEntidadesDinamica(string id, EntidadesDinamica entidad)
     {
         if (id != entidad.Id)
         {
@@ -129,7 +129,7 @@ public class EntidadesDinamicasController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!EntidadDinamicaExists(id))
+            if (!EntidadesDinamicaExists(id))
             {
                 return NotFound();
             }
@@ -144,7 +144,7 @@ public class EntidadesDinamicasController : ControllerBase
 
     // DELETE: api/EntidadesDinamicas/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteEntidadDinamica(string id)
+    public async Task<IActionResult> DeleteEntidadesDinamica(string id)
     {
         var entidad = await _context.EntidadesDinamicas.FindAsync(id);
         if (entidad == null)
@@ -219,12 +219,12 @@ public class EntidadesDinamicasController : ControllerBase
         return NoContent();
     }
 
-    private bool EntidadDinamicaExists(string id)
+    private bool EntidadesDinamicaExists(string id)
     {
         return _context.EntidadesDinamicas.Any(e => e.Id == id);
     }
 
-    private async Task ProcessAddressFields(EntidadDinamica entidad, EsquemaPersonalizado esquema)
+    private async Task ProcessAddressFields(EntidadesDinamica entidad, EsquemasPersonalizado esquema)
     {
         // Parsear el esquema para encontrar campos de tipo 'address'
         var schemaJson = JsonSerializer.Deserialize<JsonElement>(esquema.Schema);
@@ -258,14 +258,14 @@ public class EntidadesDinamicasController : ControllerBase
                 // Verificar si hay datos de dirección para este campo
                 if (datosJson.TryGetValue(fieldName, out var addressData) && addressData.ValueKind == JsonValueKind.Object)
                 {
-                    // Crear un objeto Direccion desde el JSON
-                    var direccion = new Direccion
+                    // Crear un objeto Direccione desde el JSON
+                    var direccion = new Direccione
                     {
                         Id = Guid.NewGuid().ToString(),
                         FechaCreacion = DateTime.UtcNow
                     };
 
-                    // Mapear los campos del JSON a la entidad Direccion
+                    // Mapear los campos del JSON a la entidad Direccione
                     if (addressData.TryGetProperty("calle", out var calle)) direccion.Calle = calle.GetString();
                     if (addressData.TryGetProperty("numero", out var numero)) direccion.Numero = numero.GetString();
                     if (addressData.TryGetProperty("apartamento", out var apartamento)) direccion.Apartamento = apartamento.GetString();

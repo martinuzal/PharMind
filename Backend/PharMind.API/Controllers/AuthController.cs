@@ -84,9 +84,10 @@ public class AuthController : ControllerBase
                 Departamento = usuario.Departamento,
                 Activo = usuario.Activo,
                 EmailVerificado = usuario.EmailVerificado,
-                ProveedorSSO = usuario.ProveedorSSO,
+                ProveedorSso = usuario.ProveedorSso,
                 FechaCreacion = usuario.FechaCreacion,
-                Roles = usuario.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList()
+                Roles = usuario.UsuarioRoles.Select(ur => ur.Rol?.Nombre ?? "").ToList(),
+                AgenteId = usuario.AgenteId
             };
 
             return Ok(new LoginResponse

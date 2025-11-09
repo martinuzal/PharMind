@@ -43,5 +43,5 @@ public class TipoActividad : AuditableEntity
     public int? Orden { get; set; }
 
     // Navigation properties
-    public virtual ICollection<TiempoUtilizado> TiemposUtilizados { get; set; } = new List<TiempoUtilizado>();
+    public virtual ICollection<TiempoUtilizado> TiempoUtilizados { get; set; } = new List<TiempoUtilizado>();
 }

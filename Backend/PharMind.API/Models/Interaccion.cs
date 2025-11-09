@@ -78,7 +78,7 @@ public class Interaccion : AuditableEntity
 
     // Navigation properties
     [ForeignKey("TipoInteraccionId")]
-    public virtual EsquemaPersonalizado? TipoInteraccionEsquema { get; set; }
+    public virtual EsquemasPersonalizado? TipoInteraccionEsquema { get; set; }
 
     [ForeignKey("RelacionId")]
     public virtual Relacion? Relacion { get; set; }
@@ -90,5 +90,5 @@ public class Interaccion : AuditableEntity
     public virtual Cliente? Cliente { get; set; }
 
     [ForeignKey("EntidadDinamicaId")]
-    public virtual EntidadDinamica? DatosExtendidos { get; set; }
+    public virtual EntidadesDinamica? DatosExtendidos { get; set; }
 }

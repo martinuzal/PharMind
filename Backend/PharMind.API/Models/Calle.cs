@@ -1,31 +1,31 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PharMind.API.Models;
 
-[Table("Calles")]
-public class Calle : AuditableEntity
+public partial class Calle
 {
-    [Column("Nombre")]
-    [Required]
-    [MaxLength(200)]
-    public string Nombre { get; set; } = string.Empty;
+    public string Id { get; set; } = null!;
 
-    [Column("CiudadId")]
+    public string Nombre { get; set; } = null!;
+
     public string? CiudadId { get; set; }
 
-    [Column("Colonia")]
-    [MaxLength(100)]
     public string? Colonia { get; set; }
 
-    [Column("CodigoPostal")]
-    [MaxLength(20)]
     public string? CodigoPostal { get; set; }
 
-    [Column("Activo")]
-    public bool Activo { get; set; } = true;
+    public bool Activo { get; set; }
 
-    // Relaciones
-    [ForeignKey("CiudadId")]
-    public Ciudad? Ciudad { get; set; }
+    public DateTime FechaCreacion { get; set; }
+
+    public string? CreadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public bool? Status { get; set; }
+
+    public virtual Ciudade? Ciudad { get; set; }
 }

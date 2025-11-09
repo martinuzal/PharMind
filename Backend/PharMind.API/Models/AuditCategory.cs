@@ -1,60 +1,33 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace PharMind.API.Models
+namespace PharMind.API.Models;
+
+public partial class AuditCategory
 {
-    [Table("auditCategory")]
-    public class AuditCategory
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        [StringLength(100)]
-        [Column("CDG_PERUSER")]
-        public string? CDG_PERUSER { get; set; }
+    public string? CdgPeruser { get; set; }
 
-        [StringLength(100)]
-        [Column("CDGMED_REG")]
-        public string? CDGMED_REG { get; set; }
+    public string? CdgmedReg { get; set; }
 
-        [StringLength(100)]
-        [Column("CDG_MERCADO")]
-        public string? CDG_MERCADO { get; set; }
+    public string? CdgMercado { get; set; }
 
-        [StringLength(100)]
-        [Column("CDGREG_PMIX")]
-        public string? CDGREG_PMIX { get; set; }
+    public string? CdgregPmix { get; set; }
 
-        [StringLength(500)]
-        [Column("CAT")]
-        public string? CAT { get; set; }
+    public string? Cat { get; set; }
 
-        [StringLength(100)]
-        [Column("PX_MER")]
-        public string? PX_MER { get; set; }
+    public string? PxMer { get; set; }
 
-        [StringLength(100)]
-        [Column("PX_LAB")]
-        public string? PX_LAB { get; set; }
+    public string? PxLab { get; set; }
 
-        [StringLength(100)]
-        [Column("MER_MS")]
-        public string? MER_MS { get; set; }
+    public string? MerMs { get; set; }
 
-        [StringLength(100)]
-        [Column("CDG_RAIZ")]
-        public string? CDG_RAIZ { get; set; }
+    public string? CdgRaiz { get; set; }
 
-        [StringLength(100)]
-        [Column("PX")]
-        public string? PX { get; set; }
+    public string? Px { get; set; }
 
-        [StringLength(100)]
-        [Column("PX_MS")]
-        public string? PX_MS { get; set; }
+    public string? PxMs { get; set; }
 
-        [StringLength(1000)]
-        public string? RawData { get; set; }
-    }
+    public string? RawData { get; set; }
 }

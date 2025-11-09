@@ -32,7 +32,7 @@ public class ModulosController : ControllerBase
         try
         {
             var query = _context.Modulos
-                .Include(m => m.SubModulos.Where(sm => sm.Status == false))
+                .Include(m => m.InverseModuloPadre.Where(sm => sm.Status == false))
                 .Where(m => m.Status == false && m.ModuloPadreId == null); // Solo módulos principales
 
             if (!includeInactive)
@@ -67,7 +67,7 @@ public class ModulosController : ControllerBase
         try
         {
             var modulo = await _context.Modulos
-                .Include(m => m.SubModulos.Where(sm => sm.Status == false))
+                .Include(m => m.InverseModuloPadre.Where(sm => sm.Status == false))
                 .Include(m => m.ModuloPadre)
                 .Where(m => m.Status == false)
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -147,7 +147,7 @@ public class ModulosController : ControllerBase
 
             // Cargar el módulo completo con relaciones
             var moduloCompleto = await _context.Modulos
-                .Include(m => m.SubModulos.Where(sm => sm.Status == false))
+                .Include(m => m.InverseModuloPadre.Where(sm => sm.Status == false))
                 .Include(m => m.ModuloPadre)
                 .FirstOrDefaultAsync(m => m.Id == modulo.Id);
 
@@ -179,7 +179,7 @@ public class ModulosController : ControllerBase
         try
         {
             var modulo = await _context.Modulos
-                .Include(m => m.SubModulos)
+                .Include(m => m.InverseModuloPadre)
                 .FirstOrDefaultAsync(m => m.Id == id && m.Status == false);
 
             if (modulo == null)
@@ -225,7 +225,7 @@ public class ModulosController : ControllerBase
                 }
 
                 // Si el módulo actual tiene hijos, no permitir asignarlo como hijo
-                if (modulo.SubModulos.Any(sm => sm.Status == false))
+                if (modulo.InverseModuloPadre.Any(sm => sm.Status == false))
                 {
                     return BadRequest("No se puede convertir en submódulo un módulo que tiene submódulos");
                 }
@@ -245,7 +245,7 @@ public class ModulosController : ControllerBase
 
             // Recargar con todas las relaciones
             var moduloActualizado = await _context.Modulos
-                .Include(m => m.SubModulos.Where(sm => sm.Status == false))
+                .Include(m => m.InverseModuloPadre.Where(sm => sm.Status == false))
                 .Include(m => m.ModuloPadre)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
@@ -276,7 +276,7 @@ public class ModulosController : ControllerBase
         try
         {
             var modulo = await _context.Modulos
-                .Include(m => m.SubModulos)
+                .Include(m => m.InverseModuloPadre)
                 .Include(m => m.RolModulos)
                 .FirstOrDefaultAsync(m => m.Id == id && m.Status == false);
 
@@ -286,7 +286,7 @@ public class ModulosController : ControllerBase
             }
 
             // Validar que no tenga submódulos activos
-            var subModulosActivos = modulo.SubModulos.Where(sm => sm.Status == false).ToList();
+            var subModulosActivos = modulo.InverseModuloPadre.Where(sm => sm.Status == false).ToList();
             if (subModulosActivos.Any())
             {
                 return BadRequest($"No se puede eliminar el módulo porque tiene {subModulosActivos.Count} submódulo(s) activo(s)");
@@ -342,7 +342,7 @@ public class ModulosController : ControllerBase
             if (usuario.EsAdministrador)
             {
                 var todosModulos = await _context.Modulos
-                    .Include(m => m.SubModulos.Where(sm => sm.Status == false && sm.Activo))
+                    .Include(m => m.InverseModuloPadre.Where(sm => sm.Status == false && sm.Activo))
                     .Where(m => m.Status == false && m.Activo && m.ModuloPadreId == null)
                     .OrderBy(m => m.OrdenMenu)
                     .ToListAsync();
@@ -370,7 +370,7 @@ public class ModulosController : ControllerBase
 
                 // Obtener solo los módulos principales permitidos
                 var modulosPrincipales = await _context.Modulos
-                    .Include(m => m.SubModulos.Where(sm => sm.Status == false && sm.Activo))
+                    .Include(m => m.InverseModuloPadre.Where(sm => sm.Status == false && sm.Activo))
                     .Where(m => m.Status == false && m.Activo && m.ModuloPadreId == null)
                     .OrderBy(m => m.OrdenMenu)
                     .ToListAsync();
@@ -396,7 +396,7 @@ public class ModulosController : ControllerBase
     /// </summary>
     private ModuloDto MapToDto(Modulo modulo, bool includeInactive)
     {
-        var subModulos = modulo.SubModulos
+        var subModulos = modulo.InverseModuloPadre
             .Where(sm => includeInactive || sm.Activo)
             .OrderBy(sm => sm.OrdenMenu)
             .Select(sm => MapToDto(sm, includeInactive))
@@ -425,7 +425,7 @@ public class ModulosController : ControllerBase
         bool esAdmin)
     {
         // Mapear submódulos con permisos
-        var subModulos = modulo.SubModulos
+        var subModulos = modulo.InverseModuloPadre
             .Where(sm => sm.Activo && (esAdmin || (permisosDict != null && permisosDict.ContainsKey(sm.Id) && permisosDict[sm.Id].PuedeVer)))
             .OrderBy(sm => sm.OrdenMenu)
             .Select(sm => MapToPermisosDto(sm, permisosDict, esAdmin))

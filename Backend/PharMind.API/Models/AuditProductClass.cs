@@ -1,24 +1,15 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace PharMind.API.Models
+namespace PharMind.API.Models;
+
+public partial class AuditProductClass
 {
-    [Table("auditProductClass")]
-    public class AuditProductClass
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        [StringLength(100)]
-        [Column("CODIGO_PMIX")]
-        public string? CODIGO_PMIX { get; set; }
+    public string? CodigoPmix { get; set; }
 
-        [StringLength(100)]
-        [Column("CDG_MERCADO")]
-        public string? CDG_MERCADO { get; set; }
+    public string? CdgMercado { get; set; }
 
-        [StringLength(1000)]
-        public string? RawData { get; set; }
-    }
+    public string? RawData { get; set; }
 }

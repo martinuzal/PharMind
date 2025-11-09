@@ -27,7 +27,7 @@ public class EsquemasPersonalizadosController : ControllerBase
     /// <param name="activo">Filtro opcional por estado activo</param>
     /// <returns>Lista de esquemas</returns>
     [HttpGet]
-    public async Task<ActionResult<List<EsquemaPersonalizado>>> GetEsquemas(
+    public async Task<ActionResult<List<EsquemasPersonalizado>>> GetEsquemas(
         [FromQuery] string? entidadTipo = null,
         [FromQuery] bool? activo = null)
     {
@@ -69,7 +69,7 @@ public class EsquemasPersonalizadosController : ControllerBase
     /// <param name="id">ID del esquema</param>
     /// <returns>Esquema encontrado</returns>
     [HttpGet("{id}")]
-    public async Task<ActionResult<EsquemaPersonalizado>> GetEsquema(string id)
+    public async Task<ActionResult<EsquemasPersonalizado>> GetEsquema(string id)
     {
         try
         {
@@ -97,7 +97,7 @@ public class EsquemasPersonalizadosController : ControllerBase
     /// <param name="entidadTipo">Tipo de entidad (Cliente o Interaccion)</param>
     /// <returns>Lista de esquemas del tipo especificado</returns>
     [HttpGet("tipo/{entidadTipo}")]
-    public async Task<ActionResult<List<EsquemaPersonalizado>>> GetEsquemasPorTipo(string entidadTipo)
+    public async Task<ActionResult<List<EsquemasPersonalizado>>> GetEsquemasPorTipo(string entidadTipo)
     {
         try
         {
@@ -123,7 +123,7 @@ public class EsquemasPersonalizadosController : ControllerBase
     /// <param name="subtipo">Subtipo del esquema</param>
     /// <returns>Esquema encontrado</returns>
     [HttpGet("tipo/{tipo}/subtipo/{subtipo}")]
-    public async Task<ActionResult<EsquemaPersonalizado>> GetEsquemaPorTipoSubTipo(string tipo, string subtipo)
+    public async Task<ActionResult<EsquemasPersonalizado>> GetEsquemaPorTipoSubTipo(string tipo, string subtipo)
     {
         try
         {
@@ -153,7 +153,7 @@ public class EsquemasPersonalizadosController : ControllerBase
     /// <param name="esquema">Datos del esquema a crear</param>
     /// <returns>Esquema creado</returns>
     [HttpPost]
-    public async Task<ActionResult<EsquemaPersonalizado>> CreateEsquema([FromBody] EsquemaPersonalizado esquema)
+    public async Task<ActionResult<EsquemasPersonalizado>> CreateEsquema([FromBody] EsquemasPersonalizado esquema)
     {
         try
         {
@@ -209,7 +209,7 @@ public class EsquemasPersonalizadosController : ControllerBase
     /// <param name="esquema">Datos actualizados del esquema</param>
     /// <returns>Esquema actualizado</returns>
     [HttpPut("{id}")]
-    public async Task<ActionResult<EsquemaPersonalizado>> UpdateEsquema(string id, [FromBody] EsquemaPersonalizado esquema)
+    public async Task<ActionResult<EsquemasPersonalizado>> UpdateEsquema(string id, [FromBody] EsquemasPersonalizado esquema)
     {
         try
         {
@@ -229,7 +229,7 @@ public class EsquemasPersonalizadosController : ControllerBase
             esquemaExistente.Schema = esquema.Schema;
             esquemaExistente.ReglasValidacion = esquema.ReglasValidacion;
             esquemaExistente.ReglasCorrelacion = esquema.ReglasCorrelacion;
-            esquemaExistente.ConfiguracionUI = esquema.ConfiguracionUI;
+            esquemaExistente.ConfiguracionUi = esquema.ConfiguracionUi;
             esquemaExistente.Activo = esquema.Activo;
             esquemaExistente.Orden = esquema.Orden;
             esquemaExistente.FechaModificacion = DateTime.Now;
@@ -286,7 +286,7 @@ public class EsquemasPersonalizadosController : ControllerBase
     /// <param name="activo">Estado activo</param>
     /// <returns>Esquema actualizado</returns>
     [HttpPatch("{id}/toggle-activo")]
-    public async Task<ActionResult<EsquemaPersonalizado>> ToggleActivo(string id, [FromQuery] bool activo)
+    public async Task<ActionResult<EsquemasPersonalizado>> ToggleActivo(string id, [FromQuery] bool activo)
     {
         try
         {

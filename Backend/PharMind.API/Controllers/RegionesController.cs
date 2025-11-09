@@ -152,7 +152,7 @@ public class RegionesController : ControllerBase
     {
         try
         {
-            var region = new Region
+            var region = new Regiones
             {
                 Codigo = dto.Codigo,
                 Nombre = dto.Nombre,

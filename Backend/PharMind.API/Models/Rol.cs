@@ -36,4 +36,5 @@ public class Rol : AuditableEntity
 
     public virtual ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
     public virtual ICollection<RolModulo> RolModulos { get; set; } = new List<RolModulo>();
+    public virtual ICollection<UsuarioRol> UsuarioRols { get; set; } = new List<UsuarioRol>();
 }

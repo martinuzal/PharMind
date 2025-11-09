@@ -21,6 +21,7 @@ public class ClienteDto
     public string? Telefono { get; set; }
     public string? DireccionId { get; set; }
     public DireccionDto? Direccion { get; set; }
+    public string? CodigoAudit { get; set; }
     public string Estado { get; set; } = "Activo";
     public DateTime FechaCreacion { get; set; }
     public string? CreadoPor { get; set; }
@@ -44,6 +45,7 @@ public class CreateClienteDto
     public string? Email { get; set; }
     public string? Telefono { get; set; }
     public string? DireccionId { get; set; }
+    public string? CodigoAudit { get; set; }
     public string Estado { get; set; } = "Activo";
 }
 
@@ -61,6 +63,7 @@ public class UpdateClienteDto
     public string? Email { get; set; }
     public string? Telefono { get; set; }
     public string? DireccionId { get; set; }
+    public string? CodigoAudit { get; set; }
     public string Estado { get; set; } = "Activo";
 }
 

@@ -44,5 +44,5 @@ public class LineaNegocio : AuditableEntity
 
     // Navigation properties
     public virtual ICollection<Agente> Agentes { get; set; } = new List<Agente>();
-    public virtual ICollection<ManagerLineaNegocio> ManagerLineasNegocio { get; set; } = new List<ManagerLineaNegocio>();
+    public virtual ICollection<ManagerLineasNegocio> ManagerLineasNegocio { get; set; } = new List<ManagerLineasNegocio>();
 }

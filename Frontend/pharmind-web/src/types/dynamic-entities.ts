@@ -16,6 +16,7 @@ export interface EsquemaPersonalizado {
   version?: number;
   activo: boolean;
   orden?: number;
+  cruceAudit?: boolean;
 }
 
 export interface EntidadDinamica {

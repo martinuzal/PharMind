@@ -22,9 +22,7 @@ public class UsuarioRol : AuditableEntity
     public string? AsignadoPor { get; set; }
 
     // Navigation properties
-    [ForeignKey("UsuarioId")]
     public virtual Usuario? Usuario { get; set; }
 
-    [ForeignKey("RolId")]
     public virtual Rol? Rol { get; set; }
 }

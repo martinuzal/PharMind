@@ -35,7 +35,7 @@ public class AgentesController : ControllerBase
         {
             var query = _context.Agentes
                 .Include(a => a.TipoAgente)
-                .Include(a => a.DatosExtendidos)
+                .Include(a => a.EntidadesDinamica)
                 .Include(a => a.Region)
                 .Include(a => a.Distrito)
                 .Include(a => a.LineaNegocio)
@@ -90,7 +90,7 @@ public class AgentesController : ControllerBase
         {
             var agente = await _context.Agentes
                 .Include(a => a.TipoAgente)
-                .Include(a => a.DatosExtendidos)
+                .Include(a => a.EntidadesDinamica)
                 .Include(a => a.Region)
                 .Include(a => a.Distrito)
                 .Include(a => a.LineaNegocio)
@@ -167,10 +167,10 @@ public class AgentesController : ControllerBase
             }
 
             // Crear entidad dinámica si hay datos dinámicos
-            EntidadDinamica? entidadDinamica = null;
+            EntidadesDinamica? EntidadesDinamica = null;
             if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
             {
-                entidadDinamica = new EntidadDinamica
+                EntidadesDinamica = new EntidadesDinamica
                 {
                     Id = Guid.NewGuid().ToString(),
                     EsquemaId = dto.TipoAgenteId,
@@ -180,7 +180,7 @@ public class AgentesController : ControllerBase
                     Status = false
                 };
 
-                _context.EntidadesDinamicas.Add(entidadDinamica);
+                _context.EntidadesDinamicas.Add(EntidadesDinamica);
             }
 
             // Crear agente
@@ -188,7 +188,7 @@ public class AgentesController : ControllerBase
             {
                 Id = Guid.NewGuid().ToString(),
                 TipoAgenteId = dto.TipoAgenteId,
-                EntidadDinamicaId = entidadDinamica?.Id,
+                EntidadDinamicaId = EntidadesDinamica?.Id,
                 CodigoAgente = dto.CodigoAgente,
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
@@ -198,7 +198,7 @@ public class AgentesController : ControllerBase
                 DistritoId = dto.DistritoId,
                 LineaNegocioId = dto.LineaNegocioId,
                 ManagerId = dto.ManagerId,
-                FechaIngreso = dto.FechaIngreso,
+                FechaIngreso = dto.FechaIngreso.HasValue ? DateOnly.FromDateTime(dto.FechaIngreso.Value) : null,
                 Activo = dto.Activo,
                 Observaciones = dto.Observaciones,
                 Status = false,
@@ -211,7 +211,7 @@ public class AgentesController : ControllerBase
 
             // Recargar con datos relacionados
             await _context.Entry(agente).Reference(a => a.TipoAgente).LoadAsync();
-            await _context.Entry(agente).Reference(a => a.DatosExtendidos).LoadAsync();
+            await _context.Entry(agente).Reference(a => a.EntidadesDinamica).LoadAsync();
             await _context.Entry(agente).Reference(a => a.Region).LoadAsync();
             await _context.Entry(agente).Reference(a => a.Distrito).LoadAsync();
             await _context.Entry(agente).Reference(a => a.LineaNegocio).LoadAsync();
@@ -238,7 +238,7 @@ public class AgentesController : ControllerBase
         {
             var agente = await _context.Agentes
                 .Include(a => a.TipoAgente)
-                .Include(a => a.DatosExtendidos)
+                .Include(a => a.EntidadesDinamica)
                 .Include(a => a.Region)
                 .Include(a => a.Distrito)
                 .Include(a => a.LineaNegocio)
@@ -290,17 +290,17 @@ public class AgentesController : ControllerBase
             // Actualizar o crear entidad dinámica si hay datos dinámicos
             if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
             {
-                if (agente.EntidadDinamicaId != null && agente.DatosExtendidos != null)
+                if (agente.EntidadDinamicaId != null && agente.EntidadesDinamica != null)
                 {
                     // Actualizar entidad existente
-                    agente.DatosExtendidos.Datos = JsonSerializer.Serialize(dto.DatosDinamicos);
-                    agente.DatosExtendidos.FechaModificacion = DateTime.Now;
-                    agente.DatosExtendidos.ModificadoPor = "System";
+                    agente.EntidadesDinamica.Datos = JsonSerializer.Serialize(dto.DatosDinamicos);
+                    agente.EntidadesDinamica.FechaModificacion = DateTime.Now;
+                    agente.EntidadesDinamica.ModificadoPor = "System";
                 }
                 else
                 {
                     // Crear nueva entidad dinámica
-                    var entidadDinamica = new EntidadDinamica
+                    var EntidadesDinamica = new EntidadesDinamica
                     {
                         Id = Guid.NewGuid().ToString(),
                         EsquemaId = agente.TipoAgenteId,
@@ -310,8 +310,8 @@ public class AgentesController : ControllerBase
                         Status = false
                     };
 
-                    _context.EntidadesDinamicas.Add(entidadDinamica);
-                    agente.EntidadDinamicaId = entidadDinamica.Id;
+                    _context.EntidadesDinamicas.Add(EntidadesDinamica);
+                    agente.EntidadDinamicaId = EntidadesDinamica.Id;
                 }
             }
 
@@ -324,7 +324,7 @@ public class AgentesController : ControllerBase
             agente.DistritoId = dto.DistritoId;
             agente.LineaNegocioId = dto.LineaNegocioId;
             agente.ManagerId = dto.ManagerId;
-            agente.FechaIngreso = dto.FechaIngreso;
+            agente.FechaIngreso = dto.FechaIngreso.HasValue ? DateOnly.FromDateTime(dto.FechaIngreso.Value) : null;
             agente.Activo = dto.Activo;
             agente.Observaciones = dto.Observaciones;
             agente.FechaModificacion = DateTime.Now;
@@ -334,7 +334,7 @@ public class AgentesController : ControllerBase
 
             // Recargar con datos relacionados
             await _context.Entry(agente).Reference(a => a.TipoAgente).LoadAsync();
-            await _context.Entry(agente).Reference(a => a.DatosExtendidos).LoadAsync();
+            await _context.Entry(agente).Reference(a => a.EntidadesDinamica).LoadAsync();
             await _context.Entry(agente).Reference(a => a.Region).LoadAsync();
             await _context.Entry(agente).Reference(a => a.Distrito).LoadAsync();
             await _context.Entry(agente).Reference(a => a.LineaNegocio).LoadAsync();
@@ -425,11 +425,11 @@ public class AgentesController : ControllerBase
     {
         Dictionary<string, object?>? datosDinamicos = null;
 
-        if (agente.DatosExtendidos != null && !string.IsNullOrWhiteSpace(agente.DatosExtendidos.Datos))
+        if (agente.EntidadesDinamica != null && !string.IsNullOrWhiteSpace(agente.EntidadesDinamica.Datos))
         {
             try
             {
-                datosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(agente.DatosExtendidos.Datos);
+                datosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(agente.EntidadesDinamica.Datos);
             }
             catch (Exception ex)
             {
@@ -459,7 +459,7 @@ public class AgentesController : ControllerBase
             ManagerNombre = agente.Manager?.Nombre,
             TimelineId = agente.TimelineId,
             TimelineNombre = agente.Timeline?.Nombre,
-            FechaIngreso = agente.FechaIngreso,
+            FechaIngreso = agente.FechaIngreso.HasValue ? agente.FechaIngreso.Value.ToDateTime(TimeOnly.MinValue) : null,
             Activo = agente.Activo,
             Observaciones = agente.Observaciones,
             FechaCreacion = agente.FechaCreacion,

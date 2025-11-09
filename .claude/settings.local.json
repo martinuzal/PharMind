@@ -1,8 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(TASKKILL //F //PID 53200)",
-      "Bash(TASKKILL //F //PID 9684)"
+      "Bash(powershell -Command \"Stop-Process -Id 63584 -Force\")",
+      "Bash(timeout 10 cat:*)",
+      "Bash(timeout 10 bash:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(for file in AgentesController.cs ClientesController.cs MobileController.cs InteraccionesController.cs RelacionesController.cs \"Base/BaseHybridEntityController.cs\")",
+      "Bash(do powershell -Command \"(Get-Content ''$file'') -replace ''\\bEntidadDinamica\\b'', ''EntidadesDinamica'' | Set-Content ''$file''\")",
+      "Bash(done)",
+      "Bash(timeout 15 cat:*)",
+      "Bash(timeout 20 dotnet run:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

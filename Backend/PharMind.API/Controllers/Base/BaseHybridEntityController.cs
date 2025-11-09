@@ -144,11 +144,11 @@ public abstract class BaseHybridEntityController<TEntity, TDto, TCreateDto, TUpd
                 return BadRequest(new { message = $"Tipo de {GetEntityName()} no encontrado" });
             }
 
-            // Crear EntidadDinamica si hay datos dinámicos
+            // Crear EntidadesDinamica si hay datos dinámicos
             string? entidadDinamicaId = null;
             if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
             {
-                var entidadDinamica = new EntidadDinamica
+                var EntidadesDinamica = new EntidadesDinamica
                 {
                     Id = Guid.NewGuid().ToString(),
                     EsquemaId = dto.TipoEntidadId,
@@ -158,8 +158,8 @@ public abstract class BaseHybridEntityController<TEntity, TDto, TCreateDto, TUpd
                     CreadoPor = "System"
                 };
 
-                _context.EntidadesDinamicas.Add(entidadDinamica);
-                entidadDinamicaId = entidadDinamica.Id;
+                _context.EntidadesDinamicas.Add(EntidadesDinamica);
+                entidadDinamicaId = EntidadesDinamica.Id;
             }
 
             // Crear entidad principal
@@ -218,24 +218,24 @@ public abstract class BaseHybridEntityController<TEntity, TDto, TCreateDto, TUpd
                 return NotFound(new { message = $"{GetEntityName()} no encontrado" });
             }
 
-            // Actualizar o crear EntidadDinamica
+            // Actualizar o crear EntidadesDinamica
             if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
             {
                 if (!string.IsNullOrWhiteSpace(entity.EntidadDinamicaId))
                 {
                     // Actualizar entidad dinámica existente
-                    var entidadDinamica = await _context.EntidadesDinamicas.FindAsync(entity.EntidadDinamicaId);
-                    if (entidadDinamica != null)
+                    var EntidadesDinamica = await _context.EntidadesDinamicas.FindAsync(entity.EntidadDinamicaId);
+                    if (EntidadesDinamica != null)
                     {
-                        entidadDinamica.Datos = JsonSerializer.Serialize(dto.DatosDinamicos);
-                        entidadDinamica.FechaModificacion = DateTime.Now;
-                        entidadDinamica.ModificadoPor = "System";
+                        EntidadesDinamica.Datos = JsonSerializer.Serialize(dto.DatosDinamicos);
+                        EntidadesDinamica.FechaModificacion = DateTime.Now;
+                        EntidadesDinamica.ModificadoPor = "System";
                     }
                 }
                 else
                 {
                     // Crear nueva entidad dinámica
-                    var nuevaEntidadDinamica = new EntidadDinamica
+                    var nuevaEntidadDinamica = new EntidadesDinamica
                     {
                         Id = Guid.NewGuid().ToString(),
                         EsquemaId = GetTipoEntidadId(entity),

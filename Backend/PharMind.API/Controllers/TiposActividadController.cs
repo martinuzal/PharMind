@@ -35,7 +35,7 @@ public class TiposActividadController : ControllerBase
         try
         {
             var query = _context.TiposActividad
-                .Include(ta => ta.TiemposUtilizados)
+                .Include(ta => ta.TiempoUtilizados)
                 .Where(ta => ta.Status == false);
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -77,7 +77,7 @@ public class TiposActividadController : ControllerBase
                 Activo = ta.Activo,
                 EsSistema = ta.EsSistema,
                 Orden = ta.Orden,
-                CantidadUsos = ta.TiemposUtilizados.Count(tu => tu.Status == false),
+                CantidadUsos = ta.TiempoUtilizados.Count(tu => tu.Status == false),
                 FechaCreacion = ta.FechaCreacion
             }).ToList();
 
@@ -107,7 +107,7 @@ public class TiposActividadController : ControllerBase
         try
         {
             var tipoActividad = await _context.TiposActividad
-                .Include(ta => ta.TiemposUtilizados)
+                .Include(ta => ta.TiempoUtilizados)
                 .FirstOrDefaultAsync(ta => ta.Id == id && ta.Status == false);
 
             if (tipoActividad == null)
@@ -127,7 +127,7 @@ public class TiposActividadController : ControllerBase
                 Activo = tipoActividad.Activo,
                 EsSistema = tipoActividad.EsSistema,
                 Orden = tipoActividad.Orden,
-                CantidadUsos = tipoActividad.TiemposUtilizados.Count(tu => tu.Status == false),
+                CantidadUsos = tipoActividad.TiempoUtilizados.Count(tu => tu.Status == false),
                 FechaCreacion = tipoActividad.FechaCreacion
             };
 
@@ -201,7 +201,7 @@ public class TiposActividadController : ControllerBase
         try
         {
             var tipoActividad = await _context.TiposActividad
-                .Include(ta => ta.TiemposUtilizados)
+                .Include(ta => ta.TiempoUtilizados)
                 .FirstOrDefaultAsync(ta => ta.Id == id && ta.Status == false);
 
             if (tipoActividad == null)
@@ -240,7 +240,7 @@ public class TiposActividadController : ControllerBase
                 Activo = tipoActividad.Activo,
                 EsSistema = tipoActividad.EsSistema,
                 Orden = tipoActividad.Orden,
-                CantidadUsos = tipoActividad.TiemposUtilizados.Count(tu => tu.Status == false),
+                CantidadUsos = tipoActividad.TiempoUtilizados.Count(tu => tu.Status == false),
                 FechaCreacion = tipoActividad.FechaCreacion
             };
 
@@ -262,7 +262,7 @@ public class TiposActividadController : ControllerBase
         try
         {
             var tipoActividad = await _context.TiposActividad
-                .Include(ta => ta.TiemposUtilizados)
+                .Include(ta => ta.TiempoUtilizados)
                 .FirstOrDefaultAsync(ta => ta.Id == id && ta.Status == false);
 
             if (tipoActividad == null)
@@ -277,7 +277,7 @@ public class TiposActividadController : ControllerBase
             }
 
             // Verificar si tiene usos
-            if (tipoActividad.TiemposUtilizados.Any(tu => tu.Status == false))
+            if (tipoActividad.TiempoUtilizados.Any(tu => tu.Status == false))
             {
                 return BadRequest(new { message = "No se puede eliminar un tipo de actividad que está siendo utilizado" });
             }

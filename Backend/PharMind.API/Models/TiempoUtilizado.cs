@@ -1,49 +1,41 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PharMind.API.Models;
 
-[Table("TiempoUtilizado")]
-public class TiempoUtilizado : AuditableEntity
+public partial class TiempoUtilizado
 {
-    [Required]
-    [Column("RepresentanteId")]
-    public string RepresentanteId { get; set; } = string.Empty;
+    public string Id { get; set; } = null!;
 
-    [Required]
-    [Column("Fecha")]
-    public DateTime Fecha { get; set; } = DateTime.Today;
+    public string RepresentanteId { get; set; } = null!;
 
-    [Required]
-    [Column("TipoActividadId")]
-    public string TipoActividadId { get; set; } = string.Empty;
+    public DateTime Fecha { get; set; }
 
-    [Column("Descripcion")]
-    [MaxLength(500)]
+    public string TipoActividadId { get; set; } = null!;
+
     public string? Descripcion { get; set; }
 
-    [Required]
-    [Column("HorasUtilizadas")]
     public decimal HorasUtilizadas { get; set; }
 
-    [Column("MinutosUtilizados")]
     public int MinutosUtilizados { get; set; }
 
-    [Column("Turno")]
-    [MaxLength(20)]
-    public string Turno { get; set; } = "TodoElDia"; // Mañana, Tarde, TodoElDia
+    public bool EsRecurrente { get; set; }
 
-    [Column("EsRecurrente")]
-    public bool EsRecurrente { get; set; } = false;
-
-    [Column("Observaciones")]
-    [MaxLength(1000)]
     public string? Observaciones { get; set; }
 
-    // Navigation properties
-    [ForeignKey("RepresentanteId")]
-    public virtual Usuario? Representante { get; set; }
+    public DateTime FechaCreacion { get; set; }
 
-    [ForeignKey("TipoActividadId")]
-    public virtual TipoActividad? TipoActividad { get; set; }
+    public string? CreadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public bool? Status { get; set; }
+
+    public string Turno { get; set; } = null!;
+
+    public virtual Usuario Representante { get; set; } = null!;
+
+    public virtual TipoActividad TipoActividad { get; set; } = null!;
 }
