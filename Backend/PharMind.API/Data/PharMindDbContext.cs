@@ -44,6 +44,15 @@ public class PharMindDbContext : DbContext
     public DbSet<Interaccion> Interacciones { get; set; }
     public DbSet<AuditoriaAgente> AuditoriasAgentes { get; set; }
 
+    // Productos y Muestras DbSets
+    public DbSet<Producto> Productos { get; set; }
+    public DbSet<InventarioAgente> InventariosAgente { get; set; }
+    public DbSet<MuestraMedica> MuestrasMedicas { get; set; }
+    public DbSet<MovimientoInventario> MovimientosInventario { get; set; }
+
+    // Calendario DbSets
+    public DbSet<Cita> Citas { get; set; }
+
     // Analytics DbSets
     public DbSet<Models.Analytics.AnalyticsMedico> AnalyticsMedicos { get; set; }
     public DbSet<Models.Analytics.AnalyticsRepresentante> AnalyticsRepresentantes { get; set; }
@@ -301,6 +310,98 @@ public class PharMindDbContext : DbContext
         //     .WithMany(a => a.Auditorias)
         //     .HasForeignKey(aa => aa.AgenteId)
         //     .OnDelete(DeleteBehavior.Restrict);
+
+        // Configuración de relaciones para Productos y Muestras
+        modelBuilder.Entity<Producto>()
+            .HasIndex(p => p.CodigoProducto)
+            .IsUnique();
+
+        modelBuilder.Entity<Producto>()
+            .HasOne(p => p.LineaNegocio)
+            .WithMany(ln => ln.Productos)
+            .HasForeignKey(p => p.LineaNegocioId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<InventarioAgente>()
+            .HasIndex(ia => new { ia.AgenteId, ia.ProductoId })
+            .IsUnique();
+
+        modelBuilder.Entity<InventarioAgente>()
+            .HasOne(ia => ia.Agente)
+            .WithMany()
+            .HasForeignKey(ia => ia.AgenteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<InventarioAgente>()
+            .HasOne(ia => ia.Producto)
+            .WithMany(p => p.Inventarios)
+            .HasForeignKey(ia => ia.ProductoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MuestraMedica>()
+            .HasOne(mm => mm.Interaccion)
+            .WithMany()
+            .HasForeignKey(mm => mm.InteraccionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MuestraMedica>()
+            .HasOne(mm => mm.Producto)
+            .WithMany(p => p.MuestrasEntregadas)
+            .HasForeignKey(mm => mm.ProductoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MuestraMedica>()
+            .HasOne(mm => mm.Agente)
+            .WithMany()
+            .HasForeignKey(mm => mm.AgenteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MuestraMedica>()
+            .HasOne(mm => mm.Cliente)
+            .WithMany()
+            .HasForeignKey(mm => mm.ClienteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MovimientoInventario>()
+            .HasOne(mi => mi.InventarioAgente)
+            .WithMany(ia => ia.Movimientos)
+            .HasForeignKey(mi => mi.InventarioAgenteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MovimientoInventario>()
+            .HasOne(mi => mi.MuestraMedica)
+            .WithMany()
+            .HasForeignKey(mi => mi.MuestraMedicaId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configuración de relaciones para Citas
+        modelBuilder.Entity<Cita>()
+            .HasIndex(c => c.CodigoCita)
+            .IsUnique();
+
+        modelBuilder.Entity<Cita>()
+            .HasOne(c => c.Agente)
+            .WithMany()
+            .HasForeignKey(c => c.AgenteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Cita>()
+            .HasOne(c => c.Relacion)
+            .WithMany()
+            .HasForeignKey(c => c.RelacionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Cita>()
+            .HasOne(c => c.Cliente)
+            .WithMany()
+            .HasForeignKey(c => c.ClienteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Cita>()
+            .HasOne(c => c.Interaccion)
+            .WithMany()
+            .HasForeignKey(c => c.InteraccionId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Seed data - IDs fijos para datos de prueba
         var empresaDefaultId = "EMP-DEFAULT-001";

@@ -17,10 +17,19 @@ public class MobileSyncResponse
     public List<ClienteMobileDto> Clientes { get; set; } = new();
     public List<TipoRelacionMobileDto> TiposRelacion { get; set; } = new();
     public List<TipoInteraccionMobileDto> TiposInteraccion { get; set; } = new();
+
+    // Nuevos módulos agregados
+    public List<ProductoDto> Productos { get; set; } = new();
+    public List<InventarioAgenteDto> Inventarios { get; set; } = new();
+    public List<CitaDto> Citas { get; set; } = new();
+
     public DateTime FechaSincronizacion { get; set; } = DateTime.UtcNow;
     public int TotalRelaciones { get; set; }
     public int TotalInteracciones { get; set; }
     public int TotalClientes { get; set; }
+    public int TotalProductos { get; set; }
+    public int TotalInventarios { get; set; }
+    public int TotalCitas { get; set; }
 }
 
 // ==================== RELACIÓN MOBILE ====================

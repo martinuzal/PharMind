@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PharMind.API.Data;
 
@@ -11,9 +12,11 @@ using PharMind.API.Data;
 namespace PharMind.API.Migrations
 {
     [DbContext(typeof(PharMindDbContext))]
-    partial class PharMindDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251110025608_AddProductosYCitas")]
+    partial class AddProductosYCitas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

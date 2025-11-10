@@ -62,6 +62,9 @@ dependencies:
   # Internationalization and formatting
   intl: ^0.19.0
 
+  # Calendar widget
+  table_calendar: ^3.0.9
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
