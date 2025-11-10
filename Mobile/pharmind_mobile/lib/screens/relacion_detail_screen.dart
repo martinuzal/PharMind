@@ -1,10 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/mobile_api_service.dart';
 import '../models/relacion.dart';
 import '../models/interaccion.dart';
 import '../models/tipo_interaccion.dart';
+import '../providers/toolbar_provider.dart';
+import '../widgets/bottom_toolbar.dart';
 import 'interaccion_form_screen.dart';
+import 'relacion_form_screen.dart';
 
 class RelacionDetailScreen extends StatefulWidget {
   final String relacionId;
@@ -34,6 +38,25 @@ class _RelacionDetailScreenState extends State<RelacionDetailScreen> with Single
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadData();
+
+    // Configurar acciones del toolbar después de que el frame esté construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupToolbarActions();
+    });
+  }
+
+  void _setupToolbarActions() {
+    final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+    toolbarProvider.setActions([
+      ToolbarProvider.createAddAction(() => _mostrarSelectorTipoInteraccion()),
+      ToolbarProvider.createEditAction(() => _editarRelacion()),
+      ToolbarProvider.createDeleteAction(() => _confirmarEliminarRelacion()),
+      ToolbarProvider.createShareAction(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Compartir no implementado aún')),
+        );
+      }),
+    ]);
   }
 
   @override
@@ -177,61 +200,7 @@ class _RelacionDetailScreenState extends State<RelacionDetailScreen> with Single
                     _buildInteraccionesTab(),
                   ],
                 ),
-      bottomNavigationBar: _relacion == null
-          ? null
-          : BottomAppBar(
-              color: Colors.white,
-              elevation: 8,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Botón Nueva Interacción
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _mostrarSelectorTipoInteraccion,
-                        icon: const Icon(Icons.add_circle_outline, size: 20),
-                        label: const Text('Nueva Interacción'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Botón Editar
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _editarRelacion,
-                        icon: const Icon(Icons.edit, size: 20),
-                        label: const Text('Editar'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.deepPurple,
-                          side: const BorderSide(color: Colors.deepPurple),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Botón Eliminar
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _confirmarEliminarRelacion,
-                        icon: const Icon(Icons.delete, size: 20),
-                        label: const Text('Eliminar'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+      bottomNavigationBar: const BottomToolbar(),
     );
   }
 
@@ -753,13 +722,15 @@ class _RelacionDetailScreenState extends State<RelacionDetailScreen> with Single
   }
 
   void _editarRelacion() {
-    // TODO: Implementar pantalla de edición de relación
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Función de edición en desarrollo'),
-        duration: Duration(seconds: 2),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RelacionFormScreen(
+          relacion: _relacion!,
+          agenteId: widget.agenteId,
+        ),
       ),
-    );
+    ).then((_) => _loadData());
   }
 
   void _confirmarEliminarRelacion() {

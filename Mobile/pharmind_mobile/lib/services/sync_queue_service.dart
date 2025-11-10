@@ -111,6 +111,9 @@ class SyncQueueService {
   /// Agrega una operación a la cola de sincronización
   Future<void> addToQueue(SyncQueueItem item) async {
     try {
+      // Asegurar que la tabla existe antes de insertar
+      await initializeSyncQueue();
+
       final db = await _dbService.database;
       await db.insert(
         _tableName,

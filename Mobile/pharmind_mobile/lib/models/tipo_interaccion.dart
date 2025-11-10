@@ -77,4 +77,37 @@ class TipoInteraccion {
       schema: null, // Will be parsed separately if needed
     );
   }
+
+  // Helper methods to check static field configuration
+  bool isStaticFieldVisible(String fieldName) {
+    if (schema == null) return true;
+    final staticFieldsConfig = schema!['staticFieldsConfig'];
+    if (staticFieldsConfig == null) return true;
+    final campos = staticFieldsConfig['campos'];
+    if (campos == null) return true;
+    final fieldConfig = campos[fieldName];
+    if (fieldConfig == null) return true;
+    return fieldConfig['visible'] ?? true;
+  }
+
+  bool isStaticFieldRequired(String fieldName) {
+    if (schema == null) return false;
+    final staticFieldsConfig = schema!['staticFieldsConfig'];
+    if (staticFieldsConfig == null) return false;
+    final campos = staticFieldsConfig['campos'];
+    if (campos == null) return false;
+    final fieldConfig = campos[fieldName];
+    if (fieldConfig == null) return false;
+    return fieldConfig['requerido'] ?? false;
+  }
+
+  // Get dynamic fields from schema
+  List<Map<String, dynamic>> getDynamicFields() {
+    if (schema == null) return [];
+    final fields = schema!['fields'];
+    if (fields == null || fields is! List) return [];
+    return List<Map<String, dynamic>>.from(
+      fields.map((f) => Map<String, dynamic>.from(f as Map))
+    );
+  }
 }

@@ -7,6 +7,9 @@ class EsquemaPersonalizado {
   final String? icono;  // Material icon name from backend
   final String? color;  // Hex color from backend
   final Map<String, dynamic> esquemaJson;
+  final Map<String, dynamic>? configuracionUi;  // UI configuration (visibility, editability, etc.)
+  final Map<String, dynamic>? reglasValidacion;  // Validation rules
+  final Map<String, dynamic>? reglasCorrelacion;  // Correlation/auto-calculation rules
   final DateTime? fechaCreacion;
   final DateTime? fechaActualizacion;
 
@@ -17,6 +20,9 @@ class EsquemaPersonalizado {
     this.icono,
     this.color,
     required this.esquemaJson,
+    this.configuracionUi,
+    this.reglasValidacion,
+    this.reglasCorrelacion,
     this.fechaCreacion,
     this.fechaActualizacion,
   });
@@ -48,6 +54,57 @@ class EsquemaPersonalizado {
     print('DEBUG - Parsed esquemaJson: $parsedEsquemaJson');
     print('DEBUG - Fields in esquemaJson: ${parsedEsquemaJson['fields']}');
 
+    // Parse ConfiguracionUi
+    Map<String, dynamic>? parsedConfiguracionUi;
+    final configuracionUiField = json['configuracionUi'] ?? json['ConfiguracionUi'];
+    if (configuracionUiField != null) {
+      if (configuracionUiField is String) {
+        try {
+          parsedConfiguracionUi = Map<String, dynamic>.from(
+            jsonDecode(configuracionUiField)
+          );
+        } catch (e) {
+          print('ERROR parsing ConfiguracionUi: $e');
+        }
+      } else if (configuracionUiField is Map) {
+        parsedConfiguracionUi = Map<String, dynamic>.from(configuracionUiField);
+      }
+    }
+
+    // Parse ReglasValidacion
+    Map<String, dynamic>? parsedReglasValidacion;
+    final reglasValidacionField = json['reglasValidacion'] ?? json['ReglasValidacion'];
+    if (reglasValidacionField != null) {
+      if (reglasValidacionField is String) {
+        try {
+          parsedReglasValidacion = Map<String, dynamic>.from(
+            jsonDecode(reglasValidacionField)
+          );
+        } catch (e) {
+          print('ERROR parsing ReglasValidacion: $e');
+        }
+      } else if (reglasValidacionField is Map) {
+        parsedReglasValidacion = Map<String, dynamic>.from(reglasValidacionField);
+      }
+    }
+
+    // Parse ReglasCorrelacion
+    Map<String, dynamic>? parsedReglasCorrelacion;
+    final reglasCorrelacionField = json['reglasCorrelacion'] ?? json['ReglasCorrelacion'];
+    if (reglasCorrelacionField != null) {
+      if (reglasCorrelacionField is String) {
+        try {
+          parsedReglasCorrelacion = Map<String, dynamic>.from(
+            jsonDecode(reglasCorrelacionField)
+          );
+        } catch (e) {
+          print('ERROR parsing ReglasCorrelacion: $e');
+        }
+      } else if (reglasCorrelacionField is Map) {
+        parsedReglasCorrelacion = Map<String, dynamic>.from(reglasCorrelacionField);
+      }
+    }
+
     return EsquemaPersonalizado(
       id: json['id'],  // Accepts both int and String
       nombreEntidad: json['nombre'] ?? json['Nombre'] ?? json['nombreEntidad'] ?? '',
@@ -55,6 +112,9 @@ class EsquemaPersonalizado {
       icono: json['icono'] ?? json['Icono'],  // Material icon name from backend
       color: json['color'] ?? json['Color'],  // Hex color from backend
       esquemaJson: parsedEsquemaJson,
+      configuracionUi: parsedConfiguracionUi,
+      reglasValidacion: parsedReglasValidacion,
+      reglasCorrelacion: parsedReglasCorrelacion,
       fechaCreacion: json['fechaCreacion'] != null
         ? DateTime.parse(json['fechaCreacion'])
         : null,
@@ -72,6 +132,9 @@ class EsquemaPersonalizado {
       'icono': icono,
       'color': color,
       'esquemaJson': esquemaJson,
+      'configuracionUi': configuracionUi,
+      'reglasValidacion': reglasValidacion,
+      'reglasCorrelacion': reglasCorrelacion,
       'fechaCreacion': fechaCreacion?.toIso8601String(),
       'fechaActualizacion': fechaActualizacion?.toIso8601String(),
     };
@@ -87,6 +150,62 @@ class EsquemaPersonalizado {
   LayoutConfig? get layoutConfig {
     if (esquemaJson['layoutConfig'] == null) return null;
     return LayoutConfig.fromJson(esquemaJson['layoutConfig']);
+  }
+
+  // Helper methods for ConfiguracionUi
+  bool isFieldVisible(String fieldName) {
+    if (configuracionUi == null) return true;
+    final fieldConfig = configuracionUi!['fields']?[fieldName];
+    if (fieldConfig == null) return true;
+    return fieldConfig['visible'] ?? true;
+  }
+
+  bool isFieldEditable(String fieldName) {
+    if (configuracionUi == null) return true;
+    final fieldConfig = configuracionUi!['fields']?[fieldName];
+    if (fieldConfig == null) return true;
+    return fieldConfig['editable'] ?? true;
+  }
+
+  bool isFieldRequired(String fieldName) {
+    // Check ReglasValidacion first
+    if (reglasValidacion != null) {
+      final requiredFields = reglasValidacion!['required'];
+      if (requiredFields is List && requiredFields.contains(fieldName)) {
+        return true;
+      }
+    }
+    // Fallback to schema definition
+    final field = fields.firstWhere(
+      (f) => f.name == fieldName,
+      orElse: () => FieldSchema(name: '', label: '', type: 'text'),
+    );
+    return field.required;
+  }
+
+  dynamic getFieldDefaultValue(String fieldName) {
+    if (configuracionUi == null) return null;
+    final fieldConfig = configuracionUi!['fields']?[fieldName];
+    if (fieldConfig == null) return null;
+    return fieldConfig['defaultValue'];
+  }
+
+  String? getFieldValidationPattern(String fieldName) {
+    if (reglasValidacion == null) return null;
+    final patterns = reglasValidacion!['patterns'];
+    if (patterns is Map) {
+      return patterns[fieldName];
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? getFieldCorrelationRule(String fieldName) {
+    if (reglasCorrelacion == null) return null;
+    final rules = reglasCorrelacion!['rules'];
+    if (rules is Map) {
+      return rules[fieldName];
+    }
+    return null;
   }
 }
 

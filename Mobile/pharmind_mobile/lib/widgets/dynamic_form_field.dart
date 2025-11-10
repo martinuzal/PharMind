@@ -6,12 +6,14 @@ class DynamicFormField extends StatefulWidget {
   final FieldSchema field;
   final dynamic value;
   final Function(String, dynamic) onChanged;
+  final EsquemaPersonalizado? esquema; // Esquema completo para aplicar configuraciones
 
   const DynamicFormField({
     super.key,
     required this.field,
     this.value,
     required this.onChanged,
+    this.esquema,
   });
 
   @override
@@ -92,24 +94,43 @@ class _DynamicFormFieldState extends State<DynamicFormField> {
 
   @override
   Widget build(BuildContext context) {
+    // Verificar si el campo está visible según la configuración
+    final isVisible = widget.esquema?.isFieldVisible(widget.field.name) ?? true;
+    if (!isVisible) {
+      return const SizedBox.shrink(); // Campo oculto
+    }
+
+    // Verificar si el campo es editable
+    final isEditable = widget.esquema?.isFieldEditable(widget.field.name) ?? true;
+
+    // Verificar si el campo es requerido (combinando schema y reglas)
+    final isRequired = widget.esquema?.isFieldRequired(widget.field.name) ?? widget.field.required;
+
+    // Obtener valor por defecto si existe
+    final defaultValue = widget.esquema?.getFieldDefaultValue(widget.field.name);
+    final effectiveValue = widget.value ?? defaultValue;
+
     switch (widget.field.type) {
       case 'text':
       case 'email':
       case 'tel':
         return TextFormField(
-          initialValue: widget.value?.toString() ?? '',
+          initialValue: effectiveValue?.toString() ?? '',
           decoration: InputDecoration(
             labelText: widget.field.label,
             hintText: widget.field.helpText,
             border: const OutlineInputBorder(),
+            suffixIcon: !isEditable ? const Icon(Icons.lock, size: 16) : null,
           ),
+          enabled: isEditable,
+          readOnly: !isEditable,
           keyboardType: widget.field.type == 'email'
               ? TextInputType.emailAddress
               : widget.field.type == 'tel'
                   ? TextInputType.phone
                   : TextInputType.text,
           validator: (value) {
-            if (widget.field.required && (value == null || value.isEmpty)) {
+            if (isRequired && (value == null || value.isEmpty)) {
               return 'Este campo es requerido';
             }
             return null;
