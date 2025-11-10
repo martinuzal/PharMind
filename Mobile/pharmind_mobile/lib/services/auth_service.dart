@@ -85,6 +85,8 @@ class AuthService {
         // Guardar usuario en cache local para modo offline (solo en móvil, no en web)
         if (!kIsWeb) {
           await _dbService.saveUsuario(authResponse.usuario);
+          // Guardar email del último usuario que hizo login
+          await _saveLastLoggedInUser(authResponse.usuario.email);
         } else {
           // En web, guardar usuario en SharedPreferences
           await saveUserWeb(authResponse.usuario);
@@ -124,6 +126,9 @@ class AuthService {
         // Generar un token temporal para modo offline
         final offlineToken = 'offline_${DateTime.now().millisecondsSinceEpoch}';
         await saveToken(offlineToken);
+
+        // Guardar email del último usuario que hizo login
+        await _saveLastLoggedInUser(email);
 
         // Retornar respuesta de autenticación
         return AuthResponse(
@@ -181,6 +186,29 @@ class AuthService {
     }
   }
 
+  // Guardar email del último usuario que hizo login
+  Future<void> _saveLastLoggedInUser(String email) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_logged_in_user', email);
+      print('Último usuario guardado: $email');
+    } catch (e) {
+      print('Error al guardar último usuario: $e');
+    }
+  }
+
+  // Obtener email del último usuario que hizo login
+  Future<String?> _getLastLoggedInUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('last_logged_in_user');
+      return email;
+    } catch (e) {
+      print('Error al obtener último usuario: $e');
+      return null;
+    }
+  }
+
   // Guardar usuario en web
   Future<void> saveUserWeb(Usuario usuario) async {
     if (kIsWeb) {
@@ -220,13 +248,25 @@ class AuthService {
         return null;
       }
 
+      // Obtener email del último usuario que hizo login
+      final lastEmail = await _getLastLoggedInUser();
+
       // Si es token offline, obtener de cache local (solo en móvil)
       if (token.startsWith('offline_')) {
         if (!kIsWeb) {
           print('Token offline detectado - Obteniendo usuario de cache local');
+          if (lastEmail != null) {
+            // Buscar usuario por email específico
+            final usuario = await _dbService.getUsuarioByEmail(lastEmail);
+            if (usuario != null) {
+              print('Usuario obtenido del cache por email: $lastEmail');
+              return usuario;
+            }
+          }
+          // Fallback: obtener cualquier usuario si no hay email guardado
           final usuarios = await _dbService.getAllUsuarios();
           if (usuarios.isNotEmpty) {
-            return usuarios.first; // Retornar el primer usuario en cache
+            return usuarios.first;
           }
         }
         return null;
@@ -234,9 +274,18 @@ class AuthService {
 
       // PRIORIDAD 1: Intentar obtener usuario del cache local primero (más rápido y preserva sesión)
       if (!kIsWeb) {
+        if (lastEmail != null) {
+          // Buscar usuario específico por email del último login
+          final usuarioCache = await _dbService.getUsuarioByEmail(lastEmail);
+          if (usuarioCache != null) {
+            print('Usuario obtenido del cache local por email: $lastEmail');
+            return usuarioCache;
+          }
+        }
+        // Fallback: obtener cualquier usuario si no hay email guardado
         final usuariosCache = await _dbService.getAllUsuarios();
         if (usuariosCache.isNotEmpty) {
-          print('Usuario obtenido del cache local (SQLite)');
+          print('Usuario obtenido del cache local (primer usuario)');
           return usuariosCache.first;
         }
       } else {
@@ -328,8 +377,12 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('auth_token');
         await prefs.remove('current_user');
+        await prefs.remove('last_logged_in_user');
       } else {
         await _storage.delete(key: 'auth_token');
+        // Limpiar último usuario logueado
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('last_logged_in_user');
       }
 
       // Limpiar cache local (opcional - puedes mantener el cache para offline)

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/mobile_api_service.dart';
 import '../models/relacion.dart';
+import '../providers/toolbar_provider.dart';
+import '../widgets/bottom_toolbar.dart';
 import 'relacion_detail_screen.dart';
 
 class RelacionesScreen extends StatefulWidget {
@@ -28,6 +31,28 @@ class _RelacionesScreenState extends State<RelacionesScreen> {
   void initState() {
     super.initState();
     _loadRelaciones();
+
+    // Configurar acciones del toolbar después de que el frame esté construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupToolbarActions();
+    });
+  }
+
+  void _setupToolbarActions() {
+    final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+    toolbarProvider.setActions([
+      ToolbarProvider.createSearchAction(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Búsqueda ya está activa en la pantalla')),
+        );
+      }),
+      ToolbarProvider.createFilterAction(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Filtros ya están disponibles en la pantalla')),
+        );
+      }),
+      ToolbarProvider.createSyncAction(() => _loadRelaciones()),
+    ]);
   }
 
   Future<void> _loadRelaciones() async {
@@ -212,6 +237,7 @@ class _RelacionesScreenState extends State<RelacionesScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: const BottomToolbar(),
     );
   }
 

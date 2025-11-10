@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:math';
 import 'package:geolocator/geolocator.dart';
 import '../services/mobile_api_service.dart';
 import '../services/sync_queue_service.dart';
 import '../models/relacion.dart';
 import '../models/tipo_interaccion.dart';
+import '../providers/toolbar_provider.dart';
+import '../widgets/bottom_toolbar.dart';
+import '../models/esquema_personalizado.dart';
 
 class InteraccionFormScreen extends StatefulWidget {
   final String relacionId;
@@ -41,6 +45,9 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
   DateTime? _fechaProximaAccion;
   String? _resultadoVisita;
 
+  // Dynamic fields values
+  Map<String, dynamic> _dynamicFieldsValues = {};
+
   // Geolocation
   Position? _position;
   bool _capturandoUbicacion = false;
@@ -50,10 +57,48 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
   bool _modoOffline = false;
 
   @override
+  void initState() {
+    super.initState();
+
+    // Pre-seleccionar el primer tipo de interacción si solo hay uno permitido
+    if (widget.tiposInteraccionPermitidos.length == 1) {
+      _tipoInteraccionSeleccionado = widget.tiposInteraccionPermitidos.first;
+    }
+
+    // Configurar acciones del toolbar después de que el frame esté construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupToolbarActions();
+    });
+  }
+
+  void _setupToolbarActions() {
+    final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+    toolbarProvider.setActions([
+      ToolbarProvider.createAction(
+        icon: Icons.save,
+        label: 'Guardar',
+        onPressed: () => _guardarInteraccion(),
+      ),
+      ToolbarProvider.createAction(
+        icon: Icons.close,
+        label: 'Cancelar',
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+    ]);
+  }
+
+  @override
   void dispose() {
     _objetivoController.dispose();
     _resumenController.dispose();
     _proximaAccionController.dispose();
+
+    // Limpiar acciones del toolbar al salir del formulario
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+      toolbarProvider.clearActions();
+    });
+
     super.dispose();
   }
 
@@ -112,11 +157,15 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
   }
 
   Future<void> _guardarInteraccion() async {
+    print('=== INICIANDO GUARDADO DE INTERACCIÓN ===');
+
     if (!_formKey.currentState!.validate()) {
+      print('Validación del formulario falló');
       return;
     }
 
     if (_tipoInteraccionSeleccionado == null) {
+      print('No hay tipo de interacción seleccionado');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor seleccione un tipo de interacción')),
       );
@@ -137,6 +186,11 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
         _hora.minute,
       );
 
+      print('Fecha y hora de interacción: $fechaHora');
+      print('Tipo de interacción: ${_tipoInteraccionSeleccionado!.nombre} (${_tipoInteraccionSeleccionado!.id})');
+      print('Relación ID: ${widget.relacionId}');
+      print('Agente ID: ${widget.agenteId}');
+
       final interaccionData = {
         'tipoInteraccionId': _tipoInteraccionSeleccionado!.id,
         'relacionId': widget.relacionId,
@@ -154,10 +208,13 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
         'latitud': _position?.latitude,
         'longitud': _position?.longitude,
         'direccionCapturada': _direccionCapturada,
-        'datosDinamicos': <String, dynamic>{},
+        'datosDinamicos': _dynamicFieldsValues,
       };
 
+      print('Datos de interacción preparados: ${interaccionData.keys.join(", ")}');
+
       if (_modoOffline) {
+        print('MODO OFFLINE: Guardando en cola de sincronización');
         // Modo offline: agregar a la cola de sincronización
         final queueItem = SyncQueueItem(
           id: _generateUuid(),
@@ -168,16 +225,26 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
         );
 
         await _syncQueueService.addToQueue(queueItem);
+        print('Interacción agregada a cola de sincronización');
 
         if (mounted) {
+          // Limpiar toolbar antes de cerrar
+          final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+          toolbarProvider.clearActions();
+
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Interacción guardada en cola para sincronización posterior')),
+            const SnackBar(
+              content: Text('Interacción guardada en cola para sincronización posterior'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
           );
           Navigator.of(context).pop(true);
         }
       } else {
+        print('MODO ONLINE: Enviando al servidor');
         // Modo online: enviar directamente
-        await _apiService.createInteraccion(
+        final result = await _apiService.createInteraccion(
           tipoInteraccionId: interaccionData['tipoInteraccionId'] as String,
           relacionId: interaccionData['relacionId'] as String,
           agenteId: interaccionData['agenteId'] as String,
@@ -199,22 +266,229 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
           datosDinamicos: interaccionData['datosDinamicos'] as Map<String, dynamic>?,
         );
 
+        print('✅ Interacción creada exitosamente en el servidor');
+        print('ID de interacción creada: ${result.id}');
+
         if (mounted) {
+          // Limpiar toolbar antes de cerrar
+          final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+          toolbarProvider.clearActions();
+
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Interacción creada exitosamente')),
+            const SnackBar(
+              content: Text('✓ Interacción creada exitosamente'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
           );
+          // Pequeño delay para que el usuario vea el mensaje antes de cerrar
+          await Future.delayed(const Duration(milliseconds: 500));
           Navigator.of(context).pop(true);
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ ERROR al guardar interacción: $e');
+      print('Stack trace: $stackTrace');
+
       setState(() {
         _isLoading = false;
       });
+
       if (mounted) {
+        // Extraer mensaje de error más amigable
+        String errorMessage = 'Error al guardar interacción';
+        if (e.toString().contains('Exception:')) {
+          errorMessage = e.toString().replaceAll('Exception: ', '');
+        } else {
+          errorMessage = '$errorMessage: ${e.toString()}';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar interacción: $e')),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Ver detalles',
+              textColor: Colors.white,
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Error detallado'),
+                    content: SingleChildScrollView(
+                      child: Text('$e\n\nStack trace:\n$stackTrace'),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cerrar'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
         );
       }
+    }
+
+    print('=== FIN GUARDADO DE INTERACCIÓN ===');
+  }
+
+  // Build dynamic field widget based on field schema
+  Widget _buildDynamicField(FieldSchema field) {
+    final currentValue = _dynamicFieldsValues[field.name];
+
+    switch (field.type) {
+      case 'text':
+      case 'email':
+      case 'tel':
+        return TextFormField(
+          initialValue: currentValue?.toString() ?? '',
+          decoration: InputDecoration(
+            labelText: '${field.label}${field.required ? ' *' : ''}',
+            hintText: field.helpText,
+            border: const OutlineInputBorder(),
+          ),
+          keyboardType: field.type == 'email'
+              ? TextInputType.emailAddress
+              : field.type == 'tel'
+                  ? TextInputType.phone
+                  : TextInputType.text,
+          validator: field.required
+              ? (value) => (value == null || value.isEmpty) ? 'Este campo es requerido' : null
+              : null,
+          onChanged: (value) {
+            setState(() {
+              _dynamicFieldsValues[field.name] = value;
+            });
+          },
+        );
+
+      case 'number':
+        return TextFormField(
+          initialValue: currentValue?.toString() ?? '',
+          decoration: InputDecoration(
+            labelText: '${field.label}${field.required ? ' *' : ''}',
+            hintText: field.helpText,
+            border: const OutlineInputBorder(),
+          ),
+          keyboardType: TextInputType.number,
+          validator: field.required
+              ? (value) => (value == null || value.isEmpty) ? 'Este campo es requerido' : null
+              : null,
+          onChanged: (value) {
+            setState(() {
+              _dynamicFieldsValues[field.name] = value.isEmpty ? null : num.tryParse(value);
+            });
+          },
+        );
+
+      case 'textarea':
+        return TextFormField(
+          initialValue: currentValue?.toString() ?? '',
+          decoration: InputDecoration(
+            labelText: '${field.label}${field.required ? ' *' : ''}',
+            hintText: field.helpText,
+            border: const OutlineInputBorder(),
+          ),
+          maxLines: 4,
+          validator: field.required
+              ? (value) => (value == null || value.isEmpty) ? 'Este campo es requerido' : null
+              : null,
+          onChanged: (value) {
+            setState(() {
+              _dynamicFieldsValues[field.name] = value;
+            });
+          },
+        );
+
+      case 'select':
+        return DropdownButtonFormField<String>(
+          value: currentValue?.toString(),
+          decoration: InputDecoration(
+            labelText: '${field.label}${field.required ? ' *' : ''}',
+            hintText: field.helpText,
+            border: const OutlineInputBorder(),
+          ),
+          items: (field.options ?? []).map((option) {
+            final value = option is String ? option : option.toString();
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          validator: field.required
+              ? (value) => value == null ? 'Este campo es requerido' : null
+              : null,
+          onChanged: (value) {
+            setState(() {
+              _dynamicFieldsValues[field.name] = value;
+            });
+          },
+        );
+
+      case 'checkbox':
+        return CheckboxListTile(
+          title: Text(field.label),
+          subtitle: field.helpText != null ? Text(field.helpText!) : null,
+          value: currentValue == true || currentValue == 'true',
+          onChanged: (value) {
+            setState(() {
+              _dynamicFieldsValues[field.name] = value;
+            });
+          },
+        );
+
+      case 'date':
+        final dateController = TextEditingController(
+          text: currentValue?.toString() ?? '',
+        );
+        return TextFormField(
+          controller: dateController,
+          decoration: InputDecoration(
+            labelText: '${field.label}${field.required ? ' *' : ''}',
+            hintText: field.helpText,
+            border: const OutlineInputBorder(),
+            suffixIcon: const Icon(Icons.calendar_today),
+          ),
+          readOnly: true,
+          onTap: () async {
+            final date = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(1900),
+              lastDate: DateTime(2100),
+            );
+            if (date != null) {
+              final formattedDate = date.toIso8601String().split('T')[0];
+              setState(() {
+                dateController.text = formattedDate;
+                _dynamicFieldsValues[field.name] = formattedDate;
+              });
+            }
+          },
+          validator: field.required
+              ? (value) => (value == null || value.isEmpty) ? 'Este campo es requerido' : null
+              : null,
+        );
+
+      default:
+        return TextFormField(
+          initialValue: currentValue?.toString() ?? '',
+          decoration: InputDecoration(
+            labelText: '${field.label}${field.required ? ' *' : ''}',
+            hintText: field.helpText,
+            border: const OutlineInputBorder(),
+          ),
+          onChanged: (value) {
+            setState(() {
+              _dynamicFieldsValues[field.name] = value;
+            });
+          },
+        );
     }
   }
 
@@ -289,10 +563,14 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
 
                   // Tipo de interacción
                   DropdownButtonFormField<TipoInteraccion>(
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Tipo de Interacción *',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.category),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.category),
+                      // Indicador visual de campo preseleccionado
+                      suffixIcon: widget.tiposInteraccionPermitidos.length == 1
+                          ? const Icon(Icons.lock, size: 16, color: Colors.grey)
+                          : null,
                     ),
                     value: _tipoInteraccionSeleccionado,
                     items: widget.tiposInteraccionPermitidos.map((tipo) {
@@ -301,17 +579,23 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
                         child: Text(tipo.nombre),
                       );
                     }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _tipoInteraccionSeleccionado = value;
-                      });
-                    },
+                    // Solo permitir cambios si hay más de una opción
+                    onChanged: widget.tiposInteraccionPermitidos.length > 1
+                        ? (value) {
+                            setState(() {
+                              _tipoInteraccionSeleccionado = value;
+                            });
+                          }
+                        : null,
                     validator: (value) {
                       if (value == null) {
                         return 'Por favor seleccione un tipo de interacción';
                       }
                       return null;
                     },
+                    disabledHint: _tipoInteraccionSeleccionado != null
+                        ? Text(_tipoInteraccionSeleccionado!.nombre)
+                        : null,
                   ),
 
                   const SizedBox(height: 16),
@@ -378,153 +662,183 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Turno
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Turno',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.wb_sunny),
-                    ),
-                    value: _turno,
-                    items: ['Mañana', 'Tarde', 'Noche'].map((turno) {
-                      return DropdownMenuItem(
-                        value: turno,
-                        child: Text(turno),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _turno = value;
-                      });
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Duración
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Duración (minutos)',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.timer),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      _duracionMinutos = int.tryParse(value);
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Objetivo
-                  TextFormField(
-                    controller: _objetivoController,
-                    decoration: const InputDecoration(
-                      labelText: 'Objetivo de la Visita',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.flag),
-                    ),
-                    maxLines: 2,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Resumen
-                  TextFormField(
-                    controller: _resumenController,
-                    decoration: const InputDecoration(
-                      labelText: 'Resumen de la Visita *',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.notes),
-                    ),
-                    maxLines: 4,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingrese un resumen';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Resultado
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Resultado',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.check_circle),
-                    ),
-                    value: _resultadoVisita,
-                    items: ['Exitoso', 'Pendiente', 'Cancelado', 'Reagendar'].map((resultado) {
-                      return DropdownMenuItem(
-                        value: resultado,
-                        child: Text(resultado),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _resultadoVisita = value;
-                      });
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Próxima acción
-                  TextFormField(
-                    controller: _proximaAccionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Próxima Acción',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.next_plan),
-                    ),
-                    maxLines: 2,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Fecha próxima acción
-                  InkWell(
-                    onTap: () async {
-                      final fecha = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                      );
-                      if (fecha != null) {
-                        setState(() {
-                          _fechaProximaAccion = fecha;
-                        });
-                      }
-                    },
-                    child: InputDecorator(
+                  // Turno (conditional based on schema)
+                  if (_tipoInteraccionSeleccionado?.isStaticFieldVisible('Turno') ?? true) ...[
+                    DropdownButtonFormField<String>(
                       decoration: InputDecoration(
-                        labelText: 'Fecha Próxima Acción',
+                        labelText: 'Turno${(_tipoInteraccionSeleccionado?.isStaticFieldRequired('Turno') ?? false) ? ' *' : ''}',
                         border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.event),
-                        suffixIcon: _fechaProximaAccion != null
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  setState(() {
-                                    _fechaProximaAccion = null;
-                                  });
-                                },
-                              )
-                            : null,
+                        prefixIcon: const Icon(Icons.wb_sunny),
                       ),
-                      child: Text(
-                        _fechaProximaAccion != null
-                            ? '${_fechaProximaAccion!.day}/${_fechaProximaAccion!.month}/${_fechaProximaAccion!.year}'
-                            : 'Seleccionar fecha',
-                        style: TextStyle(
-                          color: _fechaProximaAccion != null ? Colors.black : Colors.grey,
+                      initialValue: _turno,
+                      items: ['Mañana', 'Tarde', 'Noche'].map((turno) {
+                        return DropdownMenuItem(
+                          value: turno,
+                          child: Text(turno),
+                        );
+                      }).toList(),
+                      validator: (_tipoInteraccionSeleccionado?.isStaticFieldRequired('Turno') ?? false)
+                        ? (value) => value == null ? 'Este campo es requerido' : null
+                        : null,
+                      onChanged: (value) {
+                        setState(() {
+                          _turno = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Duración (conditional based on schema)
+                  if (_tipoInteraccionSeleccionado?.isStaticFieldVisible('DuracionMinutos') ?? true) ...[
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'Duración (minutos)${(_tipoInteraccionSeleccionado?.isStaticFieldRequired('DuracionMinutos') ?? false) ? ' *' : ''}',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.timer),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (_tipoInteraccionSeleccionado?.isStaticFieldRequired('DuracionMinutos') ?? false)
+                        ? (value) => (value == null || value.isEmpty) ? 'Este campo es requerido' : null
+                        : null,
+                      onChanged: (value) {
+                        _duracionMinutos = int.tryParse(value);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Objetivo (conditional based on schema)
+                  if (_tipoInteraccionSeleccionado?.isStaticFieldVisible('ObjetivoVisita') ?? true) ...[
+                    TextFormField(
+                      controller: _objetivoController,
+                      decoration: InputDecoration(
+                        labelText: 'Objetivo de la Visita${(_tipoInteraccionSeleccionado?.isStaticFieldRequired('ObjetivoVisita') ?? false) ? ' *' : ''}',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.flag),
+                      ),
+                      maxLines: 2,
+                      validator: (_tipoInteraccionSeleccionado?.isStaticFieldRequired('ObjetivoVisita') ?? false)
+                        ? (value) => (value == null || value.isEmpty) ? 'Este campo es requerido' : null
+                        : null,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Resumen (conditional based on schema)
+                  if (_tipoInteraccionSeleccionado?.isStaticFieldVisible('ResumenVisita') ?? true) ...[
+                    TextFormField(
+                      controller: _resumenController,
+                      decoration: InputDecoration(
+                        labelText: 'Resumen de la Visita${(_tipoInteraccionSeleccionado?.isStaticFieldRequired('ResumenVisita') ?? false) ? ' *' : ''}',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.notes),
+                      ),
+                      maxLines: 4,
+                      validator: (_tipoInteraccionSeleccionado?.isStaticFieldRequired('ResumenVisita') ?? false)
+                        ? (value) => (value == null || value.isEmpty) ? 'Por favor ingrese un resumen' : null
+                        : null,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Resultado (conditional based on schema)
+                  if (_tipoInteraccionSeleccionado?.isStaticFieldVisible('Resultado') ?? true) ...[
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Resultado${(_tipoInteraccionSeleccionado?.isStaticFieldRequired('Resultado') ?? false) ? ' *' : ''}',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.check_circle),
+                      ),
+                      initialValue: _resultadoVisita,
+                      items: ['Exitoso', 'Pendiente', 'Cancelado', 'Reagendar'].map((resultado) {
+                        return DropdownMenuItem(
+                          value: resultado,
+                          child: Text(resultado),
+                        );
+                      }).toList(),
+                      validator: (_tipoInteraccionSeleccionado?.isStaticFieldRequired('Resultado') ?? false)
+                        ? (value) => value == null ? 'Este campo es requerido' : null
+                        : null,
+                      onChanged: (value) {
+                        setState(() {
+                          _resultadoVisita = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Próxima acción (conditional based on schema)
+                  if (_tipoInteraccionSeleccionado?.isStaticFieldVisible('ProximaAccion') ?? true) ...[
+                    TextFormField(
+                      controller: _proximaAccionController,
+                      decoration: InputDecoration(
+                        labelText: 'Próxima Acción${(_tipoInteraccionSeleccionado?.isStaticFieldRequired('ProximaAccion') ?? false) ? ' *' : ''}',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.next_plan),
+                      ),
+                      maxLines: 2,
+                      validator: (_tipoInteraccionSeleccionado?.isStaticFieldRequired('ProximaAccion') ?? false)
+                        ? (value) => (value == null || value.isEmpty) ? 'Este campo es requerido' : null
+                        : null,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Fecha próxima acción (conditional based on schema)
+                  if (_tipoInteraccionSeleccionado?.isStaticFieldVisible('FechaProximaAccion') ?? true) ...[
+                    InkWell(
+                      onTap: () async {
+                        final fecha = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (fecha != null) {
+                          setState(() {
+                            _fechaProximaAccion = fecha;
+                          });
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Fecha Próxima Acción${(_tipoInteraccionSeleccionado?.isStaticFieldRequired('FechaProximaAccion') ?? false) ? ' *' : ''}',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.event),
+                          suffixIcon: _fechaProximaAccion != null
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    setState(() {
+                                      _fechaProximaAccion = null;
+                                    });
+                                  },
+                                )
+                              : null,
+                        ),
+                        child: Text(
+                          _fechaProximaAccion != null
+                              ? '${_fechaProximaAccion!.day}/${_fechaProximaAccion!.month}/${_fechaProximaAccion!.year}'
+                              : 'Seleccionar fecha',
+                          style: TextStyle(
+                            color: _fechaProximaAccion != null ? Colors.black : Colors.grey,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Dynamic fields from schema
+                  ...(_tipoInteraccionSeleccionado?.getDynamicFields() ?? []).map((fieldJson) {
+                    final fieldSchema = FieldSchema.fromJson(fieldJson);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildDynamicField(fieldSchema),
+                    );
+                  }),
 
                   const SizedBox(height: 24),
 
@@ -639,6 +953,7 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
                 ],
               ),
             ),
+      bottomNavigationBar: const BottomToolbar(),
     );
   }
 }

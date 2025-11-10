@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/esquema_personalizado.dart';
 import '../models/entidad_dinamica.dart';
 import '../services/entity_service.dart';
 import '../widgets/dynamic_form_field.dart';
+import '../providers/toolbar_provider.dart';
+import '../widgets/bottom_toolbar.dart';
 
 class EntityFormScreen extends StatefulWidget {
   final EsquemaPersonalizado esquema;
@@ -30,6 +33,27 @@ class _EntityFormScreenState extends State<EntityFormScreen> {
     if (widget.entidad != null) {
       _formData.addAll(widget.entidad!.datos);
     }
+
+    // Configurar acciones del toolbar después de que el frame esté construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupToolbarActions();
+    });
+  }
+
+  void _setupToolbarActions() {
+    final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+    toolbarProvider.setActions([
+      ToolbarProvider.createAction(
+        icon: Icons.save,
+        label: 'Guardar',
+        onPressed: () => _saveEntity(),
+      ),
+      ToolbarProvider.createAction(
+        icon: Icons.close,
+        label: 'Cancelar',
+        onPressed: () => Navigator.pop(context),
+      ),
+    ]);
   }
 
   void _handleFieldChange(String fieldName, dynamic value) {
@@ -172,6 +196,7 @@ class _EntityFormScreenState extends State<EntityFormScreen> {
                 ],
               ),
             ),
+      bottomNavigationBar: const BottomToolbar(),
     );
   }
 }

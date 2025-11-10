@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:math';
 import '../services/mobile_api_service.dart';
 import '../services/sync_queue_service.dart';
+import '../providers/toolbar_provider.dart';
+import '../widgets/bottom_toolbar.dart';
 
 class TestPhase2Screen extends StatefulWidget {
   final String agenteId;
@@ -36,6 +39,28 @@ class _TestPhase2ScreenState extends State<TestPhase2Screen> {
     super.initState();
     _initSyncQueue();
     _updatePendingCount();
+
+    // Configurar acciones del toolbar después de que el frame esté construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupToolbarActions();
+    });
+  }
+
+  void _setupToolbarActions() {
+    final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+    toolbarProvider.setActions([
+      ToolbarProvider.createSyncAction(() => _testProcessQueue()),
+      ToolbarProvider.createAction(
+        icon: Icons.add_to_queue,
+        label: 'Cola',
+        onPressed: () => _testOfflineUpdate(),
+      ),
+      ToolbarProvider.createAction(
+        icon: Icons.delete_sweep,
+        label: 'Limpiar',
+        onPressed: () => _testClearQueue(),
+      ),
+    ]);
   }
 
   Future<void> _initSyncQueue() async {
@@ -404,6 +429,7 @@ Pendientes: $_pendingCount
           ),
         ),
       ),
+      bottomNavigationBar: const BottomToolbar(),
     );
   }
 

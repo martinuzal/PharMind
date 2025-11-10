@@ -10,6 +10,10 @@ import 'test_phase2_screen.dart';
 import 'relaciones_screen.dart';
 import 'interacciones_realizadas_screen.dart';
 import 'clientes_screen.dart';
+import 'configuracion_screen.dart';
+import 'tiempo_utilizado_screen.dart';
+import 'eficiencia_screen.dart';
+import 'gastos_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,8 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }),
       ToolbarProvider.createSettingsAction(() {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Configuración no implementada aún')),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ConfiguracionScreen(),
+          ),
         );
       }),
     ]);
@@ -206,6 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 children: [
+                  /*
                   // Header con información del usuario
                   Container(
                     width: double.infinity,
@@ -280,6 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
+                  */
                   // Contenido principal
                   Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -328,6 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           ),
+                        /*
                         // Título de sección
                         const Text(
                           'Información del Usuario',
@@ -366,6 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             value: _formatDate(user.ultimoAcceso!),
                           ),
                         const SizedBox(height: 20),
+                        */
                         // Título de módulos
                         const Text(
                           'Módulos',
@@ -375,6 +386,243 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        // Módulo de Tiempo Utilizado
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const TiempoUtilizadoScreen(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.purple.shade400,
+                                  Colors.purple.shade600,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.purple.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.schedule,
+                                    size: 32,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Tiempo Utilizado',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Estadísticas de uso de la aplicación',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Módulo de Eficiencia
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const EficienciaScreen(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.teal.shade400,
+                                  Colors.teal.shade600,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.teal.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.analytics,
+                                    size: 32,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Eficiencia',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Distribución geográfica de tareas',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Módulo de Rendición de Gastos
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const GastosScreen(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.orange.shade400,
+                                  Colors.orange.shade600,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.orange.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.receipt_long,
+                                    size: 32,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Rendición de Gastos',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Gestión de gastos y comprobantes',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Módulos comentados
+                        /*
+                        // Módulos de test (comentados para producción)
                         // Botón de prueba de API Mobile (Fase 1)
                         InkWell(
                           onTap: () {
@@ -544,6 +792,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
+                        */
                         // Botón de Clientes
                         InkWell(
                           onTap: () {
@@ -820,45 +1069,65 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
+
                         // Widget de estado de sincronización
                         const SyncStatusWidget(),
-                        const SizedBox(height: 20),
-                        // Información adicional
+                        const SizedBox(height: 12),
+                        // Información adicional (compacta)
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Row(
                                 children: [
                                   Icon(
-                                    Icons.info_outline,
-                                    color: Colors.blue[700],
+                                    Icons.person_outline,
+                                    size: 16,
+                                    color: Colors.grey[700],
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 6),
                                   Text(
-                                    'Información del Sistema',
+                                    user.nombre,
                                     style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue[700],
+                                      fontSize: 12,
+                                      color: Colors.grey[800],
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'ID de Usuario: ${user.id}',
-                                style: TextStyle(color: Colors.blue[900]),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Estado: ${authProvider.isOfflineMode ? 'Offline' : 'Online'}',
-                                style: TextStyle(color: Colors.blue[900]),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: authProvider.isOfflineMode ? Colors.orange[100] : Colors.green[100],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      authProvider.isOfflineMode ? Icons.cloud_off : Icons.cloud_done,
+                                      size: 12,
+                                      color: authProvider.isOfflineMode ? Colors.orange[800] : Colors.green[800],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      authProvider.isOfflineMode ? 'Offline' : 'Online',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: authProvider.isOfflineMode ? Colors.orange[800] : Colors.green[800],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),

@@ -5,6 +5,8 @@ import '../services/database_service.dart';
 import '../models/relacion.dart';
 import '../models/interaccion.dart';
 import '../providers/auth_provider.dart';
+import '../providers/toolbar_provider.dart';
+import '../widgets/bottom_toolbar.dart';
 
 class TestSyncScreen extends StatefulWidget {
   const TestSyncScreen({super.key});
@@ -21,6 +23,33 @@ class _TestSyncScreenState extends State<TestSyncScreen> {
   MobileSyncResponse? _syncData;
   MobileDashboard? _dashboard;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Configurar acciones del toolbar después de que el frame esté construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupToolbarActions();
+    });
+  }
+
+  void _setupToolbarActions() {
+    final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+    toolbarProvider.setActions([
+      ToolbarProvider.createSyncAction(() => _testSync()),
+      ToolbarProvider.createAction(
+        icon: Icons.dashboard,
+        label: 'Dashboard',
+        onPressed: () => _testDashboard(),
+      ),
+      ToolbarProvider.createAction(
+        icon: Icons.storage,
+        label: 'DB',
+        onPressed: () => _inspectDatabase(),
+      ),
+    ]);
+  }
 
   String? get _agenteId {
     final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
@@ -606,6 +635,7 @@ class _TestSyncScreenState extends State<TestSyncScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: const BottomToolbar(),
     );
   }
 

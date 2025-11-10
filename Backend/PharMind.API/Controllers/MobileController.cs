@@ -411,8 +411,10 @@ public class MobileController : ControllerBase
             {
                 var EntidadesDinamica = new EntidadesDinamica
                 {
+                    Id = Guid.NewGuid().ToString(),
                     EsquemaId = dto.TipoInteraccionId,
-                    Datos = System.Text.Json.JsonSerializer.Serialize(dto.DatosDinamicos)
+                    Datos = System.Text.Json.JsonSerializer.Serialize(dto.DatosDinamicos),
+                    FechaCreacion = DateTime.Now
                 };
                 _context.EntidadesDinamicas.Add(EntidadesDinamica);
                 await _context.SaveChangesAsync();
@@ -481,8 +483,10 @@ public class MobileController : ControllerBase
                 {
                     var EntidadesDinamica = new EntidadesDinamica
                     {
+                        Id = Guid.NewGuid().ToString(),
                         EsquemaId = interaccionDto.TipoInteraccionId,
-                        Datos = System.Text.Json.JsonSerializer.Serialize(interaccionDto.DatosDinamicos)
+                        Datos = System.Text.Json.JsonSerializer.Serialize(interaccionDto.DatosDinamicos),
+                        FechaCreacion = DateTime.Now
                     };
                     _context.EntidadesDinamicas.Add(EntidadesDinamica);
                     await _context.SaveChangesAsync();
@@ -718,10 +722,9 @@ public class MobileController : ControllerBase
 
     private RelacionMobileDto MapRelacionToMobileDto(Relacion r)
     {
-        // Buscar última interacción
+        // Buscar última interacción (sin Include porque usamos Select)
         var ultimaInteraccion = _context.Interacciones
             .Where(i => i.RelacionId == r.Id && i.Status == false)
-            .Include(i => i.TipoInteraccionEsquema)
             .OrderByDescending(i => i.Fecha)
             .Select(i => new { i.Fecha, TipoNombre = i.TipoInteraccionEsquema!.Nombre })
             .FirstOrDefault();

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/loading_indicator.dart';
 import '../services/sync_service.dart';
+import '../models/sync_stats.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,15 +72,27 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
 
-        // Sincronizar datos en segundo plano después del login exitoso
+        // Sincronizar datos después del login exitoso
         final syncService = SyncService();
-        syncService.syncAll().catchError((error) {
-          print('Error en sincronización automática: $error');
-          // No mostrar error al usuario, la sincronización es en segundo plano
-        });
+        final syncStats = await syncService.syncAll();
+
+        if (!mounted) return;
+
+        // Mostrar resumen de sincronización
+        if (syncStats.exitosa) {
+          _showSyncSummaryDialog(syncStats);
+        } else {
+          _showSyncErrorDialog(syncStats.errorMessage ?? 'Error desconocido');
+        }
       }
 
       // Navegar a home
+      if (!authProvider.isOfflineMode) {
+        // Esperar un momento para que el usuario vea el resumen antes de navegar
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      if (!mounted) return;
       Navigator.of(context).pushReplacementNamed('/home');
     } else {
       // Mostrar error
@@ -91,6 +104,137 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     }
+  }
+
+  void _showSyncSummaryDialog(SyncStats stats) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 28),
+            SizedBox(width: 10),
+            Text('Sincronización Completada'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (stats.esquemasDescargados > 0)
+                _buildStatRow(
+                  Icons.layers,
+                  'Esquemas descargados',
+                  stats.esquemasDescargados.toString(),
+                ),
+              if (stats.entidadesDescargadas > 0)
+                _buildStatRow(
+                  Icons.download,
+                  'Entidades recibidas',
+                  stats.entidadesDescargadas.toString(),
+                ),
+              if (stats.entidadesEnviadas > 0)
+                _buildStatRow(
+                  Icons.upload,
+                  'Entidades enviadas',
+                  stats.entidadesEnviadas.toString(),
+                ),
+              if (stats.entidadesPorTipo.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Detalle por tipo:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...stats.entidadesPorTipo.entries.map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(left: 16, bottom: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.arrow_right, size: 16),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${entry.key}: ${entry.value}',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              if (stats.esquemasDescargados == 0 &&
+                  stats.entidadesDescargadas == 0 &&
+                  stats.entidadesEnviadas == 0)
+                const Text(
+                  'No hay cambios para sincronizar',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSyncErrorDialog(String errorMessage) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.error, color: Colors.red, size: 28),
+            SizedBox(width: 10),
+            Text('Error en Sincronización'),
+          ],
+        ),
+        content: Text(errorMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.blue),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

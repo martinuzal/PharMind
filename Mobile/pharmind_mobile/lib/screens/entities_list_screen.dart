@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/esquema_personalizado.dart';
 import '../models/entidad_dinamica.dart';
 import '../services/entity_service.dart';
+import '../providers/toolbar_provider.dart';
+import '../widgets/bottom_toolbar.dart';
 import 'entity_form_screen.dart';
 
 class EntitiesListScreen extends StatefulWidget {
@@ -30,6 +33,27 @@ class _EntitiesListScreenState extends State<EntitiesListScreen> {
     super.initState();
     _loadEntidades();
     _searchController.addListener(_filterEntidades);
+
+    // Configurar acciones del toolbar después de que el frame esté construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupToolbarActions();
+    });
+  }
+
+  void _setupToolbarActions() {
+    final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+    toolbarProvider.setActions([
+      ToolbarProvider.createAddAction(() => _navigateToForm()),
+      ToolbarProvider.createSearchAction(() {
+        setState(() {
+          _isSearching = !_isSearching;
+          if (!_isSearching) {
+            _searchController.clear();
+          }
+        });
+      }),
+      ToolbarProvider.createSyncAction(() => _loadEntidades()),
+    ]);
   }
 
   @override
@@ -346,11 +370,7 @@ class _EntitiesListScreenState extends State<EntitiesListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _navigateToForm(),
-        icon: const Icon(Icons.add),
-        label: const Text('Nuevo'),
-      ),
+      bottomNavigationBar: const BottomToolbar(),
     );
   }
 }

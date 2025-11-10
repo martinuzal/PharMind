@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/esquema_personalizado.dart';
 import '../services/entity_service.dart';
 import '../widgets/loading_indicator.dart';
+import '../providers/toolbar_provider.dart';
+import '../widgets/bottom_toolbar.dart';
 import 'entities_list_screen.dart';
 
 class EntitiesDashboardScreen extends StatefulWidget {
@@ -22,6 +25,23 @@ class _EntitiesDashboardScreenState extends State<EntitiesDashboardScreen> {
   void initState() {
     super.initState();
     _loadData();
+
+    // Configurar acciones del toolbar después de que el frame esté construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupToolbarActions();
+    });
+  }
+
+  void _setupToolbarActions() {
+    final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+    toolbarProvider.setActions([
+      ToolbarProvider.createSyncAction(() => _loadData()),
+      ToolbarProvider.createSearchAction(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Buscar no implementado aún')),
+        );
+      }),
+    ]);
   }
 
   Future<void> _loadData() async {
@@ -177,6 +197,7 @@ class _EntitiesDashboardScreenState extends State<EntitiesDashboardScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: const BottomToolbar(),
     );
   }
 

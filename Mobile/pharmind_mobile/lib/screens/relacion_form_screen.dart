@@ -51,9 +51,14 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
     super.initState();
 
     // Initialize form fields with current relacion values
-    _prioridad = widget.relacion.prioridad;
-    _frecuenciaVisitas = widget.relacion.frecuenciaVisitas;
-    _estado = widget.relacion.estado;
+    // Normalize values to ensure they are in the dropdown lists or null
+    final validPrioridades = ['A', 'B', 'C'];
+    final validFrecuencias = ['Diaria', 'Semanal', 'Quincenal', 'Mensual', 'Bimestral', 'Trimestral'];
+    final validEstados = ['Activo', 'Inactivo', 'Completado'];
+
+    _prioridad = validPrioridades.contains(widget.relacion.prioridad) ? widget.relacion.prioridad : null;
+    _frecuenciaVisitas = validFrecuencias.contains(widget.relacion.frecuenciaVisitas) ? widget.relacion.frecuenciaVisitas : null;
+    _estado = validEstados.contains(widget.relacion.estado) ? widget.relacion.estado : null;
     _fechaFin = widget.relacion.fechaFin;
     _observacionesController.text = widget.relacion.observaciones ?? '';
 

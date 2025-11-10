@@ -14,7 +14,9 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nVersión Estable: Backend + Web + Mobile\n\nImplementaciones principales:\n- Sistema completo de Managers con relaciones a Regiones, Distritos y Líneas de Negocio\n- Módulo de Auditoría de Clientes con Perfil Prescriptivo\n- Sistema de Médicos de Auditoría con búsqueda avanzada\n- Módulo de Mapa Geográfico con análisis detallado\n- Sistema de sincronización offline para Mobile (Relaciones e Interacciones)\n- API Mobile con endpoints optimizados para sincronización\n- Sistema de cola de sincronización para operaciones offline\n- Formularios dinámicos con entidades personalizables\n- Mejoras en arquitectura de entidades dinámicas\n\nFixes importantes:\n- Corrección de relaciones Manager-Usuario (eliminado UsuarioId shadow property)\n- Serialización correcta de campos de especialidad en Médicos de Auditoría\n- Sistema híbrido de datos dinámicos en Interacciones\n- Mejoras en la búsqueda y filtrado de entidades\n\nBackend:\n- Nuevos controladores: MobileController, AuditCustomerController\n- DTOs optimizados para transferencia de datos\n- Modelos actualizados con campos de auditoría\n- Migraciones SQL para nuevos campos\n\nFrontend Web:\n- Página de Entidades Dinámicas mejorada\n- Página de Médicos de Auditoría con toolbar y búsqueda\n- Modal de Perfil Prescriptivo\n- Servicios de API actualizados\n\nMobile:\n- Pantallas de Relaciones e Interacciones\n- Modelos de datos sincronizados con Backend\n- Servicios de sincronización offline\n- Base de datos local SQLite\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git tag:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(flutter --version:*)"
     ],
     "deny": [],
     "ask": []
