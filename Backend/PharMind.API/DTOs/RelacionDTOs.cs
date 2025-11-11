@@ -1,5 +1,17 @@
 namespace PharMind.API.DTOs;
 
+// DTO para indicador de frecuencia de visitas
+public class FrecuenciaIndicadorDto
+{
+    public int InteraccionesRealizadas { get; set; }
+    public int FrecuenciaObjetivo { get; set; }
+    public string PeriodoMedicion { get; set; } = string.Empty;
+    public DateTime FechaInicioPeriodo { get; set; }
+    public DateTime FechaFinPeriodo { get; set; }
+    public string Estado { get; set; } = "gris"; // gris, amarillo, verde, azul
+    public int VisitasPendientes { get; set; }
+}
+
 public class RelacionDto
 {
     public string Id { get; set; } = string.Empty;
@@ -38,6 +50,9 @@ public class RelacionDto
     public string? CreadoPor { get; set; }
     public DateTime? FechaModificacion { get; set; }
     public string? ModificadoPor { get; set; }
+
+    // Indicador de frecuencia de visitas
+    public FrecuenciaIndicadorDto? Frecuencia { get; set; }
 }
 
 public class CreateRelacionDto

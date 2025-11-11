@@ -1,0 +1,48 @@
+.frecuencia-indicator {
+  width: 5px;
+  height: 100%;
+  border-radius: 2px 0 0 2px;
+  transition: all 0.3s ease;
+  cursor: help;
+}
+
+/* Estados del semáforo */
+.frecuencia-gris {
+  background-color: #6c757d;
+}
+
+.frecuencia-amarillo {
+  background-color: #ffc107;
+}
+
+.frecuencia-verde {
+  background-color: #28a745;
+}
+
+.frecuencia-azul {
+  background-color: #17a2b8;
+}
+
+/* Efecto hover para indicadores activos */
+.frecuencia-indicator:hover {
+  width: 6px;
+  opacity: 0.9;
+}
+
+/* Para cuando el indicador está dentro de una tarjeta o fila */
+.frecuencia-container {
+  display: flex;
+  position: relative;
+}
+
+.frecuencia-container .frecuencia-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+.frecuencia-container > *:not(.frecuencia-indicator) {
+  flex: 1;
+}

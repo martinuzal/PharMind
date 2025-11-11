@@ -22,6 +22,7 @@ builder.Services.AddScoped<EntityFilterService>();
 builder.Services.AddSingleton<IChunkedUploadService, ChunkedUploadService>();
 builder.Services.AddScoped<IAuditoriaPrescripcionesService, AuditoriaPrescripcionesService>();
 builder.Services.AddScoped<IProcessLogService, ProcessLogService>();
+builder.Services.AddScoped<IFrecuenciaVisitasService, FrecuenciaVisitasService>();
 builder.Services.AddHttpClient();
 
 // SignalR

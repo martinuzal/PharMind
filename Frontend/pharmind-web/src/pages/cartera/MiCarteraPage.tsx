@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { usePage } from '../../contexts/PageContext';
 import InteractionFormModal from '../../components/modals/InteractionFormModal';
+import FrecuenciaIndicator from '../../components/common/FrecuenciaIndicator';
+import type { FrecuenciaIndicadorData } from '../../components/common/FrecuenciaIndicator';
 import './MiCarteraPage.css';
 
 interface TipoRelacion {
@@ -20,6 +22,8 @@ interface TipoInteraccion {
   subTipo: string;
   icono?: string;
   color?: string;
+  schema?: string | any;
+  configuracionUi?: string | null;
 }
 
 interface Relacion {
@@ -43,6 +47,7 @@ interface Relacion {
   prioridad?: string;
   observaciones?: string;
   datosDinamicos?: Record<string, any>;
+  frecuencia?: FrecuenciaIndicadorData;
 }
 
 const MiCarteraPage: React.FC = () => {
@@ -56,6 +61,7 @@ const MiCarteraPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [tipoFiltro, setTipoFiltro] = useState<string>('todos');
+  const [soloConPendientes, setSoloConPendientes] = useState(false);
   const [viewMode, setViewMode] = useState<'mosaico' | 'lista'>('mosaico');
   const [menuAbiertoId, setMenuAbiertoId] = useState<string | null>(null);
   const [showInteractionModal, setShowInteractionModal] = useState(false);
@@ -69,11 +75,11 @@ const MiCarteraPage: React.FC = () => {
 
   useEffect(() => {
     setupToolbar();
-  }, [searchTerm, tipoFiltro, viewMode, tiposRelacion]);
+  }, [searchTerm, tipoFiltro, viewMode, tiposRelacion, soloConPendientes]);
 
   useEffect(() => {
     filterRelaciones();
-  }, [relaciones, searchTerm, tipoFiltro]);
+  }, [relaciones, searchTerm, tipoFiltro, soloConPendientes]);
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -104,12 +110,14 @@ const MiCarteraPage: React.FC = () => {
       setTiposInteraccion(tiposInt);
 
       // Cargar todas las relaciones del usuario (con paginación grande para obtener todas)
-      const relacionesResponse = await api.get('/Relaciones?pageSize=1000');
+      const relacionesResponse = await api.get('/Relaciones?pageSize=1000&incluirFrecuencia=true');
       console.log('Relaciones Response:', relacionesResponse.data);
 
       // El backend devuelve un objeto con items, no un array directo
       const rels = relacionesResponse.data?.items || [];
       console.log('Relaciones procesadas:', rels);
+      console.log('Primera relación con frecuencia:', rels[0]);
+      console.log('¿Tiene frecuencia?:', rels[0]?.frecuencia);
       setRelaciones(rels);
       setRelacionesFiltradas(rels);
     } catch (error) {
@@ -146,6 +154,13 @@ const MiCarteraPage: React.FC = () => {
     // Filtrar por tipo
     if (tipoFiltro !== 'todos') {
       filtered = filtered.filter(rel => rel.tipoRelacionId === tipoFiltro);
+    }
+
+    // Filtrar por visitas pendientes
+    if (soloConPendientes) {
+      filtered = filtered.filter(rel =>
+        rel.frecuencia && rel.frecuencia.visitasPendientes > 0
+      );
     }
 
     setRelacionesFiltradas(filtered);
@@ -220,9 +235,33 @@ const MiCarteraPage: React.FC = () => {
       </div>
     );
 
-    // Cambio de vista
+    // Cambio de vista y filtro de pendientes
     setToolbarRightContent(
       <div className="toolbar-right">
+        <button
+          className={`btn-filter ${soloConPendientes ? 'active' : ''}`}
+          onClick={() => setSoloConPendientes(!soloConPendientes)}
+          title="Solo con visitas pendientes"
+          style={{
+            marginRight: '0.75rem',
+            padding: '0.5rem 0.875rem',
+            background: soloConPendientes ? 'var(--accent-color)' : 'transparent',
+            color: soloConPendientes ? 'white' : 'var(--text-secondary)',
+            border: '1px solid',
+            borderColor: soloConPendientes ? 'var(--accent-color)' : 'var(--border-color)',
+            borderRadius: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          <span className="material-icons" style={{ fontSize: '1.125rem' }}>event_busy</span>
+          <span>Pendientes</span>
+        </button>
         <div className="view-toggle">
           <button
             className={`btn-view ${viewMode === 'mosaico' ? 'active' : ''}`}
@@ -297,24 +336,18 @@ const MiCarteraPage: React.FC = () => {
 
   const handleCrearInteraccion = async (relacion: Relacion, tipoInteraccion: TipoInteraccion) => {
     try {
-      // Cargar esquema completo del tipo de interacción
-      const esquemaResponse = await api.get(`/esquemaspersonalizados/tipo/Interaccion/subtipo/${tipoInteraccion.subTipo}`);
-
-      // Preparar datos pre-poblados y abrir modal
+      // Abrir modal con datos pre-poblados
       setModalPrefilledData({
         relacionId: relacion.id,
         agenteId: relacion.agenteId,
         clienteId: relacion.clientePrincipalId,
         tipoInteraccionId: tipoInteraccion.id
       });
-      setSelectedTipoInteraccion({
-        ...tipoInteraccion,
-        ...esquemaResponse.data
-      });
+      setSelectedTipoInteraccion(tipoInteraccion);
       setShowInteractionModal(true);
       setMenuAbiertoId(null);
     } catch (error) {
-      console.error('Error al cargar esquema de interacción:', error);
+      console.error('Error al abrir formulario de interacción:', error);
       alert('Error al abrir formulario de interacción');
     }
   };
@@ -425,9 +458,11 @@ const MiCarteraPage: React.FC = () => {
               return (
                 <div
                   key={relacion.id}
-                  className="relacion-card"
+                  className="relacion-card frecuencia-container"
                   onClick={() => handleRelacionClick(relacion)}
                 >
+                  <FrecuenciaIndicator frecuencia={relacion.frecuencia} />
+                  <div className="card-content-wrapper">
                   <div className="card-header">
                     <div className="card-icon" style={{ background: tipo?.color || '#4DB8B8' }}>
                       <span className="material-icons">{tipo?.icono || 'link'}</span>
@@ -519,6 +554,7 @@ const MiCarteraPage: React.FC = () => {
                       {new Date(relacion.fechaInicio).toLocaleDateString()}
                     </span>
                   </div>
+                  </div>
                 </div>
               );
             })
@@ -550,7 +586,8 @@ const MiCarteraPage: React.FC = () => {
                         onClick={() => handleRelacionClick(relacion)}
                         className="table-row-clickable"
                       >
-                        <td>
+                        <td style={{ position: 'relative' }}>
+                          <FrecuenciaIndicator frecuencia={relacion.frecuencia} />
                           <div className="table-tipo">
                             <span className="material-icons" style={{ color: tipo?.color || '#4DB8B8' }}>
                               {tipo?.icono || 'link'}

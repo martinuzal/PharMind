@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PharMind.API.Data;
 using PharMind.API.DTOs;
 using PharMind.API.Models;
+using PharMind.API.Services;
 using System.Text.Json;
 
 namespace PharMind.API.Controllers;
@@ -13,13 +14,16 @@ public class RelacionesController : ControllerBase
 {
     private readonly PharMindDbContext _context;
     private readonly ILogger<RelacionesController> _logger;
+    private readonly IFrecuenciaVisitasService _frecuenciaService;
 
     public RelacionesController(
         PharMindDbContext context,
-        ILogger<RelacionesController> logger)
+        ILogger<RelacionesController> logger,
+        IFrecuenciaVisitasService frecuenciaService)
     {
         _context = context;
         _logger = logger;
+        _frecuenciaService = frecuenciaService;
     }
 
     /// <summary>
@@ -28,7 +32,9 @@ public class RelacionesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<RelacionListResponse>> GetRelaciones(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] bool? soloConPendientes = null,
+        [FromQuery] bool incluirFrecuencia = true)
     {
         try
         {
@@ -44,17 +50,40 @@ public class RelacionesController : ControllerBase
 
             // Contar total de items
             var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
             // Aplicar paginación
             var items = await query
                 .OrderByDescending(r => r.FechaInicio)
                 .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+                .Take(pageSize * 2) // Cargar más para filtrar después
                 .ToListAsync();
 
-            // Mapear a DTOs usando MapToDto
-            var itemDtos = items.Select(r => MapToDto(r)).ToList();
+            // Mapear a DTOs y calcular frecuencia
+            var itemDtos = new List<RelacionDto>();
+
+            foreach (var relacion in items)
+            {
+                var dto = await MapToDtoAsync(relacion, incluirFrecuencia);
+
+                // Aplicar filtro de pendientes si se especificó
+                if (soloConPendientes.HasValue && soloConPendientes.Value)
+                {
+                    if (dto.Frecuencia != null && dto.Frecuencia.VisitasPendientes > 0)
+                    {
+                        itemDtos.Add(dto);
+                    }
+                }
+                else
+                {
+                    itemDtos.Add(dto);
+                }
+
+                // Respetar el tamaño de página solicitado
+                if (itemDtos.Count >= pageSize)
+                    break;
+            }
+
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
             var response = new RelacionListResponse
             {
@@ -375,7 +404,97 @@ public class RelacionesController : ControllerBase
     }
 
     /// <summary>
-    /// Mapea una entidad Relacion a RelacionDto incluyendo datos dinámicos
+    /// Mapea una entidad Relacion a RelacionDto incluyendo datos dinámicos y frecuencia
+    /// </summary>
+    private async Task<RelacionDto> MapToDtoAsync(Relacion relacion, bool incluirFrecuencia = true)
+    {
+        var dto = new RelacionDto
+        {
+            Id = relacion.Id,
+            TipoRelacionId = relacion.TipoRelacionId,
+            TipoRelacionNombre = relacion.TipoRelacionEsquema?.Nombre,
+            EntidadDinamicaId = relacion.EntidadDinamicaId,
+            CodigoRelacion = relacion.CodigoRelacion,
+            AgenteId = relacion.AgenteId,
+            AgenteNombre = relacion.Agente?.Nombre ?? "N/A",
+            ClientePrincipalId = relacion.ClientePrincipalId,
+            ClientePrincipalNombre = relacion.ClientePrincipal?.Nombre ?? relacion.ClientePrincipal?.RazonSocial ?? "N/A",
+            ClienteSecundario1Id = relacion.ClienteSecundario1Id,
+            ClienteSecundario1Nombre = relacion.ClienteSecundario1?.Nombre ?? relacion.ClienteSecundario1?.RazonSocial,
+            ClienteSecundario2Id = relacion.ClienteSecundario2Id,
+            ClienteSecundario2Nombre = relacion.ClienteSecundario2?.Nombre ?? relacion.ClienteSecundario2?.RazonSocial,
+            TipoRelacion = relacion.TipoRelacion,
+            FechaInicio = relacion.FechaInicio,
+            FechaFin = relacion.FechaFin,
+            Estado = relacion.Estado,
+            FrecuenciaVisitas = relacion.FrecuenciaVisitas,
+            Prioridad = relacion.Prioridad,
+            Observaciones = relacion.Observaciones,
+            EspecialidadId = relacion.EspecialidadId,
+            CategoriaId = relacion.CategoriaId,
+            Segment1Id = relacion.Segment1Id,
+            Segment2Id = relacion.Segment2Id,
+            Segment3Id = relacion.Segment3Id,
+            Segment4Id = relacion.Segment4Id,
+            Segment5Id = relacion.Segment5Id,
+            FechaCreacion = relacion.FechaCreacion,
+            CreadoPor = relacion.CreadoPor,
+            FechaModificacion = relacion.FechaModificacion,
+            ModificadoPor = relacion.ModificadoPor
+        };
+
+        // Mapear datos dinámicos si existen
+        if (relacion.DatosExtendidos?.Datos != null)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                dto.DatosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(relacion.DatosExtendidos.Datos, options);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error al deserializar datos dinámicos para relación {Id}", relacion.Id);
+            }
+        }
+
+        // Calcular frecuencia si se solicita
+        if (incluirFrecuencia)
+        {
+            _logger.LogInformation("Calculando frecuencia para relación {RelacionId} (FrecuenciaVisitas: {FrecuenciaVisitas})",
+                relacion.Id, relacion.FrecuenciaVisitas);
+
+            var frecuencia = await _frecuenciaService.CalcularFrecuenciaAsync(relacion.Id);
+
+            if (frecuencia != null)
+            {
+                _logger.LogInformation("Frecuencia calculada para {RelacionId}: {Realizadas}/{Objetivo} - Estado: {Estado}",
+                    relacion.Id, frecuencia.InteraccionesRealizadas, frecuencia.FrecuenciaObjetivo, frecuencia.Estado);
+
+                dto.Frecuencia = new FrecuenciaIndicadorDto
+                {
+                    InteraccionesRealizadas = frecuencia.InteraccionesRealizadas,
+                    FrecuenciaObjetivo = frecuencia.FrecuenciaObjetivo,
+                    PeriodoMedicion = frecuencia.PeriodoMedicion,
+                    FechaInicioPeriodo = frecuencia.FechaInicioPeriodo,
+                    FechaFinPeriodo = frecuencia.FechaFinPeriodo,
+                    Estado = frecuencia.Estado,
+                    VisitasPendientes = frecuencia.VisitasPendientes
+                };
+            }
+            else
+            {
+                _logger.LogWarning("Frecuencia retornó null para relación {RelacionId}", relacion.Id);
+            }
+        }
+
+        return dto;
+    }
+
+    /// <summary>
+    /// Mapea una entidad Relacion a RelacionDto incluyendo datos dinámicos (versión síncrona)
     /// </summary>
     private RelacionDto MapToDto(Relacion relacion)
     {

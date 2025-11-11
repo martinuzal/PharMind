@@ -6,6 +6,8 @@ import InteractionFormModal from '../../components/modals/InteractionFormModal';
 import DireccionForm from '../../components/direccion/DireccionForm';
 import type { DireccionData } from '../../components/direccion/DireccionForm';
 import EntityFilterBuilder, { type ActiveFilter } from '../../components/filters/EntityFilterBuilder';
+import FrecuenciaIndicator from '../../components/common/FrecuenciaIndicator';
+import type { FrecuenciaIndicadorData } from '../../components/common/FrecuenciaIndicator';
 import { usePage } from '../../contexts/PageContext';
 import './CRMPages.css';
 
@@ -42,6 +44,7 @@ interface Relation {
   frecuenciaVisitas?: number;
   prioridad?: string;
   observaciones?: string;
+  frecuencia?: FrecuenciaIndicadorData;
 }
 
 interface Agent {
@@ -127,6 +130,7 @@ const RelationDynamicEntityPage: React.FC = () => {
   const [selectedTipoInteraccion, setSelectedTipoInteraccion] = useState<TipoInteraccion | null>(null);
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [soloConPendientes, setSoloConPendientes] = useState(false);
 
   useEffect(() => {
     loadEsquema();
@@ -165,7 +169,7 @@ const RelationDynamicEntityPage: React.FC = () => {
         </>
       );
 
-      // Centro: Búsqueda + Vista
+      // Centro: Búsqueda + Filtro Pendientes + Vista
       const toolbarCenter = (
         <>
           <div className="search-box" style={{ marginRight: '0.5rem' }}>
@@ -178,6 +182,15 @@ const RelationDynamicEntityPage: React.FC = () => {
               className="search-input"
             />
           </div>
+          <button
+            className={`btn-filter ${soloConPendientes ? 'active' : ''}`}
+            onClick={() => setSoloConPendientes(!soloConPendientes)}
+            title="Solo con visitas pendientes"
+            style={{ marginRight: '0.5rem' }}
+          >
+            <span className="material-icons">event_busy</span>
+            <span>Pendientes</span>
+          </button>
           <div className="view-toggle">
             <button
               className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
@@ -227,7 +240,7 @@ const RelationDynamicEntityPage: React.FC = () => {
     return () => {
       clearToolbarContent();
     };
-  }, [esquema, searchQuery, viewMode, activeFilters.length, showFilters]);
+  }, [esquema, searchQuery, viewMode, activeFilters.length, showFilters, soloConPendientes]);
 
   const loadEsquema = async () => {
     try {
@@ -248,7 +261,7 @@ const RelationDynamicEntityPage: React.FC = () => {
 
     try {
       const response = await api.get('/relaciones', {
-        params: { page: 1, pageSize: 100 }
+        params: { page: 1, pageSize: 100, incluirFrecuencia: true }
       });
 
       // Filtrar relaciones por TipoRelacionId
@@ -780,7 +793,10 @@ const RelationDynamicEntityPage: React.FC = () => {
     // Aplicar filtros avanzados
     const matchesFilters = applyFilters(rel);
 
-    return matchesSearch && matchesFilters;
+    // Aplicar filtro de pendientes
+    const matchesPendientes = !soloConPendientes || (rel.frecuencia && rel.frecuencia.visitasPendientes > 0);
+
+    return matchesSearch && matchesFilters && matchesPendientes;
   });
 
   if (loading) {
@@ -822,7 +838,8 @@ const RelationDynamicEntityPage: React.FC = () => {
       {viewMode === 'grid' ? (
         <div className="entities-grid">
           {filteredRelaciones.map((relacion) => (
-            <div key={relacion.id} className="entity-card">
+            <div key={relacion.id} className="entity-card frecuencia-container">
+              <FrecuenciaIndicator frecuencia={relacion.frecuencia} />
               <div className="entity-body">
                 <div className="entity-title">
                   <h3>{relacion.codigoRelacion}</h3>
@@ -987,7 +1004,8 @@ const RelationDynamicEntityPage: React.FC = () => {
       ) : (
         <div className="entities-list">
           {filteredRelaciones.map((relacion) => (
-            <div key={relacion.id} className="entity-list-item">
+            <div key={relacion.id} className="entity-list-item frecuencia-container">
+              <FrecuenciaIndicator frecuencia={relacion.frecuencia} />
               <div className="entity-list-content">
                 <div className="entity-list-main">
                   <h3>{relacion.codigoRelacion}</h3>

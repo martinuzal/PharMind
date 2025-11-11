@@ -359,9 +359,16 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 0.75rem;
-  padding: 1.5rem;
+  padding: 0;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-content-wrapper {
+  padding: 1.5rem;
+  padding-left: calc(1.5rem + 5px);
 }
 
 .relacion-card:hover {
@@ -691,11 +698,23 @@
   background: var(--hover-bg);
 }
 
+.table-row-clickable td:first-child .frecuencia-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
 .relaciones-table td {
   padding: 1rem;
   font-size: 0.875rem;
   color: var(--text-primary);
   white-space: nowrap;
+}
+
+.table-row-clickable td:first-child {
+  padding-left: calc(1rem + 5px);
 }
 
 .table-tipo {
