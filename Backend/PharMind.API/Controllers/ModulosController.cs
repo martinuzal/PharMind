@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PharMind.API.Data;
@@ -12,13 +13,16 @@ public class ModulosController : ControllerBase
 {
     private readonly PharMindDbContext _context;
     private readonly ILogger<ModulosController> _logger;
+    private readonly IMapper _mapper;
 
     public ModulosController(
         PharMindDbContext context,
-        ILogger<ModulosController> logger)
+        ILogger<ModulosController> logger,
+        IMapper mapper)
     {
         _context = context;
         _logger = logger;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -128,19 +132,9 @@ public class ModulosController : ControllerBase
             }
 
             // Crear módulo
-            var modulo = new Modulo
-            {
-                Id = Guid.NewGuid().ToString(),
-                Nombre = createDto.Nombre,
-                Descripcion = createDto.Descripcion,
-                Icono = createDto.Icono,
-                Ruta = createDto.Ruta,
-                OrdenMenu = createDto.Orden,
-                ModuloPadreId = createDto.ModuloPadreId,
-                Activo = true,
-                FechaCreacion = DateTime.Now,
-                Status = false
-            };
+            var modulo = _mapper.Map<Modulo>(createDto);
+            modulo.Id = Guid.NewGuid().ToString();
+            modulo.FechaCreacion = DateTime.Now;
 
             _context.Modulos.Add(modulo);
             await _context.SaveChangesAsync();
@@ -232,13 +226,7 @@ public class ModulosController : ControllerBase
             }
 
             // Actualizar datos del módulo
-            modulo.Nombre = updateDto.Nombre;
-            modulo.Descripcion = updateDto.Descripcion;
-            modulo.Icono = updateDto.Icono;
-            modulo.Ruta = updateDto.Ruta;
-            modulo.OrdenMenu = updateDto.Orden;
-            modulo.ModuloPadreId = updateDto.ModuloPadreId;
-            modulo.Activo = updateDto.Activo;
+            _mapper.Map(updateDto, modulo);
             modulo.FechaModificacion = DateTime.Now;
 
             await _context.SaveChangesAsync();
@@ -396,24 +384,15 @@ public class ModulosController : ControllerBase
     /// </summary>
     private ModuloDto MapToDto(Modulo modulo, bool includeInactive)
     {
-        var subModulos = modulo.InverseModuloPadre
+        var moduloDto = _mapper.Map<ModuloDto>(modulo);
+
+        moduloDto.SubModulos = modulo.InverseModuloPadre
             .Where(sm => includeInactive || sm.Activo)
             .OrderBy(sm => sm.OrdenMenu)
             .Select(sm => MapToDto(sm, includeInactive))
             .ToList();
 
-        return new ModuloDto
-        {
-            Id = modulo.Id,
-            Nombre = modulo.Nombre,
-            Descripcion = modulo.Descripcion,
-            Icono = modulo.Icono,
-            Ruta = modulo.Ruta,
-            Orden = modulo.OrdenMenu,
-            Activo = modulo.Activo,
-            ModuloPadreId = modulo.ModuloPadreId,
-            SubModulos = subModulos
-        };
+        return moduloDto;
     }
 
     /// <summary>
@@ -424,8 +403,10 @@ public class ModulosController : ControllerBase
         Dictionary<string, RolModulo>? permisosDict,
         bool esAdmin)
     {
+        var moduloDto = _mapper.Map<ModuloConPermisosDto>(modulo);
+
         // Mapear submódulos con permisos
-        var subModulos = modulo.InverseModuloPadre
+        moduloDto.SubModulos = modulo.InverseModuloPadre
             .Where(sm => sm.Activo && (esAdmin || (permisosDict != null && permisosDict.ContainsKey(sm.Id) && permisosDict[sm.Id].PuedeVer)))
             .OrderBy(sm => sm.OrdenMenu)
             .Select(sm => MapToPermisosDto(sm, permisosDict, esAdmin))
@@ -438,22 +419,11 @@ public class ModulosController : ControllerBase
                 ? new { rolModulo.PuedeVer, rolModulo.PuedeCrear, rolModulo.PuedeEditar, rolModulo.PuedeEliminar }
                 : new { PuedeVer = false, PuedeCrear = false, PuedeEditar = false, PuedeEliminar = false };
 
-        return new ModuloConPermisosDto
-        {
-            Id = modulo.Id,
-            Codigo = modulo.Codigo,
-            Nombre = modulo.Nombre,
-            Descripcion = modulo.Descripcion,
-            Icono = modulo.Icono,
-            Ruta = modulo.Ruta,
-            OrdenMenu = modulo.OrdenMenu,
-            Activo = modulo.Activo,
-            ModuloPadreId = modulo.ModuloPadreId,
-            PuedeVer = permisos.PuedeVer,
-            PuedeCrear = permisos.PuedeCrear,
-            PuedeEditar = permisos.PuedeEditar,
-            PuedeEliminar = permisos.PuedeEliminar,
-            SubModulos = subModulos
-        };
+        moduloDto.PuedeVer = permisos.PuedeVer;
+        moduloDto.PuedeCrear = permisos.PuedeCrear;
+        moduloDto.PuedeEditar = permisos.PuedeEditar;
+        moduloDto.PuedeEliminar = permisos.PuedeEliminar;
+
+        return moduloDto;
     }
 }

@@ -12,6 +12,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(Program));
+
 // DbContext
 builder.Services.AddDbContext<PharMindDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

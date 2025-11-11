@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +18,13 @@ public class ProductosController : ControllerBase
 {
     private readonly PharMindDbContext _context;
     private readonly ILogger<ProductosController> _logger;
+    private readonly IMapper _mapper;
 
-    public ProductosController(PharMindDbContext context, ILogger<ProductosController> logger)
+    public ProductosController(PharMindDbContext context, ILogger<ProductosController> logger, IMapper mapper)
     {
         _context = context;
         _logger = logger;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -69,7 +72,7 @@ public class ProductosController : ControllerBase
                 .ThenBy(p => p.Nombre)
                 .ToListAsync();
 
-            var productosDto = productos.Select(p => MapToDto(p)).ToList();
+            var productosDto = _mapper.Map<List<ProductoDto>>(productos);
 
             return Ok(productosDto);
         }
@@ -98,7 +101,7 @@ public class ProductosController : ControllerBase
                 return NotFound(new { error = "Producto no encontrado" });
             }
 
-            return Ok(MapToDto(producto));
+            return Ok(_mapper.Map<ProductoDto>(producto));
         }
         catch (Exception ex)
         {
@@ -122,7 +125,7 @@ public class ProductosController : ControllerBase
                 .OrderBy(p => p.Nombre)
                 .ToListAsync();
 
-            var productosDto = productos.Select(p => MapToDto(p)).ToList();
+            var productosDto = _mapper.Map<List<ProductoDto>>(productos);
 
             return Ok(productosDto);
         }
@@ -160,7 +163,7 @@ public class ProductosController : ControllerBase
                 .Take(50) // Limitar resultados
                 .ToListAsync();
 
-            var productosDto = productos.Select(p => MapToDto(p)).ToList();
+            var productosDto = _mapper.Map<List<ProductoDto>>(productos);
 
             return Ok(productosDto);
         }
@@ -187,7 +190,7 @@ public class ProductosController : ControllerBase
                 .ThenBy(p => p.Nombre)
                 .ToListAsync();
 
-            var productosDto = productos.Select(p => MapToDto(p)).ToList();
+            var productosDto = _mapper.Map<List<ProductoDto>>(productos);
 
             return Ok(productosDto);
         }
@@ -241,27 +244,10 @@ public class ProductosController : ControllerBase
                 return BadRequest(new { error = "Ya existe un producto con ese código" });
             }
 
-            var producto = new Producto
-            {
-                CodigoProducto = dto.CodigoProducto,
-                Nombre = dto.Nombre,
-                NombreComercial = dto.NombreComercial,
-                Descripcion = dto.Descripcion,
-                Presentacion = dto.Presentacion,
-                Categoria = dto.Categoria,
-                Laboratorio = dto.Laboratorio,
-                PrincipioActivo = dto.PrincipioActivo,
-                Concentracion = dto.Concentracion,
-                ViaAdministracion = dto.ViaAdministracion,
-                Indicaciones = dto.Indicaciones,
-                Contraindicaciones = dto.Contraindicaciones,
-                PrecioReferencia = dto.PrecioReferencia,
-                ImagenUrl = dto.ImagenUrl,
-                Activo = dto.Activo,
-                EsMuestra = dto.EsMuestra,
-                RequiereReceta = dto.RequiereReceta,
-                LineaNegocioId = dto.LineaNegocioId
-            };
+            var producto = _mapper.Map<Producto>(dto);
+            producto.Id = Guid.NewGuid().ToString();
+            producto.FechaCreacion = DateTime.Now;
+            producto.CreadoPor = User.Identity?.Name ?? "Sistema";
 
             _context.Productos.Add(producto);
             await _context.SaveChangesAsync();
@@ -271,7 +257,7 @@ public class ProductosController : ControllerBase
                 .Include(p => p.LineaNegocio)
                 .FirstAsync(p => p.Id == producto.Id);
 
-            return CreatedAtAction(nameof(GetProducto), new { id = producto.Id }, MapToDto(productoCreado));
+            return CreatedAtAction(nameof(GetProducto), new { id = producto.Id }, _mapper.Map<ProductoDto>(productoCreado));
         }
         catch (Exception ex)
         {
@@ -297,17 +283,9 @@ public class ProductosController : ControllerBase
                 return NotFound(new { error = "Producto no encontrado" });
             }
 
-            // Actualizar solo campos no nulos
-            if (dto.Nombre != null) producto.Nombre = dto.Nombre;
-            if (dto.NombreComercial != null) producto.NombreComercial = dto.NombreComercial;
-            if (dto.Descripcion != null) producto.Descripcion = dto.Descripcion;
-            if (dto.Presentacion != null) producto.Presentacion = dto.Presentacion;
-            if (dto.Categoria != null) producto.Categoria = dto.Categoria;
-            if (dto.PrecioReferencia.HasValue) producto.PrecioReferencia = dto.PrecioReferencia;
-            if (dto.ImagenUrl != null) producto.ImagenUrl = dto.ImagenUrl;
-            if (dto.Activo.HasValue) producto.Activo = dto.Activo.Value;
-
+            _mapper.Map(dto, producto);
             producto.FechaModificacion = DateTime.Now;
+            producto.ModificadoPor = User.Identity?.Name ?? "Sistema";
 
             await _context.SaveChangesAsync();
 
@@ -316,7 +294,7 @@ public class ProductosController : ControllerBase
                 .Include(p => p.LineaNegocio)
                 .FirstAsync(p => p.Id == id);
 
-            return Ok(MapToDto(productoActualizado));
+            return Ok(_mapper.Map<ProductoDto>(productoActualizado));
         }
         catch (Exception ex)
         {
@@ -325,33 +303,4 @@ public class ProductosController : ControllerBase
         }
     }
 
-    // ==================== MÉTODOS PRIVADOS ====================
-
-    private ProductoDto MapToDto(Producto p)
-    {
-        return new ProductoDto
-        {
-            Id = p.Id,
-            CodigoProducto = p.CodigoProducto,
-            Nombre = p.Nombre,
-            NombreComercial = p.NombreComercial,
-            Descripcion = p.Descripcion,
-            Presentacion = p.Presentacion,
-            Categoria = p.Categoria,
-            Laboratorio = p.Laboratorio,
-            PrincipioActivo = p.PrincipioActivo,
-            Concentracion = p.Concentracion,
-            ViaAdministracion = p.ViaAdministracion,
-            Indicaciones = p.Indicaciones,
-            Contraindicaciones = p.Contraindicaciones,
-            PrecioReferencia = p.PrecioReferencia,
-            ImagenUrl = p.ImagenUrl,
-            Activo = p.Activo,
-            EsMuestra = p.EsMuestra,
-            RequiereReceta = p.RequiereReceta,
-            LineaNegocioId = p.LineaNegocioId,
-            LineaNegocioNombre = p.LineaNegocio?.Nombre,
-            FechaCreacion = p.FechaCreacion
-        };
-    }
 }

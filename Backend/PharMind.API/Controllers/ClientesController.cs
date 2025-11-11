@@ -4,6 +4,7 @@ using PharMind.API.Data;
 using PharMind.API.DTOs;
 using PharMind.API.Models;
 using System.Text.Json;
+using AutoMapper;
 
 namespace PharMind.API.Controllers;
 
@@ -13,13 +14,16 @@ public class ClientesController : ControllerBase
 {
     private readonly PharMindDbContext _context;
     private readonly ILogger<ClientesController> _logger;
+    private readonly IMapper _mapper;
 
     public ClientesController(
         PharMindDbContext context,
-        ILogger<ClientesController> logger)
+        ILogger<ClientesController> logger,
+        IMapper mapper)
     {
         _context = context;
         _logger = logger;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -160,28 +164,12 @@ public class ClientesController : ControllerBase
                 _context.EntidadesDinamicas.Add(EntidadesDinamica);
             }
 
-            // Crear cliente
-            var cliente = new Cliente
-            {
-                Id = Guid.NewGuid().ToString(),
-                TipoClienteId = dto.TipoClienteId,
-                EntidadDinamicaId = EntidadesDinamica?.Id,
-                CodigoCliente = dto.CodigoCliente,
-                Nombre = dto.Nombre,
-                Apellido = dto.Apellido,
-                RazonSocial = dto.RazonSocial,
-                Especialidad = dto.Especialidad,
-                Categoria = dto.Categoria,
-                Segmento = dto.Segmento,
-                InstitucionId = dto.InstitucionId,
-                Email = dto.Email,
-                Telefono = dto.Telefono,
-                DireccionId = dto.DireccionId,
-                Estado = dto.Estado,
-                Status = false,
-                FechaCreacion = DateTime.Now,
-                CreadoPor = "System"
-            };
+            // Crear cliente usando AutoMapper
+            var cliente = _mapper.Map<Cliente>(dto);
+            cliente.Id = Guid.NewGuid().ToString();
+            cliente.EntidadDinamicaId = EntidadesDinamica?.Id;
+            cliente.FechaCreacion = DateTime.Now;
+            cliente.CreadoPor = "System";
 
             _context.Clientes.Add(cliente);
             await _context.SaveChangesAsync();
@@ -270,18 +258,8 @@ public class ClientesController : ControllerBase
                 }
             }
 
-            // Actualizar campos base
-            cliente.Nombre = dto.Nombre;
-            cliente.Apellido = dto.Apellido;
-            cliente.RazonSocial = dto.RazonSocial;
-            cliente.Especialidad = dto.Especialidad;
-            cliente.Categoria = dto.Categoria;
-            cliente.Segmento = dto.Segmento;
-            cliente.InstitucionId = dto.InstitucionId;
-            cliente.Email = dto.Email;
-            cliente.Telefono = dto.Telefono;
-            cliente.DireccionId = dto.DireccionId;
-            cliente.Estado = dto.Estado;
+            // Actualizar campos base usando AutoMapper
+            _mapper.Map(dto, cliente);
             cliente.FechaModificacion = DateTime.Now;
             cliente.ModificadoPor = "System";
 
@@ -376,13 +354,15 @@ public class ClientesController : ControllerBase
 
     private ClienteDto MapToDto(Cliente cliente)
     {
-        Dictionary<string, object?>? datosDinamicos = null;
+        // Usar AutoMapper para el mapeo base
+        var dto = _mapper.Map<ClienteDto>(cliente);
 
+        // Mapear datos dinámicos manualmente
         if (cliente.EntidadesDinamica != null && !string.IsNullOrWhiteSpace(cliente.EntidadesDinamica.Datos))
         {
             try
             {
-                datosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(cliente.EntidadesDinamica.Datos);
+                dto.DatosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(cliente.EntidadesDinamica.Datos);
             }
             catch (Exception ex)
             {
@@ -390,40 +370,6 @@ public class ClientesController : ControllerBase
             }
         }
 
-        return new ClienteDto
-        {
-            Id = cliente.Id,
-            TipoClienteId = cliente.TipoClienteId,
-            TipoClienteNombre = cliente.TipoCliente?.Nombre,
-            EntidadDinamicaId = cliente.EntidadDinamicaId,
-            DatosDinamicos = datosDinamicos,
-            CodigoCliente = cliente.CodigoCliente,
-            Nombre = cliente.Nombre,
-            Apellido = cliente.Apellido,
-            RazonSocial = cliente.RazonSocial,
-            Especialidad = cliente.Especialidad,
-            Categoria = cliente.Categoria,
-            Segmento = cliente.Segmento,
-            InstitucionId = cliente.InstitucionId,
-            InstitucionNombre = cliente.Institucion?.RazonSocial,
-            Email = cliente.Email,
-            Telefono = cliente.Telefono,
-            DireccionId = cliente.DireccionId,
-            Direccion = cliente.Direccion != null ? new DireccionDto
-            {
-                Id = cliente.Direccion.Id,
-                Calle = cliente.Direccion.Calle,
-                Numero = cliente.Direccion.Numero,
-                Ciudad = cliente.Direccion.Ciudad,
-                Provincia = cliente.Direccion.Estado,
-                CodigoPostal = cliente.Direccion.CodigoPostal,
-                Pais = cliente.Direccion.Pais
-            } : null,
-            Estado = cliente.Estado,
-            FechaCreacion = cliente.FechaCreacion,
-            CreadoPor = cliente.CreadoPor,
-            FechaModificacion = cliente.FechaModificacion,
-            ModificadoPor = cliente.ModificadoPor
-        };
+        return dto;
     }
 }

@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,12 +21,18 @@ public class MobileController : ControllerBase
     private readonly PharMindDbContext _context;
     private readonly ILogger<MobileController> _logger;
     private readonly IFrecuenciaVisitasService _frecuenciaService;
+    private readonly IMapper _mapper;
 
-    public MobileController(PharMindDbContext context, ILogger<MobileController> logger, IFrecuenciaVisitasService frecuenciaService)
+    public MobileController(
+        PharMindDbContext context,
+        ILogger<MobileController> logger,
+        IFrecuenciaVisitasService frecuenciaService,
+        IMapper mapper)
     {
         _context = context;
         _logger = logger;
         _frecuenciaService = frecuenciaService;
+        _mapper = mapper;
     }
 
     // ==================== SINCRONIZACIÓN COMPLETA ====================
@@ -304,16 +311,8 @@ public class MobileController : ControllerBase
                 return NotFound(new { error = "Relación no encontrada" });
             }
 
-            // Actualizar campos básicos
-            if (dto.ClientePrincipalId != null) relacion.ClientePrincipalId = dto.ClientePrincipalId;
-            if (dto.ClienteSecundario1Id != null) relacion.ClienteSecundario1Id = dto.ClienteSecundario1Id;
-            if (dto.ClienteSecundario2Id != null) relacion.ClienteSecundario2Id = dto.ClienteSecundario2Id;
-            if (dto.Prioridad != null) relacion.Prioridad = dto.Prioridad;
-            if (dto.FrecuenciaVisitas != null) relacion.FrecuenciaVisitas = dto.FrecuenciaVisitas;
-            if (dto.Observaciones != null) relacion.Observaciones = dto.Observaciones;
-            if (dto.Estado != null) relacion.Estado = dto.Estado;
-            if (dto.FechaFin != null) relacion.FechaFin = dto.FechaFin;
-
+            // Mapeo base con AutoMapper (actualización parcial)
+            _mapper.Map(dto, relacion);
             relacion.FechaModificacion = DateTime.UtcNow;
 
             // Actualizar datos dinámicos si existen
@@ -373,20 +372,11 @@ public class MobileController : ControllerBase
             // Generar código de relación único
             var codigo = await GenerarCodigoRelacion();
 
-            var relacion = new Relacion
-            {
-                TipoRelacionId = dto.TipoRelacionId,
-                CodigoRelacion = codigo,
-                AgenteId = dto.AgenteId,
-                ClientePrincipalId = dto.ClientePrincipalId,
-                ClienteSecundario1Id = dto.ClienteSecundario1Id,
-                ClienteSecundario2Id = dto.ClienteSecundario2Id,
-                Prioridad = dto.Prioridad,
-                FrecuenciaVisitas = dto.FrecuenciaVisitas,
-                Observaciones = dto.Observaciones,
-                FechaInicio = DateTime.UtcNow,
-                Estado = "Activo"
-            };
+            // Mapeo base con AutoMapper
+            var relacion = _mapper.Map<Relacion>(dto);
+            relacion.CodigoRelacion = codigo;
+            relacion.FechaInicio = DateTime.UtcNow;
+            relacion.Estado = "Activo";
 
             // Guardar datos dinámicos si existen
             if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
@@ -467,19 +457,8 @@ public class MobileController : ControllerBase
                 return NotFound(new { error = "Interacción no encontrada" });
             }
 
-            // Actualizar campos básicos
-            if (dto.Fecha != null) interaccion.Fecha = dto.Fecha.Value;
-            if (dto.Turno != null) interaccion.Turno = dto.Turno;
-            if (dto.DuracionMinutos != null) interaccion.DuracionMinutos = dto.DuracionMinutos;
-            if (dto.ObjetivoVisita != null) interaccion.ObjetivoVisita = dto.ObjetivoVisita;
-            if (dto.ResumenVisita != null) interaccion.ResumenVisita = dto.ResumenVisita;
-            if (dto.ProximaAccion != null) interaccion.ProximaAccion = dto.ProximaAccion;
-            if (dto.FechaProximaAccion != null) interaccion.FechaProximaAccion = dto.FechaProximaAccion;
-            if (dto.ResultadoVisita != null) interaccion.Resultado = dto.ResultadoVisita;
-            if (dto.Latitud != null) interaccion.Latitud = (decimal?)dto.Latitud;
-            if (dto.Longitud != null) interaccion.Longitud = (decimal?)dto.Longitud;
-            if (dto.DireccionCapturada != null) interaccion.Observaciones = dto.DireccionCapturada;
-
+            // Mapeo base con AutoMapper (actualización parcial)
+            _mapper.Map(dto, interaccion);
             interaccion.FechaModificacion = DateTime.UtcNow;
 
             // Actualizar datos dinámicos si existen
@@ -534,26 +513,10 @@ public class MobileController : ControllerBase
     {
         try
         {
-            var interaccion = new Interaccion
-            {
-                TipoInteraccionId = dto.TipoInteraccionId,
-                RelacionId = dto.RelacionId,
-                AgenteId = dto.AgenteId,
-                ClienteId = dto.ClientePrincipalId,
-                CodigoInteraccion = $"INT-{DateTime.Now:yyyyMMddHHmmss}",
-                TipoInteraccion = "Visita",
-                Fecha = dto.Fecha,
-                Turno = dto.Turno,
-                DuracionMinutos = dto.DuracionMinutos,
-                ObjetivoVisita = dto.ObjetivoVisita,
-                ResumenVisita = dto.ResumenVisita,
-                ProximaAccion = dto.ProximaAccion,
-                FechaProximaAccion = dto.FechaProximaAccion,
-                Resultado = dto.ResultadoVisita,
-                Latitud = (decimal?)dto.Latitud,
-                Longitud = (decimal?)dto.Longitud,
-                Observaciones = dto.DireccionCapturada
-            };
+            // Mapeo base con AutoMapper
+            var interaccion = _mapper.Map<Interaccion>(dto);
+            interaccion.CodigoInteraccion = $"INT-{DateTime.Now:yyyyMMddHHmmss}";
+            interaccion.TipoInteraccion = "Visita";
 
             // Guardar datos dinámicos si existen
             if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
@@ -606,26 +569,10 @@ public class MobileController : ControllerBase
 
             foreach (var interaccionDto in dto.Interacciones)
             {
-                var interaccion = new Interaccion
-                {
-                    TipoInteraccionId = interaccionDto.TipoInteraccionId,
-                    RelacionId = interaccionDto.RelacionId,
-                    AgenteId = interaccionDto.AgenteId,
-                    ClienteId = interaccionDto.ClientePrincipalId,
-                    CodigoInteraccion = $"INT-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 4)}",
-                    TipoInteraccion = "Visita",
-                    Fecha = interaccionDto.Fecha,
-                    Turno = interaccionDto.Turno,
-                    DuracionMinutos = interaccionDto.DuracionMinutos,
-                    ObjetivoVisita = interaccionDto.ObjetivoVisita,
-                    ResumenVisita = interaccionDto.ResumenVisita,
-                    ProximaAccion = interaccionDto.ProximaAccion,
-                    FechaProximaAccion = interaccionDto.FechaProximaAccion,
-                    Resultado = interaccionDto.ResultadoVisita,
-                    Latitud = (decimal?)interaccionDto.Latitud,
-                    Longitud = (decimal?)interaccionDto.Longitud,
-                    Observaciones = interaccionDto.DireccionCapturada
-                };
+                // Mapeo base con AutoMapper
+                var interaccion = _mapper.Map<Interaccion>(interaccionDto);
+                interaccion.CodigoInteraccion = $"INT-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 4)}";
+                interaccion.TipoInteraccion = "Visita";
 
                 // Guardar datos dinámicos si existen
                 if (interaccionDto.DatosDinamicos != null && interaccionDto.DatosDinamicos.Count > 0)
@@ -802,32 +749,17 @@ public class MobileController : ControllerBase
             .Where(c => ids.Contains(c.Id) && c.Status == false)
             .ToListAsync();
 
-        return clientes.Select(c => new ClienteMobileDto
+        return clientes.Select(c =>
         {
-            Id = c.Id,
-            TipoClienteId = c.TipoClienteId,
-            TipoClienteNombre = c.TipoCliente?.Nombre,
-            CodigoCliente = c.CodigoCliente,
-            Nombre = c.Nombre,
-            Apellido = c.Apellido,
-            RazonSocial = c.RazonSocial,
-            Especialidad = c.Especialidad,
-            Categoria = c.Categoria,
-            Segmento = c.Segmento,
-            Email = c.Email,
-            Telefono = c.Telefono,
-            DireccionCompleta = c.Direccion != null
-                ? $"{c.Direccion.Calle} {c.Direccion.Numero}, {c.Direccion.Ciudad}"
-                : null,
-            Ciudad = c.Direccion?.Ciudad,
-            Provincia = c.Direccion?.Estado,
-            InstitucionId = c.InstitucionId,
-            InstitucionNombre = c.Institucion?.RazonSocial,
-            Estado = c.Estado,
-            DatosDinamicos = c.EntidadesDinamica != null
-                ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(c.EntidadesDinamica.Datos)
-                : null
+            // Mapeo base con AutoMapper
+            var dto = _mapper.Map<ClienteMobileDto>(c);
 
+            // Mapeo manual de datos dinámicos
+            dto.DatosDinamicos = c.EntidadesDinamica != null
+                ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(c.EntidadesDinamica.Datos)
+                : null;
+
+            return dto;
         }).ToList();
     }
 
@@ -838,18 +770,7 @@ public class MobileController : ControllerBase
             .OrderBy(e => e.Orden)
             .ToListAsync();
 
-        return tipos.Select(t => new TipoRelacionMobileDto
-        {
-            Id = t.Id,
-            Nombre = t.Nombre,
-            SubTipo = t.SubTipo ?? "",
-            Descripcion = t.Descripcion,
-            Icono = t.Icono,
-            Color = t.Color,
-            Schema = t.Schema,
-            Activo = t.Activo,
-            Orden = t.Orden
-        }).ToList();
+        return _mapper.Map<List<TipoRelacionMobileDto>>(tipos);
     }
 
     private async Task<List<TipoInteraccionMobileDto>> GetTiposInteraccion()
@@ -859,22 +780,14 @@ public class MobileController : ControllerBase
             .OrderBy(e => e.Orden)
             .ToListAsync();
 
-        return tipos.Select(t => new TipoInteraccionMobileDto
-        {
-            Id = t.Id,
-            Nombre = t.Nombre,
-            SubTipo = t.SubTipo ?? "",
-            Descripcion = t.Descripcion,
-            Icono = t.Icono,
-            Color = t.Color,
-            Schema = t.Schema,
-            Activo = t.Activo,
-            Orden = t.Orden
-        }).ToList();
+        return _mapper.Map<List<TipoInteraccionMobileDto>>(tipos);
     }
 
     private RelacionMobileDto MapRelacionToMobileDto(Relacion r)
     {
+        // Mapeo base con AutoMapper
+        var dto = _mapper.Map<RelacionMobileDto>(r);
+
         // Buscar última interacción (sin Include porque usamos Select)
         var ultimaInteraccion = _context.Interacciones
             .Where(i => i.RelacionId == r.Id && i.Status == false)
@@ -882,82 +795,30 @@ public class MobileController : ControllerBase
             .Select(i => new { i.Fecha, TipoNombre = i.TipoInteraccionEsquema!.Nombre })
             .FirstOrDefault();
 
-        return new RelacionMobileDto
-        {
-            Id = r.Id,
-            TipoRelacionId = r.TipoRelacionId,
-            TipoRelacionNombre = r.TipoRelacionEsquema?.Nombre ?? "",
-            TipoRelacionSubTipo = r.TipoRelacionEsquema?.SubTipo ?? "",
-            TipoRelacionIcono = r.TipoRelacionEsquema?.Icono,
-            TipoRelacionColor = r.TipoRelacionEsquema?.Color,
-            TipoRelacionSchema = r.TipoRelacionEsquema?.Schema,
-            CodigoRelacion = r.CodigoRelacion,
-            AgenteId = r.AgenteId,
-            AgenteNombre = r.Agente != null ? $"{r.Agente.Nombre} {r.Agente.Apellido}" : null,
-            ClientePrincipalId = r.ClientePrincipalId,
-            ClientePrincipalNombre = r.ClientePrincipal?.RazonSocial,
-            ClientePrincipalTelefono = r.ClientePrincipal?.Telefono,
-            ClientePrincipalEmail = r.ClientePrincipal?.Email,
-            ClientePrincipalEspecialidad = r.ClientePrincipal?.Especialidad,
-            ClienteSecundario1Id = r.ClienteSecundario1Id,
-            ClienteSecundario1Nombre = r.ClienteSecundario1?.RazonSocial,
-            ClienteSecundario2Id = r.ClienteSecundario2Id,
-            ClienteSecundario2Nombre = r.ClienteSecundario2?.RazonSocial,
-            TipoRelacion = r.TipoRelacionEsquema?.SubTipo,
-            FechaInicio = r.FechaInicio,
-            FechaFin = r.FechaFin,
-            Estado = r.Estado,
-            FrecuenciaVisitas = r.FrecuenciaVisitas,
-            Prioridad = r.Prioridad,
-            PrioridadVisita = null, // Campo no existe en modelo actual
-            Observaciones = r.Observaciones,
-            DatosDinamicos = r.DatosExtendidos != null
-                ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(r.DatosExtendidos.Datos)
-                : null,
-            UltimaInteraccionFecha = ultimaInteraccion?.Fecha,
-            UltimaInteraccionTipo = ultimaInteraccion?.TipoNombre,
-            FechaCreacion = r.FechaCreacion,
-            FechaModificacion = r.FechaModificacion
-        };
+        // Mapeo manual de datos dinámicos
+        dto.DatosDinamicos = r.DatosExtendidos != null
+            ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(r.DatosExtendidos.Datos)
+            : null;
+
+        // Mapeo manual de última interacción
+        dto.UltimaInteraccionFecha = ultimaInteraccion?.Fecha;
+        dto.UltimaInteraccionTipo = ultimaInteraccion?.TipoNombre;
+        dto.PrioridadVisita = null; // Campo no existe en modelo actual
+
+        return dto;
     }
 
     private InteraccionMobileDto MapInteraccionToMobileDto(Interaccion i)
     {
-        return new InteraccionMobileDto
-        {
-            Id = i.Id,
-            TipoInteraccionId = i.TipoInteraccionId,
-            TipoInteraccionNombre = i.TipoInteraccionEsquema?.Nombre ?? "",
-            TipoInteraccionSubTipo = i.TipoInteraccionEsquema?.SubTipo ?? "",
-            TipoInteraccionIcono = i.TipoInteraccionEsquema?.Icono,
-            TipoInteraccionColor = i.TipoInteraccionEsquema?.Color,
-            RelacionId = i.RelacionId,
-            AgenteId = i.AgenteId,
-            AgenteNombre = i.Agente != null ? $"{i.Agente.Nombre} {i.Agente.Apellido}" : null,
-            ClientePrincipalId = i.ClienteId,
-            ClientePrincipalNombre = i.Cliente?.RazonSocial,
-            ClienteSecundario1Id = null,
-            ClienteSecundario1Nombre = null,
-            Fecha = i.Fecha,
-            Turno = i.Turno,
-            DuracionMinutos = i.DuracionMinutos,
-            ObjetivoVisita = i.ObjetivoVisita,
-            ResumenVisita = i.ResumenVisita,
-            ProximaAccion = i.ProximaAccion,
-            FechaProximaAccion = i.FechaProximaAccion,
-            ResultadoVisita = i.Resultado,
-            Latitud = (double?)i.Latitud,
-            Longitud = (double?)i.Longitud,
-            DireccionCapturada = i.Observaciones,
-            DatosDinamicos = i.DatosExtendidos != null
-                ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(i.DatosExtendidos.Datos)
-                : null,
-            Estado = "Completada",
-            Sincronizada = true,
-            FechaCreacion = i.FechaCreacion,
-            FechaModificacion = i.FechaModificacion,
-            CreadoPor = i.CreadoPor
-        };
+        // Mapeo base con AutoMapper
+        var dto = _mapper.Map<InteraccionMobileDto>(i);
+
+        // Mapeo manual de datos dinámicos
+        dto.DatosDinamicos = i.DatosExtendidos != null
+            ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(i.DatosExtendidos.Datos)
+            : null;
+
+        return dto;
     }
 
     private async Task<string> GenerarCodigoRelacion()
@@ -985,27 +846,7 @@ public class MobileController : ControllerBase
             .ThenBy(p => p.Nombre)
             .ToListAsync();
 
-        return productos.Select(p => new ProductoDto
-        {
-            Id = p.Id,
-            CodigoProducto = p.CodigoProducto,
-            Nombre = p.Nombre,
-            NombreComercial = p.NombreComercial,
-            PrincipioActivo = p.PrincipioActivo,
-            Categoria = p.Categoria,
-            Concentracion = p.Concentracion,
-            Presentacion = p.Presentacion,
-            Laboratorio = p.Laboratorio,
-            EsMuestra = p.EsMuestra,
-            RequiereReceta = p.RequiereReceta,
-            PrecioReferencia = p.PrecioReferencia,
-            Indicaciones = p.Indicaciones,
-            Contraindicaciones = p.Contraindicaciones,
-            ViaAdministracion = p.ViaAdministracion,
-            Descripcion = p.Descripcion,
-            Activo = p.Activo,
-            FechaCreacion = p.FechaCreacion
-        }).ToList();
+        return _mapper.Map<List<ProductoDto>>(productos);
     }
 
     private async Task<List<InventarioAgenteDto>> GetInventariosAgente(string agenteId)
@@ -1019,37 +860,18 @@ public class MobileController : ControllerBase
 
         var ahora = DateTime.Now;
 
-        return inventarios.Select(i => new InventarioAgenteDto
+        return inventarios.Select(i =>
         {
-            Id = i.Id,
-            AgenteId = i.AgenteId,
-            ProductoId = i.ProductoId,
-            Producto = i.Producto != null ? new ProductoDto
-            {
-                Id = i.Producto.Id,
-                CodigoProducto = i.Producto.CodigoProducto,
-                Nombre = i.Producto.Nombre,
-                NombreComercial = i.Producto.NombreComercial,
-                Categoria = i.Producto.Categoria,
-                Presentacion = i.Producto.Presentacion,
-                Laboratorio = i.Producto.Laboratorio,
-                EsMuestra = i.Producto.EsMuestra,
-                RequiereReceta = i.Producto.RequiereReceta,
-                PrecioReferencia = i.Producto.PrecioReferencia,
-                Activo = i.Producto.Activo
-            } : null,
-            CantidadInicial = i.CantidadInicial,
-            CantidadDisponible = i.CantidadDisponible,
-            CantidadEntregada = i.CantidadEntregada,
-            LoteActual = i.LoteActual,
-            FechaVencimiento = i.FechaVencimiento,
-            FechaUltimaRecarga = i.FechaUltimaRecarga,
-            Observaciones = i.Observaciones,
-            // Calcular helpers
-            EstaPorVencer = i.FechaVencimiento.HasValue && (i.FechaVencimiento.Value - ahora).TotalDays <= 30,
-            EstaVencido = i.FechaVencimiento.HasValue && i.FechaVencimiento.Value < ahora,
-            StockBajo = i.CantidadInicial.HasValue && i.CantidadDisponible < (i.CantidadInicial.Value * 0.2m),
-            DiasParaVencer = i.FechaVencimiento.HasValue ? (int)(i.FechaVencimiento.Value - ahora).TotalDays : null
+            // Mapeo base con AutoMapper
+            var dto = _mapper.Map<InventarioAgenteDto>(i);
+
+            // Calcular helpers manualmente
+            dto.EstaPorVencer = i.FechaVencimiento.HasValue && (i.FechaVencimiento.Value - ahora).TotalDays <= 30;
+            dto.EstaVencido = i.FechaVencimiento.HasValue && i.FechaVencimiento.Value < ahora;
+            dto.StockBajo = i.CantidadInicial.HasValue && i.CantidadDisponible < (i.CantidadInicial.Value * 0.2m);
+            dto.DiasParaVencer = i.FechaVencimiento.HasValue ? (int)(i.FechaVencimiento.Value - ahora).TotalDays : null;
+
+            return dto;
         }).ToList();
     }
 
@@ -1075,44 +897,20 @@ public class MobileController : ControllerBase
 
     private CitaDto MapCitaToDto(Models.Cita c)
     {
+        // Mapeo base con AutoMapper
+        var dto = _mapper.Map<CitaDto>(c);
+
+        // Calcular propiedades calculadas manualmente
         var ahora = DateTime.Now;
         var hoy = ahora.Date;
         var fechaCitaDate = c.FechaInicio.Date;
 
-        return new CitaDto
-        {
-            Id = c.Id,
-            CodigoCita = c.CodigoCita,
-            AgenteId = c.AgenteId,
-            AgenteNombre = c.Agente != null ? $"{c.Agente.Nombre} {c.Agente.Apellido}" : null,
-            RelacionId = c.RelacionId,
-            ClienteId = c.ClienteId,
-            ClienteNombre = c.Cliente?.RazonSocial,
-            InteraccionId = c.InteraccionId,
-            Titulo = c.Titulo,
-            Descripcion = c.Descripcion,
-            FechaInicio = c.FechaInicio,
-            FechaFin = c.FechaFin,
-            TodoElDia = c.TodoElDia,
-            TipoCita = c.TipoCita,
-            Estado = c.Estado,
-            Prioridad = c.Prioridad,
-            Ubicacion = c.Ubicacion,
-            Latitud = c.Latitud,
-            Longitud = c.Longitud,
-            Color = c.Color,
-            Recordatorio = c.Recordatorio,
-            MinutosAntes = c.MinutosAntes,
-            Notas = c.Notas,
-            Orden = c.Orden,
-            DistanciaKm = c.DistanciaKm,
-            TiempoEstimadoMinutos = c.TiempoEstimadoMinutos,
-            FechaCreacion = c.FechaCreacion,
-            EsHoy = fechaCitaDate == hoy,
-            YaPaso = c.FechaFin < ahora,
-            EnProgreso = c.FechaInicio <= ahora && c.FechaFin >= ahora,
-            DuracionMinutos = (int)(c.FechaFin - c.FechaInicio).TotalMinutes
-        };
+        dto.EsHoy = fechaCitaDate == hoy;
+        dto.YaPaso = c.FechaFin < ahora;
+        dto.EnProgreso = c.FechaInicio <= ahora && c.FechaFin >= ahora;
+        dto.DuracionMinutos = (int)(c.FechaFin - c.FechaInicio).TotalMinutes;
+
+        return dto;
     }
 
     // ==================== MUESTRAS Y PRODUCTOS DE INTERACCIONES ====================
@@ -1126,22 +924,14 @@ public class MobileController : ControllerBase
     {
         try
         {
-            var muestras = await _context.InteraccionMuestrasEntregadas
+            var muestrasEntity = await _context.InteraccionMuestrasEntregadas
                 .Include(m => m.Producto)
                 .Include(m => m.Interaccion)
                 .Where(m => m.Interaccion!.AgenteId == agenteId && m.Status == false)
                 .OrderByDescending(m => m.FechaCreacion)
-                .Select(m => new InteraccionMuestraEntregadaDto
-                {
-                    Id = m.Id,
-                    InteraccionId = m.InteraccionId,
-                    ProductoId = m.ProductoId,
-                    ProductoNombre = m.Producto!.Nombre,
-                    Cantidad = m.Cantidad,
-                    Observaciones = m.Observaciones,
-                    FechaCreacion = m.FechaCreacion
-                })
                 .ToListAsync();
+
+            var muestras = _mapper.Map<List<InteraccionMuestraEntregadaDto>>(muestrasEntity);
 
             _logger.LogInformation($"✅ {muestras.Count} muestras entregadas para agente {agenteId}");
             return Ok(muestras);
@@ -1162,22 +952,14 @@ public class MobileController : ControllerBase
     {
         try
         {
-            var productos = await _context.InteraccionProductosPromocionados
+            var productosEntity = await _context.InteraccionProductosPromocionados
                 .Include(p => p.Producto)
                 .Include(p => p.Interaccion)
                 .Where(p => p.Interaccion!.AgenteId == agenteId && p.Status == false)
                 .OrderByDescending(p => p.FechaCreacion)
-                .Select(p => new InteraccionProductoPromocionadoDto
-                {
-                    Id = p.Id,
-                    InteraccionId = p.InteraccionId,
-                    ProductoId = p.ProductoId,
-                    ProductoNombre = p.Producto!.Nombre,
-                    Cantidad = p.Cantidad,
-                    Observaciones = p.Observaciones,
-                    FechaCreacion = p.FechaCreacion
-                })
                 .ToListAsync();
+
+            var productos = _mapper.Map<List<InteraccionProductoPromocionadoDto>>(productosEntity);
 
             _logger.LogInformation($"✅ {productos.Count} productos promocionados para agente {agenteId}");
             return Ok(productos);
@@ -1198,23 +980,14 @@ public class MobileController : ControllerBase
     {
         try
         {
-            var productos = await _context.InteraccionProductosSolicitados
+            var productosEntity = await _context.InteraccionProductosSolicitados
                 .Include(p => p.Producto)
                 .Include(p => p.Interaccion)
                 .Where(p => p.Interaccion!.AgenteId == agenteId && p.Status == false)
                 .OrderByDescending(p => p.FechaCreacion)
-                .Select(p => new InteraccionProductoSolicitadoMobileDto
-                {
-                    Id = p.Id,
-                    InteraccionId = p.InteraccionId,
-                    ProductoId = p.ProductoId,
-                    ProductoNombre = p.Producto!.Nombre,
-                    Cantidad = p.Cantidad,
-                    Estado = p.Estado,
-                    Observaciones = p.Observaciones,
-                    FechaCreacion = p.FechaCreacion
-                })
                 .ToListAsync();
+
+            var productos = _mapper.Map<List<InteraccionProductoSolicitadoMobileDto>>(productosEntity);
 
             _logger.LogInformation($"✅ {productos.Count} productos solicitados para agente {agenteId}");
             return Ok(productos);
@@ -1237,25 +1010,13 @@ public class MobileController : ControllerBase
     {
         try
         {
-            var movimientos = await _context.MovimientosInventario
+            var movimientosEntity = await _context.MovimientosInventario
                 .Include(m => m.InventarioAgente)
                 .Where(m => m.InventarioAgente!.AgenteId == agenteId && m.Status == false)
                 .OrderByDescending(m => m.FechaMovimiento)
-                .Select(m => new MovimientoInventarioDto
-                {
-                    Id = m.Id,
-                    InventarioAgenteId = m.InventarioAgenteId,
-                    TipoMovimiento = m.TipoMovimiento,
-                    Cantidad = m.Cantidad,
-                    CantidadAnterior = m.CantidadAnterior,
-                    CantidadNueva = m.CantidadNueva,
-                    MuestraMedicaId = m.MuestraMedicaId,
-                    Motivo = m.Motivo,
-                    Observaciones = m.Observaciones,
-                    FechaMovimiento = m.FechaMovimiento,
-                    FechaCreacion = m.FechaCreacion
-                })
                 .ToListAsync();
+
+            var movimientos = _mapper.Map<List<MovimientoInventarioDto>>(movimientosEntity);
 
             _logger.LogInformation($"✅ {movimientos.Count} movimientos de inventario para agente {agenteId}");
             return Ok(movimientos);
@@ -1278,26 +1039,13 @@ public class MobileController : ControllerBase
     {
         try
         {
-            var tiempos = await _context.TiempoUtilizado
+            var tiemposEntity = await _context.TiempoUtilizado
                 .Include(t => t.TipoActividad)
                 .Where(t => t.RepresentanteId == agenteId && t.Status == false)
                 .OrderByDescending(t => t.Fecha)
-                .Select(t => new TiempoUtilizadoDto
-                {
-                    Id = t.Id,
-                    RepresentanteId = t.RepresentanteId,
-                    Fecha = t.Fecha,
-                    TipoActividadId = t.TipoActividadId,
-                    TipoActividadNombre = t.TipoActividad!.Nombre,
-                    Descripcion = t.Descripcion,
-                    HorasUtilizadas = t.HorasUtilizadas,
-                    MinutosUtilizados = t.MinutosUtilizados,
-                    Turno = t.Turno,
-                    EsRecurrente = t.EsRecurrente,
-                    Observaciones = t.Observaciones,
-                    FechaCreacion = t.FechaCreacion
-                })
                 .ToListAsync();
+
+            var tiempos = _mapper.Map<List<TiempoUtilizadoDto>>(tiemposEntity);
 
             _logger.LogInformation($"✅ {tiempos.Count} registros de tiempo utilizado para agente {agenteId}");
             return Ok(tiempos);
@@ -1318,23 +1066,12 @@ public class MobileController : ControllerBase
     {
         try
         {
-            var tipos = await _context.TiposActividad
+            var tiposEntity = await _context.TiposActividad
                 .Where(t => t.Activo && t.Status == false)
                 .OrderBy(t => t.Orden)
-                .Select(t => new TipoActividadDto
-                {
-                    Id = t.Id,
-                    Codigo = t.Codigo,
-                    Nombre = t.Nombre,
-                    Descripcion = t.Descripcion,
-                    Clasificacion = t.Clasificacion,
-                    Color = t.Color,
-                    Icono = t.Icono,
-                    Activo = t.Activo,
-                    EsSistema = t.EsSistema,
-                    Orden = t.Orden
-                })
                 .ToListAsync();
+
+            var tipos = _mapper.Map<List<TipoActividadDto>>(tiposEntity);
 
             _logger.LogInformation($"✅ {tipos.Count} tipos de actividad");
             return Ok(tipos);

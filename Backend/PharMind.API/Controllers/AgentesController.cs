@@ -4,6 +4,7 @@ using PharMind.API.Data;
 using PharMind.API.DTOs;
 using PharMind.API.Models;
 using System.Text.Json;
+using AutoMapper;
 
 namespace PharMind.API.Controllers;
 
@@ -13,13 +14,16 @@ public class AgentesController : ControllerBase
 {
     private readonly PharMindDbContext _context;
     private readonly ILogger<AgentesController> _logger;
+    private readonly IMapper _mapper;
 
     public AgentesController(
         PharMindDbContext context,
-        ILogger<AgentesController> logger)
+        ILogger<AgentesController> logger,
+        IMapper mapper)
     {
         _context = context;
         _logger = logger;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -183,28 +187,13 @@ public class AgentesController : ControllerBase
                 _context.EntidadesDinamicas.Add(EntidadesDinamica);
             }
 
-            // Crear agente
-            var agente = new Agente
-            {
-                Id = Guid.NewGuid().ToString(),
-                TipoAgenteId = dto.TipoAgenteId,
-                EntidadDinamicaId = EntidadesDinamica?.Id,
-                CodigoAgente = dto.CodigoAgente,
-                Nombre = dto.Nombre,
-                Apellido = dto.Apellido,
-                Email = dto.Email,
-                Telefono = dto.Telefono,
-                RegionId = dto.RegionId,
-                DistritoId = dto.DistritoId,
-                LineaNegocioId = dto.LineaNegocioId,
-                ManagerId = dto.ManagerId,
-                FechaIngreso = dto.FechaIngreso.HasValue ? DateOnly.FromDateTime(dto.FechaIngreso.Value) : null,
-                Activo = dto.Activo,
-                Observaciones = dto.Observaciones,
-                Status = false,
-                FechaCreacion = DateTime.Now,
-                CreadoPor = "System"
-            };
+            // Crear agente usando AutoMapper
+            var agente = _mapper.Map<Agente>(dto);
+            agente.Id = Guid.NewGuid().ToString();
+            agente.EntidadDinamicaId = EntidadesDinamica?.Id;
+            agente.FechaCreacion = DateTime.Now;
+            agente.CreadoPor = "System";
+            agente.Estado = dto.Activo ? "Activo" : "Inactivo";
 
             _context.Agentes.Add(agente);
             await _context.SaveChangesAsync();
@@ -315,18 +304,8 @@ public class AgentesController : ControllerBase
                 }
             }
 
-            // Actualizar campos base
-            agente.Nombre = dto.Nombre;
-            agente.Apellido = dto.Apellido;
-            agente.Email = dto.Email;
-            agente.Telefono = dto.Telefono;
-            agente.RegionId = dto.RegionId;
-            agente.DistritoId = dto.DistritoId;
-            agente.LineaNegocioId = dto.LineaNegocioId;
-            agente.ManagerId = dto.ManagerId;
-            agente.FechaIngreso = dto.FechaIngreso.HasValue ? DateOnly.FromDateTime(dto.FechaIngreso.Value) : null;
-            agente.Activo = dto.Activo;
-            agente.Observaciones = dto.Observaciones;
+            // Actualizar campos base usando AutoMapper
+            _mapper.Map(dto, agente);
             agente.FechaModificacion = DateTime.Now;
             agente.ModificadoPor = "System";
 
@@ -423,13 +402,15 @@ public class AgentesController : ControllerBase
 
     private AgenteDto MapToDto(Agente agente)
     {
-        Dictionary<string, object?>? datosDinamicos = null;
+        // Usar AutoMapper para el mapeo base
+        var dto = _mapper.Map<AgenteDto>(agente);
 
+        // Mapear datos dinámicos manualmente
         if (agente.EntidadesDinamica != null && !string.IsNullOrWhiteSpace(agente.EntidadesDinamica.Datos))
         {
             try
             {
-                datosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(agente.EntidadesDinamica.Datos);
+                dto.DatosDinamicos = JsonSerializer.Deserialize<Dictionary<string, object?>>(agente.EntidadesDinamica.Datos);
             }
             catch (Exception ex)
             {
@@ -437,35 +418,6 @@ public class AgentesController : ControllerBase
             }
         }
 
-        return new AgenteDto
-        {
-            Id = agente.Id,
-            TipoAgenteId = agente.TipoAgenteId,
-            TipoAgenteNombre = agente.TipoAgente?.Nombre,
-            EntidadDinamicaId = agente.EntidadDinamicaId,
-            DatosDinamicos = datosDinamicos,
-            CodigoAgente = agente.CodigoAgente,
-            Nombre = agente.Nombre,
-            Apellido = agente.Apellido,
-            Email = agente.Email,
-            Telefono = agente.Telefono,
-            RegionId = agente.RegionId,
-            RegionNombre = agente.Region?.Nombre,
-            DistritoId = agente.DistritoId,
-            DistritoNombre = agente.Distrito?.Nombre,
-            LineaNegocioId = agente.LineaNegocioId,
-            LineaNegocioNombre = agente.LineaNegocio?.Nombre,
-            ManagerId = agente.ManagerId,
-            ManagerNombre = agente.Manager?.Nombre,
-            TimelineId = agente.TimelineId,
-            TimelineNombre = agente.Timeline?.Nombre,
-            FechaIngreso = agente.FechaIngreso.HasValue ? agente.FechaIngreso.Value.ToDateTime(TimeOnly.MinValue) : null,
-            Activo = agente.Activo,
-            Observaciones = agente.Observaciones,
-            FechaCreacion = agente.FechaCreacion,
-            CreadoPor = agente.CreadoPor,
-            FechaModificacion = agente.FechaModificacion,
-            ModificadoPor = agente.ModificadoPor
-        };
+        return dto;
     }
 }

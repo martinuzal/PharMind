@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +18,13 @@ public class CitasController : ControllerBase
 {
     private readonly PharMindDbContext _context;
     private readonly ILogger<CitasController> _logger;
+    private readonly IMapper _mapper;
 
-    public CitasController(PharMindDbContext context, ILogger<CitasController> logger)
+    public CitasController(PharMindDbContext context, ILogger<CitasController> logger, IMapper mapper)
     {
         _context = context;
         _logger = logger;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -74,7 +77,7 @@ public class CitasController : ControllerBase
                 .OrderBy(c => c.FechaInicio)
                 .ToListAsync();
 
-            var citasDto = citas.Select(c => MapToDto(c)).ToList();
+            var citasDto = citas.Select(c => MapToDtoWithCalculations(c)).ToList();
 
             return Ok(citasDto);
         }
@@ -106,7 +109,7 @@ public class CitasController : ControllerBase
                 return NotFound(new { error = "Cita no encontrada" });
             }
 
-            return Ok(MapToDto(cita));
+            return Ok(MapToDtoWithCalculations(cita));
         }
         catch (Exception ex)
         {
@@ -160,7 +163,7 @@ public class CitasController : ControllerBase
                 .Include(c => c.Relacion)
                 .FirstAsync(c => c.Id == cita.Id);
 
-            return CreatedAtAction(nameof(GetCita), new { id = cita.Id }, MapToDto(citaCreada));
+            return CreatedAtAction(nameof(GetCita), new { id = cita.Id }, MapToDtoWithCalculations(citaCreada));
         }
         catch (Exception ex)
         {
@@ -217,7 +220,7 @@ public class CitasController : ControllerBase
                 .Include(c => c.Relacion)
                 .FirstAsync(c => c.Id == id);
 
-            return Ok(MapToDto(citaActualizada));
+            return Ok(MapToDtoWithCalculations(citaActualizada));
         }
         catch (Exception ex)
         {
@@ -255,7 +258,7 @@ public class CitasController : ControllerBase
                 .Include(c => c.Relacion)
                 .FirstAsync(c => c.Id == id);
 
-            return Ok(MapToDto(citaActualizada));
+            return Ok(MapToDtoWithCalculations(citaActualizada));
         }
         catch (Exception ex)
         {
@@ -304,7 +307,7 @@ public class CitasController : ControllerBase
                 .Include(c => c.Interaccion)
                 .FirstAsync(c => c.Id == id);
 
-            return Ok(MapToDto(citaActualizada));
+            return Ok(MapToDtoWithCalculations(citaActualizada));
         }
         catch (Exception ex)
         {
@@ -364,46 +367,21 @@ public class CitasController : ControllerBase
         return $"CITA-{fechaStr}-{(numero + 1):D3}";
     }
 
-    private CitaDto MapToDto(Cita c)
+    private CitaDto MapToDtoWithCalculations(Cita c)
     {
+        // Mapear usando AutoMapper
+        var dto = _mapper.Map<CitaDto>(c);
+
+        // Agregar cálculos adicionales que no pueden ser mapeados automáticamente
         var ahora = DateTime.Now;
         var hoy = ahora.Date;
         var fechaCitaDate = c.FechaInicio.Date;
 
-        return new CitaDto
-        {
-            Id = c.Id,
-            CodigoCita = c.CodigoCita,
-            AgenteId = c.AgenteId,
-            AgenteNombre = c.Agente != null ? $"{c.Agente.Nombre} {c.Agente.Apellido}" : null,
-            RelacionId = c.RelacionId,
-            ClienteId = c.ClienteId,
-            ClienteNombre = c.Cliente?.RazonSocial,
-            InteraccionId = c.InteraccionId,
-            Titulo = c.Titulo,
-            Descripcion = c.Descripcion,
-            FechaInicio = c.FechaInicio,
-            FechaFin = c.FechaFin,
-            TodoElDia = c.TodoElDia,
-            TipoCita = c.TipoCita,
-            Estado = c.Estado,
-            Prioridad = c.Prioridad,
-            Ubicacion = c.Ubicacion,
-            Latitud = c.Latitud,
-            Longitud = c.Longitud,
-            Color = c.Color,
-            Recordatorio = c.Recordatorio,
-            MinutosAntes = c.MinutosAntes,
-            Notas = c.Notas,
-            Orden = c.Orden,
-            DistanciaKm = c.DistanciaKm,
-            TiempoEstimadoMinutos = c.TiempoEstimadoMinutos,
-            FechaCreacion = c.FechaCreacion,
-            // Helpers calculados
-            EsHoy = fechaCitaDate == hoy,
-            YaPaso = c.FechaFin < ahora,
-            EnProgreso = c.FechaInicio <= ahora && c.FechaFin >= ahora,
-            DuracionMinutos = (int)(c.FechaFin - c.FechaInicio).TotalMinutes
-        };
+        dto.EsHoy = fechaCitaDate == hoy;
+        dto.YaPaso = c.FechaFin < ahora;
+        dto.EnProgreso = c.FechaInicio <= ahora && c.FechaFin >= ahora;
+        dto.DuracionMinutos = (int)(c.FechaFin - c.FechaInicio).TotalMinutes;
+
+        return dto;
     }
 }

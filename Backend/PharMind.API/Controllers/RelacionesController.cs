@@ -5,6 +5,7 @@ using PharMind.API.DTOs;
 using PharMind.API.Models;
 using PharMind.API.Services;
 using System.Text.Json;
+using AutoMapper;
 
 namespace PharMind.API.Controllers;
 
@@ -15,15 +16,18 @@ public class RelacionesController : ControllerBase
     private readonly PharMindDbContext _context;
     private readonly ILogger<RelacionesController> _logger;
     private readonly IFrecuenciaVisitasService _frecuenciaService;
+    private readonly IMapper _mapper;
 
     public RelacionesController(
         PharMindDbContext context,
         ILogger<RelacionesController> logger,
-        IFrecuenciaVisitasService frecuenciaService)
+        IFrecuenciaVisitasService frecuenciaService,
+        IMapper mapper)
     {
         _context = context;
         _logger = logger;
         _frecuenciaService = frecuenciaService;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -188,10 +192,10 @@ public class RelacionesController : ControllerBase
             }
 
             // Crear EntidadesDinamica si hay datos dinámicos
-            string? entidadDinamicaId = null;
+            EntidadesDinamica? EntidadesDinamica = null;
             if (dto.DatosDinamicos != null && dto.DatosDinamicos.Count > 0)
             {
-                var EntidadesDinamica = new EntidadesDinamica
+                EntidadesDinamica = new EntidadesDinamica
                 {
                     Id = Guid.NewGuid().ToString(),
                     EsquemaId = dto.TipoRelacionId,
@@ -202,37 +206,14 @@ public class RelacionesController : ControllerBase
                 };
 
                 _context.EntidadesDinamicas.Add(EntidadesDinamica);
-                entidadDinamicaId = EntidadesDinamica.Id;
             }
 
-            var relacion = new Relacion
-            {
-                Id = Guid.NewGuid().ToString(),
-                TipoRelacionId = dto.TipoRelacionId,
-                EntidadDinamicaId = entidadDinamicaId,
-                CodigoRelacion = dto.CodigoRelacion,
-                AgenteId = dto.AgenteId,
-                ClientePrincipalId = dto.ClientePrincipalId,
-                ClienteSecundario1Id = dto.ClienteSecundario1Id,
-                ClienteSecundario2Id = dto.ClienteSecundario2Id,
-                TipoRelacion = dto.TipoRelacion,
-                FechaInicio = dto.FechaInicio,
-                FechaFin = dto.FechaFin,
-                Estado = dto.Estado,
-                FrecuenciaVisitas = dto.FrecuenciaVisitas,
-                Prioridad = dto.Prioridad,
-                Observaciones = dto.Observaciones,
-                EspecialidadId = dto.EspecialidadId,
-                CategoriaId = dto.CategoriaId,
-                Segment1Id = dto.Segment1Id,
-                Segment2Id = dto.Segment2Id,
-                Segment3Id = dto.Segment3Id,
-                Segment4Id = dto.Segment4Id,
-                Segment5Id = dto.Segment5Id,
-                Status = false,
-                FechaCreacion = DateTime.Now,
-                CreadoPor = "System"
-            };
+            // Crear relación usando AutoMapper
+            var relacion = _mapper.Map<Relacion>(dto);
+            relacion.Id = Guid.NewGuid().ToString();
+            relacion.EntidadDinamicaId = EntidadesDinamica?.Id;
+            relacion.FechaCreacion = DateTime.Now;
+            relacion.CreadoPor = "System";
 
             _context.Relaciones.Add(relacion);
             await _context.SaveChangesAsync();
@@ -331,23 +312,8 @@ public class RelacionesController : ControllerBase
                 }
             }
 
-            // Actualizar campos
-            relacion.ClienteSecundario1Id = dto.ClienteSecundario1Id;
-            relacion.ClienteSecundario2Id = dto.ClienteSecundario2Id;
-            relacion.TipoRelacion = dto.TipoRelacion;
-            relacion.FechaInicio = dto.FechaInicio;
-            relacion.FechaFin = dto.FechaFin;
-            relacion.Estado = dto.Estado;
-            relacion.FrecuenciaVisitas = dto.FrecuenciaVisitas;
-            relacion.Prioridad = dto.Prioridad;
-            relacion.Observaciones = dto.Observaciones;
-            relacion.EspecialidadId = dto.EspecialidadId;
-            relacion.CategoriaId = dto.CategoriaId;
-            relacion.Segment1Id = dto.Segment1Id;
-            relacion.Segment2Id = dto.Segment2Id;
-            relacion.Segment3Id = dto.Segment3Id;
-            relacion.Segment4Id = dto.Segment4Id;
-            relacion.Segment5Id = dto.Segment5Id;
+            // Actualizar campos usando AutoMapper
+            _mapper.Map(dto, relacion);
             relacion.FechaModificacion = DateTime.Now;
             relacion.ModificadoPor = "System";
 
@@ -408,42 +374,10 @@ public class RelacionesController : ControllerBase
     /// </summary>
     private async Task<RelacionDto> MapToDtoAsync(Relacion relacion, bool incluirFrecuencia = true)
     {
-        var dto = new RelacionDto
-        {
-            Id = relacion.Id,
-            TipoRelacionId = relacion.TipoRelacionId,
-            TipoRelacionNombre = relacion.TipoRelacionEsquema?.Nombre,
-            EntidadDinamicaId = relacion.EntidadDinamicaId,
-            CodigoRelacion = relacion.CodigoRelacion,
-            AgenteId = relacion.AgenteId,
-            AgenteNombre = relacion.Agente?.Nombre ?? "N/A",
-            ClientePrincipalId = relacion.ClientePrincipalId,
-            ClientePrincipalNombre = relacion.ClientePrincipal?.Nombre ?? relacion.ClientePrincipal?.RazonSocial ?? "N/A",
-            ClienteSecundario1Id = relacion.ClienteSecundario1Id,
-            ClienteSecundario1Nombre = relacion.ClienteSecundario1?.Nombre ?? relacion.ClienteSecundario1?.RazonSocial,
-            ClienteSecundario2Id = relacion.ClienteSecundario2Id,
-            ClienteSecundario2Nombre = relacion.ClienteSecundario2?.Nombre ?? relacion.ClienteSecundario2?.RazonSocial,
-            TipoRelacion = relacion.TipoRelacion,
-            FechaInicio = relacion.FechaInicio,
-            FechaFin = relacion.FechaFin,
-            Estado = relacion.Estado,
-            FrecuenciaVisitas = relacion.FrecuenciaVisitas,
-            Prioridad = relacion.Prioridad,
-            Observaciones = relacion.Observaciones,
-            EspecialidadId = relacion.EspecialidadId,
-            CategoriaId = relacion.CategoriaId,
-            Segment1Id = relacion.Segment1Id,
-            Segment2Id = relacion.Segment2Id,
-            Segment3Id = relacion.Segment3Id,
-            Segment4Id = relacion.Segment4Id,
-            Segment5Id = relacion.Segment5Id,
-            FechaCreacion = relacion.FechaCreacion,
-            CreadoPor = relacion.CreadoPor,
-            FechaModificacion = relacion.FechaModificacion,
-            ModificadoPor = relacion.ModificadoPor
-        };
+        // Usar AutoMapper para el mapeo base
+        var dto = _mapper.Map<RelacionDto>(relacion);
 
-        // Mapear datos dinámicos si existen
+        // Mapear datos dinámicos manualmente
         if (relacion.DatosExtendidos?.Datos != null)
         {
             try
@@ -498,42 +432,10 @@ public class RelacionesController : ControllerBase
     /// </summary>
     private RelacionDto MapToDto(Relacion relacion)
     {
-        var dto = new RelacionDto
-        {
-            Id = relacion.Id,
-            TipoRelacionId = relacion.TipoRelacionId,
-            TipoRelacionNombre = relacion.TipoRelacionEsquema?.Nombre,
-            EntidadDinamicaId = relacion.EntidadDinamicaId,
-            CodigoRelacion = relacion.CodigoRelacion,
-            AgenteId = relacion.AgenteId,
-            AgenteNombre = relacion.Agente?.Nombre ?? "N/A",
-            ClientePrincipalId = relacion.ClientePrincipalId,
-            ClientePrincipalNombre = relacion.ClientePrincipal?.Nombre ?? relacion.ClientePrincipal?.RazonSocial ?? "N/A",
-            ClienteSecundario1Id = relacion.ClienteSecundario1Id,
-            ClienteSecundario1Nombre = relacion.ClienteSecundario1?.Nombre ?? relacion.ClienteSecundario1?.RazonSocial,
-            ClienteSecundario2Id = relacion.ClienteSecundario2Id,
-            ClienteSecundario2Nombre = relacion.ClienteSecundario2?.Nombre ?? relacion.ClienteSecundario2?.RazonSocial,
-            TipoRelacion = relacion.TipoRelacion,
-            FechaInicio = relacion.FechaInicio,
-            FechaFin = relacion.FechaFin,
-            Estado = relacion.Estado,
-            FrecuenciaVisitas = relacion.FrecuenciaVisitas,
-            Prioridad = relacion.Prioridad,
-            Observaciones = relacion.Observaciones,
-            EspecialidadId = relacion.EspecialidadId,
-            CategoriaId = relacion.CategoriaId,
-            Segment1Id = relacion.Segment1Id,
-            Segment2Id = relacion.Segment2Id,
-            Segment3Id = relacion.Segment3Id,
-            Segment4Id = relacion.Segment4Id,
-            Segment5Id = relacion.Segment5Id,
-            FechaCreacion = relacion.FechaCreacion,
-            CreadoPor = relacion.CreadoPor,
-            FechaModificacion = relacion.FechaModificacion,
-            ModificadoPor = relacion.ModificadoPor
-        };
+        // Usar AutoMapper para el mapeo base
+        var dto = _mapper.Map<RelacionDto>(relacion);
 
-        // Mapear datos dinámicos si existen
+        // Mapear datos dinámicos manualmente
         if (relacion.DatosExtendidos?.Datos != null)
         {
             try

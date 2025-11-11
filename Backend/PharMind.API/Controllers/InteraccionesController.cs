@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PharMind.API.Data;
@@ -13,13 +14,16 @@ public class InteraccionesController : ControllerBase
 {
     private readonly PharMindDbContext _context;
     private readonly ILogger<InteraccionesController> _logger;
+    private readonly IMapper _mapper;
 
     public InteraccionesController(
         PharMindDbContext context,
-        ILogger<InteraccionesController> logger)
+        ILogger<InteraccionesController> logger,
+        IMapper mapper)
     {
         _context = context;
         _logger = logger;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -185,31 +189,11 @@ public class InteraccionesController : ControllerBase
                 entidadDinamicaId = EntidadesDinamica.Id;
             }
 
-            var interaccion = new Interaccion
-            {
-                Id = Guid.NewGuid().ToString(),
-                TipoInteraccionId = dto.TipoInteraccionId,
-                EntidadDinamicaId = entidadDinamicaId,
-                CodigoInteraccion = dto.CodigoInteraccion,
-                RelacionId = dto.RelacionId,
-                AgenteId = dto.AgenteId,
-                ClienteId = dto.ClienteId,
-                TipoInteraccion = dto.TipoInteraccion,
-                Fecha = dto.Fecha,
-                Turno = dto.Turno,
-                DuracionMinutos = dto.DuracionMinutos,
-                Resultado = dto.Resultado,
-                ObjetivoVisita = dto.ObjetivoVisita,
-                ResumenVisita = dto.ResumenVisita,
-                ProximaAccion = dto.ProximaAccion,
-                FechaProximaAccion = dto.FechaProximaAccion,
-                Latitud = dto.Latitud,
-                Longitud = dto.Longitud,
-                Observaciones = dto.Observaciones,
-                Status = false,
-                FechaCreacion = DateTime.Now,
-                CreadoPor = "System"
-            };
+            var interaccion = _mapper.Map<Interaccion>(dto);
+            interaccion.Id = Guid.NewGuid().ToString();
+            interaccion.EntidadDinamicaId = entidadDinamicaId;
+            interaccion.FechaCreacion = DateTime.Now;
+            interaccion.CreadoPor = "System";
 
             _context.Interacciones.Add(interaccion);
             await _context.SaveChangesAsync();
@@ -353,18 +337,7 @@ public class InteraccionesController : ControllerBase
             }
 
             // Actualizar campos estáticos
-            interaccion.TipoInteraccion = dto.TipoInteraccion;
-            interaccion.Fecha = dto.Fecha;
-            interaccion.Turno = dto.Turno;
-            interaccion.DuracionMinutos = dto.DuracionMinutos;
-            interaccion.Resultado = dto.Resultado;
-            interaccion.ObjetivoVisita = dto.ObjetivoVisita;
-            interaccion.ResumenVisita = dto.ResumenVisita;
-            interaccion.ProximaAccion = dto.ProximaAccion;
-            interaccion.FechaProximaAccion = dto.FechaProximaAccion;
-            interaccion.Latitud = dto.Latitud;
-            interaccion.Longitud = dto.Longitud;
-            interaccion.Observaciones = dto.Observaciones;
+            _mapper.Map(dto, interaccion);
             interaccion.FechaModificacion = DateTime.Now;
             interaccion.ModificadoPor = "System";
 
@@ -507,36 +480,7 @@ public class InteraccionesController : ControllerBase
     /// </summary>
     private InteraccionDto MapToDto(Interaccion interaccion)
     {
-        var dto = new InteraccionDto
-        {
-            Id = interaccion.Id,
-            TipoInteraccionId = interaccion.TipoInteraccionId,
-            TipoInteraccionNombre = interaccion.TipoInteraccionEsquema?.Nombre,
-            EntidadDinamicaId = interaccion.EntidadDinamicaId,
-            CodigoInteraccion = interaccion.CodigoInteraccion,
-            RelacionId = interaccion.RelacionId,
-            RelacionCodigo = interaccion.Relacion?.CodigoRelacion,
-            AgenteId = interaccion.AgenteId,
-            AgenteNombre = interaccion.Agente?.Nombre,
-            ClienteId = interaccion.ClienteId,
-            ClienteNombre = interaccion.Cliente?.Nombre ?? interaccion.Cliente?.RazonSocial,
-            TipoInteraccion = interaccion.TipoInteraccion,
-            Fecha = interaccion.Fecha,
-            Turno = interaccion.Turno,
-            DuracionMinutos = interaccion.DuracionMinutos,
-            Resultado = interaccion.Resultado,
-            ObjetivoVisita = interaccion.ObjetivoVisita,
-            ResumenVisita = interaccion.ResumenVisita,
-            ProximaAccion = interaccion.ProximaAccion,
-            FechaProximaAccion = interaccion.FechaProximaAccion,
-            Latitud = interaccion.Latitud,
-            Longitud = interaccion.Longitud,
-            Observaciones = interaccion.Observaciones,
-            FechaCreacion = interaccion.FechaCreacion,
-            CreadoPor = interaccion.CreadoPor,
-            FechaModificacion = interaccion.FechaModificacion,
-            ModificadoPor = interaccion.ModificadoPor
-        };
+        var dto = _mapper.Map<InteraccionDto>(interaccion);
 
         // Mapear datos dinámicos si existen
         if (interaccion.DatosExtendidos?.Datos != null)
@@ -554,43 +498,6 @@ public class InteraccionesController : ControllerBase
                 _logger.LogWarning(ex, "Error al deserializar datos dinámicos para interacción {Id}", interaccion.Id);
             }
         }
-
-        // Mapear productos promocionados
-        dto.ProductosPromocionados = interaccion.ProductosPromocionados?.Select(pp => new InteraccionProductoDto
-        {
-            Id = pp.Id,
-            ProductoId = pp.ProductoId,
-            ProductoNombre = pp.Producto?.NombreComercial ?? pp.Producto?.Nombre,
-            ProductoCodigoProducto = pp.Producto?.CodigoProducto,
-            ProductoPresentacion = pp.Producto?.Presentacion,
-            Cantidad = pp.Cantidad,
-            Observaciones = pp.Observaciones
-        }).ToList() ?? new List<InteraccionProductoDto>();
-
-        // Mapear muestras entregadas
-        dto.MuestrasEntregadas = interaccion.MuestrasEntregadas?.Select(me => new InteraccionProductoDto
-        {
-            Id = me.Id,
-            ProductoId = me.ProductoId,
-            ProductoNombre = me.Producto?.NombreComercial ?? me.Producto?.Nombre,
-            ProductoCodigoProducto = me.Producto?.CodigoProducto,
-            ProductoPresentacion = me.Producto?.Presentacion,
-            Cantidad = me.Cantidad,
-            Observaciones = me.Observaciones
-        }).ToList() ?? new List<InteraccionProductoDto>();
-
-        // Mapear productos solicitados
-        dto.ProductosSolicitados = interaccion.ProductosSolicitados?.Select(ps => new InteraccionProductoSolicitadoDto
-        {
-            Id = ps.Id,
-            ProductoId = ps.ProductoId,
-            ProductoNombre = ps.Producto?.NombreComercial ?? ps.Producto?.Nombre,
-            ProductoCodigoProducto = ps.Producto?.CodigoProducto,
-            ProductoPresentacion = ps.Producto?.Presentacion,
-            Cantidad = ps.Cantidad,
-            Estado = ps.Estado,
-            Observaciones = ps.Observaciones
-        }).ToList() ?? new List<InteraccionProductoSolicitadoDto>();
 
         return dto;
     }

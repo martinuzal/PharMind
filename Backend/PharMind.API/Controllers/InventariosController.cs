@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +18,13 @@ public class InventariosController : ControllerBase
 {
     private readonly PharMindDbContext _context;
     private readonly ILogger<InventariosController> _logger;
+    private readonly IMapper _mapper;
 
-    public InventariosController(PharMindDbContext context, ILogger<InventariosController> logger)
+    public InventariosController(PharMindDbContext context, ILogger<InventariosController> logger, IMapper mapper)
     {
         _context = context;
         _logger = logger;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -41,7 +44,13 @@ public class InventariosController : ControllerBase
                 .ThenBy(i => i.Producto!.Nombre)
                 .ToListAsync();
 
-            var inventariosDto = inventarios.Select(i => MapToDto(i)).ToList();
+            var inventariosDto = _mapper.Map<List<InventarioAgenteDto>>(inventarios);
+
+            // Calcular propiedades dinámicas
+            foreach (var dto in inventariosDto)
+            {
+                CalcularPropiedadesDinamicas(dto);
+            }
 
             return Ok(inventariosDto);
         }
@@ -71,7 +80,10 @@ public class InventariosController : ControllerBase
                 return NotFound(new { error = "Inventario no encontrado" });
             }
 
-            return Ok(MapToDto(inventario));
+            var dto = _mapper.Map<InventarioAgenteDto>(inventario);
+            CalcularPropiedadesDinamicas(dto);
+
+            return Ok(dto);
         }
         catch (Exception ex)
         {
@@ -155,7 +167,10 @@ public class InventariosController : ControllerBase
 
             _logger.LogInformation($"Inventario creado: {inventarioCreado!.Id} para agente {dto.AgenteId}");
 
-            return CreatedAtAction(nameof(GetInventario), new { id = inventarioCreado.Id }, MapToDto(inventarioCreado));
+            var dtoCreado = _mapper.Map<InventarioAgenteDto>(inventarioCreado);
+            CalcularPropiedadesDinamicas(dtoCreado);
+
+            return CreatedAtAction(nameof(GetInventario), new { id = inventarioCreado.Id }, dtoCreado);
         }
         catch (Exception ex)
         {
@@ -214,7 +229,10 @@ public class InventariosController : ControllerBase
                     .ThenInclude(p => p!.LineaNegocio)
                 .FirstAsync(i => i.Id == id);
 
-            return Ok(MapToDto(inventarioActualizado));
+            var dtoActualizado = _mapper.Map<InventarioAgenteDto>(inventarioActualizado);
+            CalcularPropiedadesDinamicas(dtoActualizado);
+
+            return Ok(dtoActualizado);
         }
         catch (Exception ex)
         {
@@ -280,7 +298,10 @@ public class InventariosController : ControllerBase
                     .ThenInclude(p => p!.LineaNegocio)
                 .FirstAsync(i => i.Id == id);
 
-            return Ok(MapToDto(inventarioActualizado));
+            var dtoActualizado = _mapper.Map<InventarioAgenteDto>(inventarioActualizado);
+            CalcularPropiedadesDinamicas(dtoActualizado);
+
+            return Ok(dtoActualizado);
         }
         catch (Exception ex)
         {
@@ -307,7 +328,13 @@ public class InventariosController : ControllerBase
                            i.Status == false)
                 .ToListAsync();
 
-            var inventariosDto = inventarios.Select(i => MapToDto(i)).ToList();
+            var inventariosDto = _mapper.Map<List<InventarioAgenteDto>>(inventarios);
+
+            // Calcular propiedades dinámicas
+            foreach (var dto in inventariosDto)
+            {
+                CalcularPropiedadesDinamicas(dto);
+            }
 
             return Ok(inventariosDto);
         }
@@ -340,7 +367,13 @@ public class InventariosController : ControllerBase
                 .OrderBy(i => i.FechaVencimiento)
                 .ToListAsync();
 
-            var inventariosDto = inventarios.Select(i => MapToDto(i)).ToList();
+            var inventariosDto = _mapper.Map<List<InventarioAgenteDto>>(inventarios);
+
+            // Calcular propiedades dinámicas
+            foreach (var dto in inventariosDto)
+            {
+                CalcularPropiedadesDinamicas(dto);
+            }
 
             return Ok(inventariosDto);
         }
@@ -353,52 +386,20 @@ public class InventariosController : ControllerBase
 
     // ==================== MÉTODOS PRIVADOS ====================
 
-    private InventarioAgenteDto MapToDto(InventarioAgente i)
+    private void CalcularPropiedadesDinamicas(InventarioAgenteDto dto)
     {
-        var diasParaVencer = i.FechaVencimiento.HasValue
-            ? (int?)(i.FechaVencimiento.Value - DateTime.Now).TotalDays
+        var diasParaVencer = dto.FechaVencimiento.HasValue
+            ? (int?)(dto.FechaVencimiento.Value - DateTime.Now).TotalDays
             : null;
 
-        var estaPorVencer = i.FechaVencimiento.HasValue &&
+        dto.DiasParaVencer = diasParaVencer;
+        dto.EstaPorVencer = dto.FechaVencimiento.HasValue &&
                            diasParaVencer <= 30 &&
                            diasParaVencer >= 0;
-
-        var estaVencido = i.FechaVencimiento.HasValue &&
-                         i.FechaVencimiento.Value < DateTime.Now;
-
-        var stockBajo = i.CantidadInicial.HasValue &&
-                       i.CantidadInicial.Value > 0 &&
-                       i.CantidadDisponible < (i.CantidadInicial.Value * 0.2);
-
-        return new InventarioAgenteDto
-        {
-            Id = i.Id,
-            AgenteId = i.AgenteId,
-            ProductoId = i.ProductoId,
-            Producto = i.Producto != null ? new ProductoDto
-            {
-                Id = i.Producto.Id,
-                CodigoProducto = i.Producto.CodigoProducto,
-                Nombre = i.Producto.Nombre,
-                NombreComercial = i.Producto.NombreComercial,
-                Descripcion = i.Producto.Descripcion,
-                Presentacion = i.Producto.Presentacion,
-                Categoria = i.Producto.Categoria,
-                Laboratorio = i.Producto.Laboratorio,
-                EsMuestra = i.Producto.EsMuestra,
-                LineaNegocioNombre = i.Producto.LineaNegocio?.Nombre
-            } : null,
-            CantidadDisponible = i.CantidadDisponible,
-            CantidadInicial = i.CantidadInicial,
-            CantidadEntregada = i.CantidadEntregada,
-            FechaUltimaRecarga = i.FechaUltimaRecarga,
-            LoteActual = i.LoteActual,
-            FechaVencimiento = i.FechaVencimiento,
-            Observaciones = i.Observaciones,
-            EstaPorVencer = estaPorVencer,
-            EstaVencido = estaVencido,
-            StockBajo = stockBajo,
-            DiasParaVencer = diasParaVencer
-        };
+        dto.EstaVencido = dto.FechaVencimiento.HasValue &&
+                         dto.FechaVencimiento.Value < DateTime.Now;
+        dto.StockBajo = dto.CantidadInicial.HasValue &&
+                       dto.CantidadInicial.Value > 0 &&
+                       dto.CantidadDisponible < (dto.CantidadInicial.Value * 0.2);
     }
 }
