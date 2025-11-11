@@ -1,0 +1,9 @@
+{
+  "API_BASE_URL": "https://api.yourdomain.com/api",
+  "APP_NAME": "PharMind",
+  "ENVIRONMENT": "production",
+  "ENABLE_DEBUG_MODE": "false",
+  "ENABLE_OFFLINE_MODE": "true",
+  "CONNECT_TIMEOUT": "30",
+  "RECEIVE_TIMEOUT": "60"
+}

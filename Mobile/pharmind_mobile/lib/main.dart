@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'config/env.dart';
 import 'providers/auth_provider.dart';
 import 'providers/toolbar_provider.dart';
 import 'screens/splash_screen.dart';
@@ -7,6 +8,12 @@ import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
 void main() {
+  // Validar configuración de ambiente al iniciar
+  AppConfig.validate();
+
+  // Imprimir configuración en modo debug
+  AppConfig.printConfig();
+
   runApp(const PharMindApp());
 }
 
@@ -25,7 +32,7 @@ class PharMindApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'PharMind',
+        title: AppConfig.appName,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           // Color scheme

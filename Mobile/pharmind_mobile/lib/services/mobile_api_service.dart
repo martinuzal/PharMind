@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/env.dart';
 import '../models/relacion.dart';
 import '../models/interaccion.dart';
 import '../models/cliente.dart';
@@ -95,14 +96,12 @@ class MobileDashboard {
 class MobileApiService {
   final Dio _dio;
   final FlutterSecureStorage _storage;
-  // 10.0.2.2 es la IP especial para acceder al localhost del host desde el emulador Android
-  static const String _baseUrl = 'http://10.0.2.2:5209/api';
 
   MobileApiService()
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
-          connectTimeout: const Duration(seconds: 30),
-          receiveTimeout: const Duration(seconds: 30),
+          baseUrl: AppConfig.apiBaseUrl,
+          connectTimeout: Duration(seconds: AppConfig.connectTimeout),
+          receiveTimeout: Duration(seconds: AppConfig.receiveTimeout),
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',

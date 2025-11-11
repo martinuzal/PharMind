@@ -1,11 +1,10 @@
 import axios from 'axios';
 import { errorHandler } from './errorHandler.service';
+import { env } from '../config/env';
 
-const API_BASE_URL = 'http://localhost:5209/api';
-
-// Crear instancia de axios
+// Crear instancia de axios con configuración desde variables de entorno
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: env.apiBaseUrl,
   headers: {
     'Content-Type': 'application/json'
   }

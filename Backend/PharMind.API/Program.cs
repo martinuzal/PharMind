@@ -28,10 +28,14 @@ builder.Services.AddHttpClient();
 // SignalR
 builder.Services.AddSignalR();
 
-// Configurar límites para archivos grandes
+// Configurar límites para archivos grandes - Desde configuración
+var maxRequestSizeMB = builder.Configuration.GetValue<int>("ApiSettings:MaxRequestBodySizeMB", 300);
+var requestTimeoutMinutes = builder.Configuration.GetValue<int>("ApiSettings:RequestTimeoutMinutes", 5);
+var maxRequestSizeBytes = maxRequestSizeMB * 1024 * 1024;
+
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 300 * 1024 * 1024; // 300MB (total request)
+    options.MultipartBodyLengthLimit = maxRequestSizeBytes;
     options.ValueLengthLimit = int.MaxValue;
     options.MultipartHeadersLengthLimit = int.MaxValue;
 });
@@ -39,27 +43,39 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 // Configurar Kestrel para soportar archivos grandes
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    serverOptions.Limits.MaxRequestBodySize = 300 * 1024 * 1024; // 300MB
-    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(5);
-    serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(5);
+    serverOptions.Limits.MaxRequestBodySize = maxRequestSizeBytes;
+    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(requestTimeoutMinutes);
+    serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(requestTimeoutMinutes);
 });
 
-// CORS
+// CORS - Configurado desde appsettings
+var allowedOrigins = builder.Configuration["ApiSettings:AllowedOrigins"]?.Split(';')
+    ?? new[] { "http://localhost:5173", "http://localhost:4200" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:4200")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials(); // Necesario para SignalR
     });
 });
 
-// JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
+// JWT Authentication - Validación de configuración
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException(
+        "JWT Key no configurado. Por favor configure Jwt:Key en User Secrets o variables de entorno.");
+
+if (jwtKey.Length < 32)
+{
+    throw new InvalidOperationException(
+        "JWT Key debe tener al menos 32 caracteres para ser seguro.");
+}
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "PharMind.API";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "PharMind.Client";
 
 builder.Services.AddAuthentication(options =>
 {
@@ -76,7 +92,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtIssuer,
         ValidAudience = jwtAudience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey ?? ""))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
 });
 

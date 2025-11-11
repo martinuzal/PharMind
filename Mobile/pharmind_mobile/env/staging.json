@@ -1,0 +1,9 @@
+{
+  "API_BASE_URL": "https://api-staging.yourdomain.com/api",
+  "APP_NAME": "PharMind (Staging)",
+  "ENVIRONMENT": "staging",
+  "ENABLE_DEBUG_MODE": "true",
+  "ENABLE_OFFLINE_MODE": "true",
+  "CONNECT_TIMEOUT": "30",
+  "RECEIVE_TIMEOUT": "30"
+}

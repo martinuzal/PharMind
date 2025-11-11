@@ -33,7 +33,8 @@
       "Bash(timeout 3:*)",
       "Bash(timeout 5 cat:*)",
       "Bash(timeout:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(dotnet user-secrets:*)"
     ],
     "deny": [],
     "ask": []
