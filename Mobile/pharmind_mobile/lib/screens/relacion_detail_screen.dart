@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/mobile_api_service.dart';
+import '../services/cache_service.dart';
 import '../models/relacion.dart';
 import '../models/interaccion.dart';
 import '../models/tipo_interaccion.dart';
@@ -26,11 +27,13 @@ class RelacionDetailScreen extends StatefulWidget {
 
 class _RelacionDetailScreenState extends State<RelacionDetailScreen> with SingleTickerProviderStateMixin {
   final MobileApiService _apiService = MobileApiService();
+  final CacheService _cacheService = CacheService();
 
   Relacion? _relacion;
   List<Interaccion> _interacciones = [];
   List<TipoInteraccion> _tiposInteraccionPermitidos = [];
   bool _isLoading = true;
+  bool _isOfflineMode = false;
   late TabController _tabController;
 
   @override
@@ -71,24 +74,88 @@ class _RelacionDetailScreenState extends State<RelacionDetailScreen> with Single
     });
 
     try {
-      // Cargar la relación
-      final relacion = await _apiService.getRelacionById(widget.relacionId);
+      Relacion? relacion;
+      List<Interaccion> interaccionesRelacion = [];
+      List<TipoInteraccion> todosTipos = [];
 
-      // Cargar las interacciones de esta relación
-      final interacciones = await _apiService.getInteracciones(
-        agenteId: widget.agenteId,
-      );
+      // Intentar cargar desde la API primero
+      try {
+        print('🌐 Intentando cargar datos desde API...');
 
-      // Filtrar solo las interacciones de esta relación
-      final interaccionesRelacion = interacciones
-          .where((i) => i.relacionId == widget.relacionId)
-          .toList();
+        // Cargar la relación
+        relacion = await _apiService.getRelacionById(widget.relacionId);
+
+        // Cargar las interacciones de esta relación
+        final interacciones = await _apiService.getInteracciones(
+          agenteId: widget.agenteId,
+        );
+
+        // Filtrar solo las interacciones de esta relación
+        interaccionesRelacion = interacciones
+            .where((i) => i.relacionId == widget.relacionId)
+            .toList();
+
+        // Cargar todos los tipos de interacción disponibles
+        todosTipos = await _apiService.getTiposInteraccion();
+
+        setState(() {
+          _isOfflineMode = false;
+        });
+
+        print('✅ Datos cargados desde API');
+      } catch (e) {
+        // Si falla la API, intentar cargar desde caché
+        print('⚠️ Error al cargar desde API: $e');
+        print('📦 Intentando cargar desde caché...');
+
+        // Cargar relación desde caché
+        final relacionJson = await _cacheService.getRelacionById(widget.relacionId);
+        if (relacionJson != null) {
+          relacion = Relacion.fromJson(relacionJson);
+          print('✅ Relación cargada desde caché');
+        }
+
+        // Cargar interacciones desde caché
+        final interaccionesJson = await _cacheService.getInteraccionesByRelacionId(widget.relacionId);
+        interaccionesRelacion = interaccionesJson
+            .map((json) => Interaccion.fromJson(json))
+            .toList();
+        print('✅ ${interaccionesRelacion.length} interacciones cargadas desde caché');
+
+        // Cargar tipos de interacción desde caché
+        final tiposJson = await _cacheService.getCachedTiposInteraccion();
+        todosTipos = tiposJson
+            .map((json) => TipoInteraccion.fromJson(json))
+            .toList();
+        print('✅ ${todosTipos.length} tipos de interacción cargados desde caché');
+
+        setState(() {
+          _isOfflineMode = true;
+        });
+
+        if (mounted && relacion != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.offline_bolt, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Modo sin conexión: mostrando datos en caché'),
+                ],
+              ),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+
+      if (relacion == null) {
+        throw Exception('No se pudo cargar la relación ni desde API ni desde caché');
+      }
 
       // Ordenar por fecha descendente
       interaccionesRelacion.sort((a, b) => b.fecha.compareTo(a.fecha));
-
-      // Cargar todos los tipos de interacción disponibles
-      final todosTipos = await _apiService.getTiposInteraccion();
 
       // Filtrar los tipos permitidos según el schema de la relación
       final tiposPermitidos = _filterTiposInteraccionPermitidos(
@@ -103,12 +170,16 @@ class _RelacionDetailScreenState extends State<RelacionDetailScreen> with Single
         _isLoading = false;
       });
     } catch (e) {
+      print('❌ Error al cargar datos: $e');
       setState(() {
         _isLoading = false;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar datos: $e')),
+          SnackBar(
+            content: Text('Error al cargar datos: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }

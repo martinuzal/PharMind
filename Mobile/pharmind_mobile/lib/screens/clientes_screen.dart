@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/cliente.dart';
 import '../services/mobile_api_service.dart';
+import '../services/cache_service.dart';
 
 class ClientesScreen extends StatefulWidget {
   final String agenteId;
@@ -16,11 +17,13 @@ class ClientesScreen extends StatefulWidget {
 
 class _ClientesScreenState extends State<ClientesScreen> {
   final MobileApiService _apiService = MobileApiService();
+  final CacheService _cacheService = CacheService();
   final TextEditingController _searchController = TextEditingController();
 
   List<Cliente> _clientes = [];
   List<Cliente> _filteredClientes = [];
   bool _isLoading = false;
+  bool _isOfflineMode = false;
   String? _errorMessage;
 
   String? _filtroTipo;
@@ -45,20 +48,66 @@ class _ClientesScreenState extends State<ClientesScreen> {
     });
 
     try {
+      // Intentar cargar desde API
+      print('🌐 Intentando cargar clientes desde API...');
       final syncResponse = await _apiService.syncAll(
         agenteId: widget.agenteId,
       );
 
       setState(() {
         _clientes = syncResponse.clientes;
+        _isOfflineMode = false;
         _applyFilters();
         _isLoading = false;
       });
+      print('✅ ${_clientes.length} clientes cargados desde API');
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Error al cargar clientes: $e';
-        _isLoading = false;
-      });
+      // Si falla la API, intentar cargar desde caché
+      print('⚠️ Error al cargar clientes desde API: $e');
+      print('📦 Intentando cargar desde caché...');
+
+      try {
+        final cachedData = await _cacheService.getCachedClientes();
+        if (cachedData.isNotEmpty) {
+          final clientesFromCache = cachedData.map((json) => Cliente.fromJson(json)).toList();
+
+          setState(() {
+            _clientes = clientesFromCache;
+            _isOfflineMode = true;
+            _applyFilters();
+            _isLoading = false;
+          });
+
+          print('✅ ${_clientes.length} clientes cargados desde caché');
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.offline_bolt, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('Modo sin conexión: mostrando datos en caché'),
+                  ],
+                ),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        } else {
+          setState(() {
+            _errorMessage = 'No hay datos en caché. Sincroniza cuando tengas conexión.';
+            _isLoading = false;
+          });
+        }
+      } catch (cacheError) {
+        print('❌ Error al cargar desde caché: $cacheError');
+        setState(() {
+          _errorMessage = 'Error al cargar clientes: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -70,10 +119,10 @@ class _ClientesScreenState extends State<ClientesScreen> {
       final searchTerm = _searchController.text.toLowerCase();
       filtered = filtered.where((cliente) {
         return (cliente.razonSocial.toLowerCase().contains(searchTerm)) ||
-            (cliente.nombreComercial?.toLowerCase().contains(searchTerm) ?? false) ||
-            (cliente.especialidad?.toLowerCase().contains(searchTerm) ?? false) ||
-            (cliente.ruc?.contains(searchTerm) ?? false) ||
-            (cliente.cedula?.contains(searchTerm) ?? false);
+            (cliente.nombre.toLowerCase().contains(searchTerm)) ||
+            (cliente.apellido?.toLowerCase().contains(searchTerm) ?? false) ||
+            (cliente.codigoCliente.toLowerCase().contains(searchTerm)) ||
+            (cliente.especialidad?.toLowerCase().contains(searchTerm) ?? false);
       }).toList();
     }
 
@@ -222,11 +271,10 @@ class _ClientesScreenState extends State<ClientesScreen> {
                           cliente.razonSocial,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        if (cliente.nombreComercial != null)
-                          Text(
-                            cliente.nombreComercial!,
-                            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                          ),
+                        Text(
+                          '${cliente.nombre}${cliente.apellido != null ? ' ${cliente.apellido}' : ''}',
+                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        ),
                       ],
                     ),
                   ),
@@ -362,24 +410,22 @@ class _ClientesScreenState extends State<ClientesScreen> {
 
               // Título
               Text(cliente.razonSocial, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              if (cliente.nombreComercial != null) ...[
-                const SizedBox(height: 4),
-                Text(cliente.nombreComercial!, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-              ],
+              const SizedBox(height: 4),
+              Text(
+                '${cliente.nombre}${cliente.apellido != null ? ' ${cliente.apellido}' : ''}',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
               const SizedBox(height: 20),
 
               // Detalles
               _buildDetailRow('Tipo', cliente.tipoClienteNombre, Icons.category),
+              _buildDetailRow('Código', cliente.codigoCliente, Icons.badge),
               if (cliente.especialidad != null)
                 _buildDetailRow('Especialidad', cliente.especialidad!, Icons.medical_services),
               if (cliente.categoria != null)
                 _buildDetailRow('Categoría', cliente.categoria!, Icons.star),
               if (cliente.segmento != null)
                 _buildDetailRow('Segmento', cliente.segmento!, Icons.business_center),
-              if (cliente.ruc != null)
-                _buildDetailRow('RUC', cliente.ruc!, Icons.badge),
-              if (cliente.cedula != null)
-                _buildDetailRow('Cédula', cliente.cedula!, Icons.credit_card),
               if (cliente.telefono != null)
                 _buildDetailRow('Teléfono', cliente.telefono!, Icons.phone),
               if (cliente.email != null)

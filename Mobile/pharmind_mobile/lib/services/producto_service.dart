@@ -2,17 +2,20 @@ import 'package:dio/dio.dart';
 import '../models/producto.dart';
 import '../models/inventario_agente.dart';
 import 'api_service.dart';
+import 'cache_service.dart';
 
 class ProductoService {
   final Dio _dio;
+  final CacheService _cacheService = CacheService();
   static const String _baseUrl = '${ApiService.baseUrl}/api/productos';
   static const String _inventarioUrl = '${ApiService.baseUrl}/api/inventarios';
 
   ProductoService() : _dio = ApiService().dio;
 
-  /// Obtener todos los productos activos
+  /// Obtener todos los productos activos (con soporte offline)
   Future<List<Producto>> getProductos() async {
     try {
+      // Intentar cargar desde API
       final response = await _dio.get(_baseUrl);
 
       if (response.statusCode == 200) {
@@ -21,7 +24,20 @@ class ProductoService {
       }
       throw Exception('Error al obtener productos');
     } catch (e) {
-      print('Error en getProductos: $e');
+      print('⚠️ Error al cargar productos desde API: $e');
+      print('📦 Intentando cargar desde caché...');
+
+      // Si falla la API, cargar desde caché
+      try {
+        final cachedData = await _cacheService.getCachedProductos();
+        if (cachedData.isNotEmpty) {
+          print('✅ ${cachedData.length} productos cargados desde caché');
+          return cachedData.map((json) => Producto.fromJson(json)).toList();
+        }
+      } catch (cacheError) {
+        print('❌ Error al cargar desde caché: $cacheError');
+      }
+
       rethrow;
     }
   }
@@ -60,7 +76,7 @@ class ProductoService {
     }
   }
 
-  /// Obtener inventario del agente
+  /// Obtener inventario del agente (con soporte offline)
   Future<List<InventarioAgente>> getInventarioAgente(String agenteId) async {
     try {
       final response = await _dio.get(
@@ -69,11 +85,28 @@ class ProductoService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data as List;
+
+        // Guardar en caché para uso offline
+        await _cacheService.saveInventarioCache(data.cast<Map<String, dynamic>>());
+
         return data.map((json) => InventarioAgente.fromJson(json)).toList();
       }
       throw Exception('Error al obtener inventario');
     } catch (e) {
-      print('Error en getInventarioAgente: $e');
+      print('⚠️ Error al cargar inventario desde API: $e');
+      print('📦 Intentando cargar desde caché...');
+
+      // Si falla la API, cargar desde caché
+      try {
+        final cachedData = await _cacheService.getCachedInventario();
+        if (cachedData.isNotEmpty) {
+          print('✅ ${cachedData.length} items de inventario cargados desde caché');
+          return cachedData.map((json) => InventarioAgente.fromJson(json)).toList();
+        }
+      } catch (cacheError) {
+        print('❌ Error al cargar desde caché: $cacheError');
+      }
+
       rethrow;
     }
   }

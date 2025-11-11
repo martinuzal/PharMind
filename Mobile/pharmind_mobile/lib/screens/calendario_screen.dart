@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/cita.dart';
 import '../services/cita_service.dart';
+import '../services/cache_service.dart';
 import 'cita_form_screen.dart';
 
 class CalendarioScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class CalendarioScreen extends StatefulWidget {
 
 class _CalendarioScreenState extends State<CalendarioScreen> with SingleTickerProviderStateMixin {
   final CitaService _citaService = CitaService();
+  final CacheService _cacheService = CacheService();
   late TabController _tabController;
   late DateTime _fechaSeleccionada;
   late DateTime _mesFocused;
@@ -25,6 +27,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> with SingleTickerPr
   List<Cita> _todasLasCitas = [];
   List<Cita> _citasDelDia = [];
   bool _isLoading = false;
+  bool _isOfflineMode = false;
 
   CalendarFormat _calendarFormat = CalendarFormat.month;
 
@@ -44,9 +47,14 @@ class _CalendarioScreenState extends State<CalendarioScreen> with SingleTickerPr
   }
 
   Future<void> _cargarCitasDelMes() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isOfflineMode = false;
+    });
 
     try {
+      // Intentar cargar desde la API
+      print('🌐 Cargando citas desde la API...');
       final citas = await _citaService.getCitasMes(
         widget.agenteId,
         year: _mesFocused.year,
@@ -57,14 +65,50 @@ class _CalendarioScreenState extends State<CalendarioScreen> with SingleTickerPr
         _todasLasCitas = citas;
         _actualizarCitasDelDia();
       });
+
+      print('✅ ${citas.length} citas cargadas desde la API');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cargar citas: $e'),
-            backgroundColor: Colors.red,
-          ),
+      // Si falla la API, intentar cargar desde cache
+      print('❌ Error al cargar desde API: $e');
+      print('📦 Intentando cargar desde cache local...');
+
+      try {
+        final citasCache = await _cacheService.getCitasFromCache(
+          agenteId: widget.agenteId,
+          year: _mesFocused.year,
+          month: _mesFocused.month,
         );
+
+        if (citasCache.isEmpty) {
+          throw Exception('No hay citas en cache para este mes.');
+        }
+
+        setState(() {
+          _todasLasCitas = citasCache;
+          _actualizarCitasDelDia();
+          _isOfflineMode = true;
+        });
+
+        print('✅ ${citasCache.length} citas cargadas desde cache');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('📦 Trabajando offline con datos cacheados'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (cacheError) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $cacheError'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } finally {
       setState(() => _isLoading = false);
@@ -92,7 +136,32 @@ class _CalendarioScreenState extends State<CalendarioScreen> with SingleTickerPr
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mi Calendario'),
+        title: Row(
+          children: [
+            const Text('Mi Calendario'),
+            if (_isOfflineMode) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.cloud_off, size: 14, color: Colors.white),
+                    SizedBox(width: 4),
+                    Text(
+                      'OFFLINE',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.today),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/interaccion.dart';
 import '../services/mobile_api_service.dart';
+import '../services/cache_service.dart';
 
 class InteraccionesRealizadasScreen extends StatefulWidget {
   final String agenteId;
@@ -17,11 +18,13 @@ class InteraccionesRealizadasScreen extends StatefulWidget {
 
 class _InteraccionesRealizadasScreenState extends State<InteraccionesRealizadasScreen> {
   final MobileApiService _apiService = MobileApiService();
+  final CacheService _cacheService = CacheService();
   final TextEditingController _searchController = TextEditingController();
 
   List<Interaccion> _interacciones = [];
   List<Interaccion> _filteredInteracciones = [];
   bool _isLoading = false;
+  bool _isOfflineMode = false;
   String? _errorMessage;
 
   // Filtros
@@ -49,6 +52,8 @@ class _InteraccionesRealizadasScreenState extends State<InteraccionesRealizadasS
     });
 
     try {
+      // Intentar cargar desde API
+      print('🌐 Intentando cargar interacciones desde API...');
       final interacciones = await _apiService.getInteracciones(
         agenteId: widget.agenteId,
         desde: _desde,
@@ -57,14 +62,66 @@ class _InteraccionesRealizadasScreenState extends State<InteraccionesRealizadasS
 
       setState(() {
         _interacciones = interacciones;
+        _isOfflineMode = false;
         _applyFilters();
         _isLoading = false;
       });
+      print('✅ ${_interacciones.length} interacciones cargadas desde API');
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Error al cargar interacciones: $e';
-        _isLoading = false;
-      });
+      // Si falla la API, intentar cargar desde caché
+      print('⚠️ Error al cargar interacciones desde API: $e');
+      print('📦 Intentando cargar desde caché...');
+
+      try {
+        final cachedData = await _cacheService.getCachedInteracciones();
+        if (cachedData.isNotEmpty) {
+          var interaccionesFromCache = cachedData.map((json) => Interaccion.fromJson(json)).toList();
+
+          // Aplicar filtros de fecha si existen
+          if (_desde != null) {
+            interaccionesFromCache = interaccionesFromCache.where((i) => i.fecha.isAfter(_desde!)).toList();
+          }
+          if (_hasta != null) {
+            interaccionesFromCache = interaccionesFromCache.where((i) => i.fecha.isBefore(_hasta!.add(const Duration(days: 1)))).toList();
+          }
+
+          setState(() {
+            _interacciones = interaccionesFromCache;
+            _isOfflineMode = true;
+            _applyFilters();
+            _isLoading = false;
+          });
+
+          print('✅ ${_interacciones.length} interacciones cargadas desde caché');
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.offline_bolt, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('Modo sin conexión: mostrando datos en caché'),
+                  ],
+                ),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        } else {
+          setState(() {
+            _errorMessage = 'No hay datos en caché. Sincroniza cuando tengas conexión.';
+            _isLoading = false;
+          });
+        }
+      } catch (cacheError) {
+        print('❌ Error al cargar desde caché: $cacheError');
+        setState(() {
+          _errorMessage = 'Error al cargar interacciones: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 

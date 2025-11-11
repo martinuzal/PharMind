@@ -17,6 +17,9 @@ import 'gastos_screen.dart';
 import 'productos_screen.dart';
 import 'inventario_screen.dart';
 import 'calendario_screen.dart';
+import 'offline_test_screen.dart';
+import 'sync_progress_screen.dart';
+import '../services/offline_sync_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -119,43 +122,50 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleRefresh() async {
-    setState(() {
-      _isRefreshing = true;
-    });
-
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
+    final agenteId = user?.agenteId;
+
+    if (agenteId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se encontró el ID del agente. Usuario debe ser representante.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     // Verificar conectividad
     final hasConnection = await authProvider.checkConnectivity();
 
-    if (hasConnection) {
-      // Actualizar información del usuario actual
-      await authProvider.refreshUser();
-
+    if (!hasConnection) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Información de usuario actualizada'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sin conexión a internet'),
+            content: Text('Sin conexión a internet. La sincronización requiere conexión.'),
             backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
+            duration: Duration(seconds: 3),
           ),
         );
       }
+      return;
     }
 
-    setState(() {
-      _isRefreshing = false;
-    });
+    // Navegar a la pantalla de progreso de sincronización
+    if (!mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SyncProgressScreen(agenteId: agenteId),
+      ),
+    );
+
+    // Actualizar información del usuario después de la sincronización
+    if (mounted) {
+      await authProvider.refreshUser();
+    }
   }
 
   @override
@@ -389,6 +399,97 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        // Botón de Mi Cartera (PRIMERO)
+                        InkWell(
+                          onTap: () {
+                            final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+                            final agenteId = user?.agenteId;
+
+                            if (agenteId == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('No se encontró el ID del agente. Usuario debe ser representante.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RelacionesScreen(agenteId: agenteId),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.teal.shade400,
+                                  Colors.teal.shade600,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.teal.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.people,
+                                    size: 32,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Mi Cartera',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Gestionar relaciones e interacciones',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                         // Módulo de Tiempo Utilizado
                         InkWell(
                           onTap: () {
@@ -1246,26 +1347,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        // Botón de Relaciones (Fase 3)
+                        // Botón de Pruebas Offline (solo para desarrollo)
                         InkWell(
                           onTap: () {
-                            final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
-                            final agenteId = user?.agenteId;
-
-                            if (agenteId == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('No se encontró el ID del agente. Usuario debe ser representante.'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                              return;
-                            }
-
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => RelacionesScreen(agenteId: agenteId),
+                                builder: (context) => const OfflineTestScreen(),
                               ),
                             );
                           },
@@ -1276,14 +1364,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  Colors.teal.shade400,
-                                  Colors.teal.shade600,
+                                  Colors.deepOrange.shade400,
+                                  Colors.deepOrange.shade600,
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.teal.withOpacity(0.3),
+                                  color: Colors.deepOrange.withOpacity(0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),
@@ -1298,7 +1386,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Icon(
-                                    Icons.people,
+                                    Icons.science,
                                     size: 32,
                                     color: Colors.white,
                                   ),
@@ -1309,7 +1397,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Mis Relaciones',
+                                        'Pruebas Offline',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -1318,7 +1406,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       SizedBox(height: 4),
                                       Text(
-                                        'Gestionar relaciones e interacciones',
+                                        'Herramientas de diagnóstico y sincronización',
                                         style: TextStyle(
                                           fontSize: 13,
                                           color: Colors.white70,

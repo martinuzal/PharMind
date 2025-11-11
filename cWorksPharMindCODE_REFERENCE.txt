@@ -1,0 +1,155 @@
+CODE EXAMPLES REFERENCE - ALL FILES ANALYZED
+
+=== SERVICE LAYER ===
+
+Base API: c:\Works\PharMind\Frontend\pharmind-web\src\services\api.ts
+- baseURL: http://localhost:5209/api
+- JWT Bearer token auto-added from localStorage
+- 401 → clear token + redirect to login
+- Network errors handled centrally
+
+Region Service: c:\Works\PharMind\Frontend\pharmind-web\src\services\regiones.service.ts
+- Interface: Region (id, codigo, nombre, color, icono, activo, timestamps)
+- DTOs: CreateRegionDto, UpdateRegionDto
+- Response: RegionListResponse (items, totalItems, totalPages, currentPage)
+- Methods: getAll(params), getById(id), getByCodigo(codigo), create, update, delete
+
+Client Service: c:\Works\PharMind\Frontend\pharmind-web\src\services\clientes.service.ts
+- Interface: Cliente (with Direccion nested)
+- Complex filters in getAll() - multiple optional params
+- Specialized methods: getByTipo(), getByInstitucion(), getByEspecialidad()
+- Default pageSize: 1000
+
+Company Service: c:\Works\PharMind\Frontend\pharmind-web\src\services\empresas.service.ts
+- Simple service returning Empresa[] directly
+- No pagination: getAll() → Promise<Empresa[]>
+- Custom method: toggleActive(id, activo)
+
+Error Handler: c:\Works\PharMind\Frontend\pharmind-web\src\services\errorHandler.service.ts
+- Singleton with notification callback
+- Extracts error from various formats (response.error, response.message, response.errors)
+- HTTP status code handling: 400, 401, 403, 404, 409, 500, 503
+- Console logging with groups
+
+=== PAGE COMPONENTS ===
+
+ClientesPage: c:\Works\PharMind\Frontend\pharmind-web\src\pages\crm\ClientesPage.tsx
+- Multiple filters: searchTerm, tipoCliente, estado, especialidad, categoria
+- Modal with form reset on create/edit
+- Pagination with prev/next
+- Loading state for full page
+- Form grid: 2 columns with full-width option
+- Disabled codigo on edit
+
+RegionesPage: c:\Works\PharMind\Frontend\pharmind-web\src\pages\gestion\RegionesPage.tsx
+- Uses usePage() hook for toolbar customization
+- Toolbar: Left (icon+title), Center (search), Right (add button)
+- Color picker and material icons input
+- Entity icon display in table
+- Simple boolean filter for activo
+
+EmpresasPage: c:\Works\PharMind\Frontend\pharmind-web\src\pages\empresas\EmpresasPage.tsx
+- Client-side filtering (no pagination)
+- Avatar with first letter
+- Status badges
+- Modal container variant
+- Form row structure
+
+=== STYLING ===
+
+App CSS: c:\Works\PharMind\Frontend\pharmind-web\src\styles\App.css
+- Root variables: --bg-primary, --text-primary, --accent-color, etc
+- Reset: * { margin/padding: 0; box-sizing: border-box; }
+- .app: flex with sidebar
+- .btn-primary, .btn-secondary
+- .form-group, .form-control
+- Utility: .mt-*, .gap-*, .justify-between
+
+CRM Pages CSS: c:\Works\PharMind\Frontend\pharmind-web\src\pages\crm\CRMPages.css
+- .page-container: absolute top: 70px
+- .filters-section: card styling
+- .data-table: full width with hover effects
+- .badge-*: Multiple color variants
+- .modal-overlay, .modal-content: Overlay pattern
+- .form-grid: 2-column with span modifiers
+- .btn-icon-edit: Light blue background, dark blue text
+- .btn-icon-delete: Light red background, dark red text
+- .pagination: Centered flex layout
+- Responsive: 1024px, 768px, 480px breakpoints
+
+=== TYPES ===
+
+Common Types: c:\Works\PharMind\Frontend\pharmind-web\src\types\common.ts
+- ApiError: message, status?, errors?
+- PaginatedResponse<T>: Generic paginated list
+- NotificationType: 'success' | 'error' | 'warning' | 'info'
+- Notification: id, title, message, type, category, timestamp, read
+
+Service Types: Defined in each service file
+- Entity: Full object with id, timestamps
+- CreateXxxDto: Request data without id/timestamps
+- UpdateXxxDto: Similar to Create or subset
+- ListResponse: items[], totalItems, totalPages, currentPage
+
+=== ROUTING ===
+
+App.tsx: c:\Works\PharMind\Frontend\pharmind-web\src\App.tsx
+- ProtectedRoute wrapper checks isAuthenticated
+- AppLayout wrapper includes Sidebar + Toolbar
+- Pattern: /section/module
+- Default: / → /dashboard or /login
+- 404: * → same as default
+- Dynamic: /{tipo}/{subtipo}
+
+Existing Routes:
+/dashboard, /mi-cartera, /usuarios, /roles, /empresas
+/gestion/tiempo-utilizado, /gestion/regiones, /gestion/distritos, /gestion/managers, /gestion/lineas-negocio
+/atlas/paises, /atlas/provincias, /atlas/localidades, /atlas/calles, /atlas/codigos-postales
+/analytics/actividad-visitas, /analytics/desempeno-representantes
+/auditoria/importaciones, /auditoria/medicos, /auditoria/portfolio, /auditoria/mercado, /auditoria/mapa-geografico
+/admin/entidades, /admin/tablas-maestras, /admin/periodos
+/crm/agentes, /crm/clientes, /crm/relaciones, /crm/interacciones
+
+=== NAVIGATION ===
+
+Sidebar: c:\Works\PharMind\Frontend\pharmind-web\src\components\layout\Sidebar.tsx
+- MenuItem interface: id, label, icon, path
+- Menu arrays: menuItems, analyticsMenuItems, gestionMenuItems, atlasMenuItems, auditoriasMenuItems, adminMenuItems
+- isModuloPermitido(codigo) function for permissions
+- Expandable sections with state
+- Collapsed mode: icons only
+- Active detection: location.pathname === item.path
+- No permission check on Gestión section
+
+Current Gestión Items:
+- Tiempo Utilizado (schedule)
+- Tipos de Actividad (category)
+
+To Add:
+- Productos (shopping_cart)
+- Inventarios (inventory_2)
+- Calendario (calendar_month)
+
+=== HOOKS ===
+
+useNotifications() → { addNotification }
+usePage() → { setToolbarContent, setToolbarCenterContent, setToolbarRightContent, clearToolbarContent }
+useAuth() → { isAuthenticated, user, logout }
+usePreferences() → { sidebarCollapsed, toggleSidebar, theme, toggleTheme }
+
+=== NOTIFICATION USAGE ===
+
+addNotification({
+  title: 'Success Title',
+  message: 'Success message',
+  type: 'success',
+  category: 'module-name'
+});
+
+addNotification({
+  title: 'Error',
+  message: 'Error details',
+  type: 'error',
+  category: 'module-name'
+});
+

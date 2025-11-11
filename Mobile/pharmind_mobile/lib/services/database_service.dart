@@ -26,7 +26,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 3, // Incrementado de 2 a 3 para incluir agenteId en usuarios
+      version: 6, // Incrementado de 5 a 6 para incluir tabla de inventario
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -152,6 +152,133 @@ class DatabaseService {
       // Migración de versión 2 a 3: Agregar agenteId a tabla usuarios
       await db.execute('ALTER TABLE usuarios ADD COLUMN agenteId TEXT');
       print('Columna agenteId agregada a tabla usuarios');
+    }
+
+    if (oldVersion < 4) {
+      // Migración de versión 3 a 4: Crear tablas de cache offline
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS clientes_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          fechaActualizacion TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS relaciones_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          fechaActualizacion TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS interacciones_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          fechaActualizacion TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS tipos_interaccion_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          fechaActualizacion TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS productos_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          fechaActualizacion TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS citas_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          fechaActualizacion TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS sync_metadata (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          fechaActualizacion TEXT NOT NULL
+        )
+      ''');
+
+      print('Tablas de cache offline creadas exitosamente');
+    }
+
+    if (oldVersion < 5) {
+      // Migración de versión 4 a 5: Agregar nuevas tablas de cache
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS muestras_entregadas_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS productos_promocionados_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS productos_solicitados_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS movimientos_inventario_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS tiempo_utilizado_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS tipos_actividad_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+
+      print('Nuevas tablas de cache (v5) creadas exitosamente');
+    }
+
+    if (oldVersion < 6) {
+      // Migración de versión 5 a 6: Agregar tabla de inventario
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS inventario_cache (
+          id TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+
+      print('Tabla de inventario_cache (v6) creada exitosamente');
     }
   }
 

@@ -7,6 +7,7 @@ class TipoInteraccion {
   final String? icono;
   final String? color;
   final Map<String, dynamic>? schema;
+  final Map<String, dynamic>? configuracionUi;
 
   TipoInteraccion({
     required this.id,
@@ -15,6 +16,7 @@ class TipoInteraccion {
     this.icono,
     this.color,
     this.schema,
+    this.configuracionUi,
   });
 
   factory TipoInteraccion.fromJson(Map<String, dynamic> json) {
@@ -35,6 +37,23 @@ class TipoInteraccion {
       }
     }
 
+    // Parsear configuracionUi que puede venir como string JSON o como Map
+    // El backend envía en PascalCase: ConfiguracionUi
+    Map<String, dynamic>? parsedConfiguracionUi;
+    final configuracionUiKey = json['ConfiguracionUi'] ?? json['configuracionUi'];
+    if (configuracionUiKey != null) {
+      if (configuracionUiKey is String) {
+        try {
+          final decoded = jsonDecode(configuracionUiKey as String);
+          parsedConfiguracionUi = Map<String, dynamic>.from(decoded as Map);
+        } catch (e) {
+          parsedConfiguracionUi = null;
+        }
+      } else if (configuracionUiKey is Map) {
+        parsedConfiguracionUi = Map<String, dynamic>.from(configuracionUiKey as Map);
+      }
+    }
+
     return TipoInteraccion(
       id: json['id'] as String,
       nombre: json['nombre'] as String,
@@ -42,6 +61,7 @@ class TipoInteraccion {
       icono: json['icono'] as String?,
       color: json['color'] as String?,
       schema: parsedSchema,
+      configuracionUi: parsedConfiguracionUi,
     );
   }
 
@@ -53,6 +73,7 @@ class TipoInteraccion {
       'icono': icono,
       'color': color,
       'schema': schema,
+      'configuracionUi': configuracionUi,
     };
   }
 

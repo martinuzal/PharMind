@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PharMind.API.Data;
 using PharMind.API.DTOs;
 using PharMind.API.Models;
+using PharMind.API.Services;
 using System.Security.Claims;
 
 namespace PharMind.API.Controllers;
@@ -18,11 +19,13 @@ public class MobileController : ControllerBase
 {
     private readonly PharMindDbContext _context;
     private readonly ILogger<MobileController> _logger;
+    private readonly IFrecuenciaVisitasService _frecuenciaService;
 
-    public MobileController(PharMindDbContext context, ILogger<MobileController> logger)
+    public MobileController(PharMindDbContext context, ILogger<MobileController> logger, IFrecuenciaVisitasService frecuenciaService)
     {
         _context = context;
         _logger = logger;
+        _frecuenciaService = frecuenciaService;
     }
 
     // ==================== SINCRONIZACIÓN COMPLETA ====================
@@ -47,6 +50,33 @@ public class MobileController : ControllerBase
 
             // 1. Obtener relaciones del agente
             var relaciones = await GetRelacionesAgente(agenteId, ultimaSincronizacion);
+
+            // Calcular frecuencia de visitas para cada relación
+            foreach (var relacion in relaciones)
+            {
+                try
+                {
+                    var frecuencia = await _frecuenciaService.CalcularFrecuenciaAsync(relacion.Id);
+                    if (frecuencia != null)
+                    {
+                        relacion.Frecuencia = new FrecuenciaIndicadorDto
+                        {
+                            InteraccionesRealizadas = frecuencia.InteraccionesRealizadas,
+                            FrecuenciaObjetivo = frecuencia.FrecuenciaObjetivo,
+                            PeriodoMedicion = frecuencia.PeriodoMedicion,
+                            FechaInicioPeriodo = frecuencia.FechaInicioPeriodo,
+                            FechaFinPeriodo = frecuencia.FechaFinPeriodo,
+                            Estado = frecuencia.Estado,
+                            VisitasPendientes = frecuencia.VisitasPendientes
+                        };
+                    }
+                }
+                catch (Exception exFrecuencia)
+                {
+                    _logger.LogWarning(exFrecuencia, $"No se pudo calcular frecuencia para relación {relacion.Id} durante sincronización");
+                }
+            }
+
             response.Relaciones = relaciones;
             response.TotalRelaciones = relaciones.Count;
 
@@ -98,18 +128,121 @@ public class MobileController : ControllerBase
         }
     }
 
+    // ==================== CLIENTES ====================
+
+    /// <summary>
+    /// Obtiene todos los clientes que tienen al menos una relación con el agente
+    /// GET /api/mobile/clientes?agenteId={id}
+    /// </summary>
+    [HttpGet("clientes")]
+    public async Task<ActionResult<List<ClienteMobileDto>>> GetClientesPorAgente([FromQuery] string agenteId)
+    {
+        try
+        {
+            _logger.LogInformation($"🔵 GET /api/mobile/clientes - AgenteId: {agenteId}");
+
+            // Obtener IDs de clientes que tienen relaciones con el agente
+            var relaciones = await _context.Relaciones
+                .Where(r => r.AgenteId == agenteId && r.Status == false)
+                .Select(r => new { r.ClientePrincipalId, r.ClienteSecundario1Id, r.ClienteSecundario2Id })
+                .ToListAsync();
+
+            var clienteIds = new HashSet<string>();
+            foreach (var rel in relaciones)
+            {
+                if (!string.IsNullOrEmpty(rel.ClientePrincipalId))
+                    clienteIds.Add(rel.ClientePrincipalId);
+                if (!string.IsNullOrEmpty(rel.ClienteSecundario1Id))
+                    clienteIds.Add(rel.ClienteSecundario1Id);
+                if (!string.IsNullOrEmpty(rel.ClienteSecundario2Id))
+                    clienteIds.Add(rel.ClienteSecundario2Id);
+            }
+
+            _logger.LogInformation($"📊 Total clientes con relaciones: {clienteIds.Count}");
+
+            // Obtener datos completos de los clientes usando el método existente
+            var clientes = await GetClientesPorIds(clienteIds.ToList());
+
+            _logger.LogInformation($"Retornando {clientes.Count} clientes para agente {agenteId}");
+            return Ok(clientes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error al obtener clientes del agente {agenteId}");
+            return StatusCode(500, new { error = "Error al obtener clientes", details = ex.Message });
+        }
+    }
+
     // ==================== RELACIONES ====================
 
     /// <summary>
     /// Obtiene todas las relaciones de un agente
-    /// GET /api/mobile/relaciones?agenteId={id}
+    /// GET /api/mobile/relaciones?agenteId={id}&incluirFrecuencia={bool}&soloConPendientes={bool}
     /// </summary>
     [HttpGet("relaciones")]
-    public async Task<ActionResult<List<RelacionMobileDto>>> GetRelaciones([FromQuery] string agenteId)
+    public async Task<ActionResult<List<RelacionMobileDto>>> GetRelaciones(
+        [FromQuery] string agenteId,
+        [FromQuery] bool incluirFrecuencia = true,
+        [FromQuery] bool soloConPendientes = false)
     {
         try
         {
+            _logger.LogInformation($"🔵 GET /api/mobile/relaciones - AgenteId: {agenteId}, incluirFrecuencia: {incluirFrecuencia}, soloConPendientes: {soloConPendientes}");
+
             var relaciones = await GetRelacionesAgente(agenteId, null);
+            _logger.LogInformation($"📊 Total relaciones encontradas: {relaciones.Count}");
+
+            // Calcular frecuencia de visitas si se solicita
+            if (incluirFrecuencia)
+            {
+                int conFrecuencia = 0;
+                int sinFrecuencia = 0;
+
+                foreach (var relacion in relaciones)
+                {
+                    try
+                    {
+                        var frecuencia = await _frecuenciaService.CalcularFrecuenciaAsync(relacion.Id);
+                        if (frecuencia != null)
+                        {
+                            relacion.Frecuencia = new FrecuenciaIndicadorDto
+                            {
+                                InteraccionesRealizadas = frecuencia.InteraccionesRealizadas,
+                                FrecuenciaObjetivo = frecuencia.FrecuenciaObjetivo,
+                                PeriodoMedicion = frecuencia.PeriodoMedicion,
+                                FechaInicioPeriodo = frecuencia.FechaInicioPeriodo,
+                                FechaFinPeriodo = frecuencia.FechaFinPeriodo,
+                                Estado = frecuencia.Estado,
+                                VisitasPendientes = frecuencia.VisitasPendientes
+                            };
+                            conFrecuencia++;
+                            _logger.LogInformation($"✅ Frecuencia calculada para {relacion.CodigoRelacion}: Estado={frecuencia.Estado}, {frecuencia.InteraccionesRealizadas}/{frecuencia.FrecuenciaObjetivo}");
+                        }
+                        else
+                        {
+                            sinFrecuencia++;
+                            _logger.LogInformation($"⚠️ Frecuencia NULL para {relacion.CodigoRelacion} (FrecuenciaVisitas={relacion.FrecuenciaVisitas})");
+                        }
+                    }
+                    catch (Exception exFrecuencia)
+                    {
+                        sinFrecuencia++;
+                        _logger.LogWarning(exFrecuencia, $"❌ Error calculando frecuencia para relación {relacion.Id}");
+                    }
+                }
+
+                _logger.LogInformation($"📈 Resultado: {conFrecuencia} con frecuencia, {sinFrecuencia} sin frecuencia");
+            }
+
+            // Filtrar solo las que tienen visitas pendientes
+            if (soloConPendientes)
+            {
+                relaciones = relaciones
+                    .Where(r => r.Frecuencia != null && r.Frecuencia.VisitasPendientes > 0)
+                    .ToList();
+            }
+
+            _logger.LogInformation($"Retornando {relaciones.Count} relaciones para agente {agenteId}");
             return Ok(relaciones);
         }
         catch (Exception ex)
@@ -665,6 +798,7 @@ public class MobileController : ControllerBase
             .Include(c => c.TipoCliente)
             .Include(c => c.Direccion)
             .Include(c => c.Institucion)
+            .Include(c => c.EntidadesDinamica)
             .Where(c => ids.Contains(c.Id) && c.Status == false)
             .ToListAsync();
 
@@ -690,6 +824,9 @@ public class MobileController : ControllerBase
             InstitucionId = c.InstitucionId,
             InstitucionNombre = c.Institucion?.RazonSocial,
             Estado = c.Estado,
+            DatosDinamicos = c.EntidadesDinamica != null
+                ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(c.EntidadesDinamica.Datos)
+                : null
 
         }).ToList();
     }
@@ -976,5 +1113,236 @@ public class MobileController : ControllerBase
             EnProgreso = c.FechaInicio <= ahora && c.FechaFin >= ahora,
             DuracionMinutos = (int)(c.FechaFin - c.FechaInicio).TotalMinutes
         };
+    }
+
+    // ==================== MUESTRAS Y PRODUCTOS DE INTERACCIONES ====================
+
+    /// <summary>
+    /// Obtiene las muestras entregadas en las interacciones de un agente
+    /// GET /api/mobile/muestras-entregadas?agenteId={id}
+    /// </summary>
+    [HttpGet("muestras-entregadas")]
+    public async Task<ActionResult<List<InteraccionMuestraEntregadaDto>>> GetMuestrasEntregadas([FromQuery] string agenteId)
+    {
+        try
+        {
+            var muestras = await _context.InteraccionMuestrasEntregadas
+                .Include(m => m.Producto)
+                .Include(m => m.Interaccion)
+                .Where(m => m.Interaccion!.AgenteId == agenteId && m.Status == false)
+                .OrderByDescending(m => m.FechaCreacion)
+                .Select(m => new InteraccionMuestraEntregadaDto
+                {
+                    Id = m.Id,
+                    InteraccionId = m.InteraccionId,
+                    ProductoId = m.ProductoId,
+                    ProductoNombre = m.Producto!.Nombre,
+                    Cantidad = m.Cantidad,
+                    Observaciones = m.Observaciones,
+                    FechaCreacion = m.FechaCreacion
+                })
+                .ToListAsync();
+
+            _logger.LogInformation($"✅ {muestras.Count} muestras entregadas para agente {agenteId}");
+            return Ok(muestras);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener muestras entregadas");
+            return StatusCode(500, new { error = "Error al obtener muestras entregadas", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene los productos promocionados en las interacciones de un agente
+    /// GET /api/mobile/productos-promocionados?agenteId={id}
+    /// </summary>
+    [HttpGet("productos-promocionados")]
+    public async Task<ActionResult<List<InteraccionProductoPromocionadoDto>>> GetProductosPromocionados([FromQuery] string agenteId)
+    {
+        try
+        {
+            var productos = await _context.InteraccionProductosPromocionados
+                .Include(p => p.Producto)
+                .Include(p => p.Interaccion)
+                .Where(p => p.Interaccion!.AgenteId == agenteId && p.Status == false)
+                .OrderByDescending(p => p.FechaCreacion)
+                .Select(p => new InteraccionProductoPromocionadoDto
+                {
+                    Id = p.Id,
+                    InteraccionId = p.InteraccionId,
+                    ProductoId = p.ProductoId,
+                    ProductoNombre = p.Producto!.Nombre,
+                    Cantidad = p.Cantidad,
+                    Observaciones = p.Observaciones,
+                    FechaCreacion = p.FechaCreacion
+                })
+                .ToListAsync();
+
+            _logger.LogInformation($"✅ {productos.Count} productos promocionados para agente {agenteId}");
+            return Ok(productos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener productos promocionados");
+            return StatusCode(500, new { error = "Error al obtener productos promocionados", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene los productos solicitados en las interacciones de un agente
+    /// GET /api/mobile/productos-solicitados?agenteId={id}
+    /// </summary>
+    [HttpGet("productos-solicitados")]
+    public async Task<ActionResult<List<InteraccionProductoSolicitadoMobileDto>>> GetProductosSolicitados([FromQuery] string agenteId)
+    {
+        try
+        {
+            var productos = await _context.InteraccionProductosSolicitados
+                .Include(p => p.Producto)
+                .Include(p => p.Interaccion)
+                .Where(p => p.Interaccion!.AgenteId == agenteId && p.Status == false)
+                .OrderByDescending(p => p.FechaCreacion)
+                .Select(p => new InteraccionProductoSolicitadoMobileDto
+                {
+                    Id = p.Id,
+                    InteraccionId = p.InteraccionId,
+                    ProductoId = p.ProductoId,
+                    ProductoNombre = p.Producto!.Nombre,
+                    Cantidad = p.Cantidad,
+                    Estado = p.Estado,
+                    Observaciones = p.Observaciones,
+                    FechaCreacion = p.FechaCreacion
+                })
+                .ToListAsync();
+
+            _logger.LogInformation($"✅ {productos.Count} productos solicitados para agente {agenteId}");
+            return Ok(productos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener productos solicitados");
+            return StatusCode(500, new { error = "Error al obtener productos solicitados", details = ex.Message });
+        }
+    }
+
+    // ==================== MOVIMIENTOS DE INVENTARIO ====================
+
+    /// <summary>
+    /// Obtiene los movimientos de inventario de un agente
+    /// GET /api/mobile/movimientos-inventario?agenteId={id}
+    /// </summary>
+    [HttpGet("movimientos-inventario")]
+    public async Task<ActionResult<List<MovimientoInventarioDto>>> GetMovimientosInventario([FromQuery] string agenteId)
+    {
+        try
+        {
+            var movimientos = await _context.MovimientosInventario
+                .Include(m => m.InventarioAgente)
+                .Where(m => m.InventarioAgente!.AgenteId == agenteId && m.Status == false)
+                .OrderByDescending(m => m.FechaMovimiento)
+                .Select(m => new MovimientoInventarioDto
+                {
+                    Id = m.Id,
+                    InventarioAgenteId = m.InventarioAgenteId,
+                    TipoMovimiento = m.TipoMovimiento,
+                    Cantidad = m.Cantidad,
+                    CantidadAnterior = m.CantidadAnterior,
+                    CantidadNueva = m.CantidadNueva,
+                    MuestraMedicaId = m.MuestraMedicaId,
+                    Motivo = m.Motivo,
+                    Observaciones = m.Observaciones,
+                    FechaMovimiento = m.FechaMovimiento,
+                    FechaCreacion = m.FechaCreacion
+                })
+                .ToListAsync();
+
+            _logger.LogInformation($"✅ {movimientos.Count} movimientos de inventario para agente {agenteId}");
+            return Ok(movimientos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener movimientos de inventario");
+            return StatusCode(500, new { error = "Error al obtener movimientos de inventario", details = ex.Message });
+        }
+    }
+
+    // ==================== TIEMPO UTILIZADO ====================
+
+    /// <summary>
+    /// Obtiene los registros de tiempo utilizado de un agente
+    /// GET /api/mobile/tiempo-utilizado?agenteId={id}
+    /// </summary>
+    [HttpGet("tiempo-utilizado")]
+    public async Task<ActionResult<List<TiempoUtilizadoDto>>> GetTiempoUtilizado([FromQuery] string agenteId)
+    {
+        try
+        {
+            var tiempos = await _context.TiempoUtilizado
+                .Include(t => t.TipoActividad)
+                .Where(t => t.RepresentanteId == agenteId && t.Status == false)
+                .OrderByDescending(t => t.Fecha)
+                .Select(t => new TiempoUtilizadoDto
+                {
+                    Id = t.Id,
+                    RepresentanteId = t.RepresentanteId,
+                    Fecha = t.Fecha,
+                    TipoActividadId = t.TipoActividadId,
+                    TipoActividadNombre = t.TipoActividad!.Nombre,
+                    Descripcion = t.Descripcion,
+                    HorasUtilizadas = t.HorasUtilizadas,
+                    MinutosUtilizados = t.MinutosUtilizados,
+                    Turno = t.Turno,
+                    EsRecurrente = t.EsRecurrente,
+                    Observaciones = t.Observaciones,
+                    FechaCreacion = t.FechaCreacion
+                })
+                .ToListAsync();
+
+            _logger.LogInformation($"✅ {tiempos.Count} registros de tiempo utilizado para agente {agenteId}");
+            return Ok(tiempos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener tiempo utilizado");
+            return StatusCode(500, new { error = "Error al obtener tiempo utilizado", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene los tipos de actividad
+    /// GET /api/mobile/tipos-actividad
+    /// </summary>
+    [HttpGet("tipos-actividad")]
+    public async Task<ActionResult<List<TipoActividadDto>>> GetTiposActividad()
+    {
+        try
+        {
+            var tipos = await _context.TiposActividad
+                .Where(t => t.Activo && t.Status == false)
+                .OrderBy(t => t.Orden)
+                .Select(t => new TipoActividadDto
+                {
+                    Id = t.Id,
+                    Codigo = t.Codigo,
+                    Nombre = t.Nombre,
+                    Descripcion = t.Descripcion,
+                    Clasificacion = t.Clasificacion,
+                    Color = t.Color,
+                    Icono = t.Icono,
+                    Activo = t.Activo,
+                    EsSistema = t.EsSistema,
+                    Orden = t.Orden
+                })
+                .ToListAsync();
+
+            _logger.LogInformation($"✅ {tipos.Count} tipos de actividad");
+            return Ok(tipos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener tipos de actividad");
+            return StatusCode(500, new { error = "Error al obtener tipos de actividad", details = ex.Message });
+        }
     }
 }

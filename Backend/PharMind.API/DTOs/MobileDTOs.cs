@@ -77,6 +77,9 @@ public class RelacionMobileDto
     // Datos dinámicos
     public Dictionary<string, object?>? DatosDinamicos { get; set; }
 
+    // Indicador de frecuencia
+    public FrecuenciaIndicadorDto? Frecuencia { get; set; }
+
     // Última interacción
     public DateTime? UltimaInteraccionFecha { get; set; }
     public string? UltimaInteraccionTipo { get; set; }
@@ -312,4 +315,57 @@ public class MobileDashboardDto
 
     // Estadísticas por tipo de interacción
     public Dictionary<string, int> InteraccionesPorTipo { get; set; } = new();
+}
+
+// ==================== MUESTRAS Y PRODUCTOS DE INTERACCIONES ====================
+
+public class InteraccionMuestraEntregadaDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string InteraccionId { get; set; } = string.Empty;
+    public string ProductoId { get; set; } = string.Empty;
+    public string? ProductoNombre { get; set; }
+    public int Cantidad { get; set; }
+    public string? Observaciones { get; set; }
+    public DateTime FechaCreacion { get; set; }
+}
+
+public class InteraccionProductoPromocionadoDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string InteraccionId { get; set; } = string.Empty;
+    public string ProductoId { get; set; } = string.Empty;
+    public string? ProductoNombre { get; set; }
+    public int Cantidad { get; set; }
+    public string? Observaciones { get; set; }
+    public DateTime FechaCreacion { get; set; }
+}
+
+public class InteraccionProductoSolicitadoMobileDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string InteraccionId { get; set; } = string.Empty;
+    public string ProductoId { get; set; } = string.Empty;
+    public string? ProductoNombre { get; set; }
+    public int Cantidad { get; set; }
+    public string? Estado { get; set; }
+    public string? Observaciones { get; set; }
+    public DateTime FechaCreacion { get; set; }
+}
+
+// ==================== MOVIMIENTOS DE INVENTARIO ====================
+
+public class MovimientoInventarioDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string InventarioAgenteId { get; set; } = string.Empty;
+    public string TipoMovimiento { get; set; } = string.Empty;
+    public int Cantidad { get; set; }
+    public int CantidadAnterior { get; set; }
+    public int CantidadNueva { get; set; }
+    public string? MuestraMedicaId { get; set; }
+    public string? Motivo { get; set; }
+    public string? Observaciones { get; set; }
+    public DateTime FechaMovimiento { get; set; }
+    public DateTime FechaCreacion { get; set; }
 }

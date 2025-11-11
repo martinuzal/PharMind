@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
 import 'dart:convert';
@@ -32,10 +33,11 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
 
   // Static form fields
   String? _prioridad;
-  String? _frecuenciaVisitas;
+  String? _frecuenciaVisitas; // Guardado como String pero representa un número
   String? _estado;
   DateTime? _fechaFin;
   final TextEditingController _observacionesController = TextEditingController();
+  final TextEditingController _frecuenciaController = TextEditingController();
 
   // Dynamic fields values
   Map<String, dynamic> _dynamicFieldsValues = {};
@@ -43,21 +45,24 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
   // TipoRelacion with schema
   TipoRelacion? _tipoRelacion;
 
-  bool _isLoading = false;
+  bool _isLoading = true; // Iniciar en true para esperar carga del schema
   bool _modoOffline = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeForm();
+  }
 
+  Future<void> _initializeForm() async {
     // Initialize form fields with current relacion values
     // Normalize values to ensure they are in the dropdown lists or null
     final validPrioridades = ['A', 'B', 'C'];
-    final validFrecuencias = ['Diaria', 'Semanal', 'Quincenal', 'Mensual', 'Bimestral', 'Trimestral'];
     final validEstados = ['Activo', 'Inactivo', 'Completado'];
 
     _prioridad = validPrioridades.contains(widget.relacion.prioridad) ? widget.relacion.prioridad : null;
-    _frecuenciaVisitas = validFrecuencias.contains(widget.relacion.frecuenciaVisitas) ? widget.relacion.frecuenciaVisitas : null;
+    _frecuenciaVisitas = widget.relacion.frecuenciaVisitas; // Guardar el valor numérico como String
+    _frecuenciaController.text = widget.relacion.frecuenciaVisitas ?? '';
     _estado = validEstados.contains(widget.relacion.estado) ? widget.relacion.estado : null;
     _fechaFin = widget.relacion.fechaFin;
     _observacionesController.text = widget.relacion.observaciones ?? '';
@@ -68,6 +73,7 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
     // Parse TipoRelacion schema
     if (widget.relacion.tipoRelacionSchema != null && widget.relacion.tipoRelacionSchema!.isNotEmpty) {
       try {
+        print('📋 Parseando schema de TipoRelacion...');
         final schemaJson = jsonDecode(widget.relacion.tipoRelacionSchema!);
         _tipoRelacion = TipoRelacion(
           id: widget.relacion.tipoRelacionId,
@@ -77,10 +83,20 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
           color: widget.relacion.tipoRelacionColor,
           schema: Map<String, dynamic>.from(schemaJson),
         );
+        print('✅ Schema parseado correctamente');
+        print('   Campos estáticos configurados: ${_tipoRelacion?.schema?['staticFields']?.keys.toList()}');
+        print('   Campos dinámicos: ${_tipoRelacion?.getDynamicFields().length ?? 0}');
       } catch (e) {
-        print('Error parsing tipoRelacion schema: $e');
+        print('❌ Error parsing tipoRelacion schema: $e');
       }
+    } else {
+      print('⚠️ No hay schema disponible para esta relación');
     }
+
+    // Marcar como inicializado y quitar loading
+    setState(() {
+      _isLoading = false;
+    });
 
     // Configurar acciones del toolbar después de que el frame esté construido
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -107,6 +123,7 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
   @override
   void dispose() {
     _observacionesController.dispose();
+    _frecuenciaController.dispose();
 
     // Limpiar acciones del toolbar al salir del formulario
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -142,76 +159,84 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
       print('Relación ID: ${widget.relacion.id}');
       print('Agente ID: ${widget.agenteId}');
 
-      if (_modoOffline) {
-        print('MODO OFFLINE: Guardando en cola de sincronización');
-        // Modo offline: agregar a la cola de sincronización
-        final queueItem = SyncQueueItem(
-          id: _generateUuid(),
-          operationType: SyncOperationType.updateRelacion,
-          entityId: widget.relacion.id,
-          data: {
-            'prioridad': _prioridad,
-            'frecuenciaVisitas': _frecuenciaVisitas,
-            'observaciones': _observacionesController.text.isNotEmpty ? _observacionesController.text : null,
-            'estado': _estado,
-            'fechaFin': _fechaFin?.toIso8601String(),
-            'datosDinamicos': _dynamicFieldsValues.isNotEmpty ? _dynamicFieldsValues : null,
-          },
-          createdAt: DateTime.now(),
-        );
-
-        await _syncQueueService.addToQueue(queueItem);
-        print('Relación agregada a cola de sincronización');
-
-        if (mounted) {
-          // Limpiar toolbar antes de cerrar
-          final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
-          toolbarProvider.clearActions();
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Relación guardada en cola para sincronización posterior'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 3),
-            ),
+      if (!_modoOffline) {
+        // Intentar enviar al servidor primero
+        print('MODO ONLINE: Intentando enviar al servidor...');
+        try {
+          final result = await _apiService.updateRelacion(
+            id: widget.relacion.id,
+            prioridad: _prioridad,
+            frecuenciaVisitas: _frecuenciaVisitas,
+            observaciones: _observacionesController.text.isNotEmpty ? _observacionesController.text : null,
+            estado: _estado,
+            fechaFin: _fechaFin,
+            datosDinamicos: _dynamicFieldsValues.isNotEmpty ? _dynamicFieldsValues : null,
           );
-          Navigator.of(context).pop(true);
-        }
-      } else {
-        print('MODO ONLINE: Enviando al servidor');
-        // Modo online: enviar directamente
-        final result = await _apiService.updateRelacion(
-          id: widget.relacion.id,
-          prioridad: _prioridad,
-          frecuenciaVisitas: _frecuenciaVisitas,
-          observaciones: _observacionesController.text.isNotEmpty ? _observacionesController.text : null,
-          estado: _estado,
-          fechaFin: _fechaFin,
-          datosDinamicos: _dynamicFieldsValues.isNotEmpty ? _dynamicFieldsValues : null,
-        );
 
-        print('✅ Relación actualizada exitosamente en el servidor');
-        print('ID de relación actualizada: ${result.id}');
+          print('✅ Relación actualizada exitosamente en el servidor');
+          print('ID de relación actualizada: ${result.id}');
 
-        if (mounted) {
-          // Limpiar toolbar antes de cerrar
-          final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
-          toolbarProvider.clearActions();
+          if (mounted) {
+            // Limpiar toolbar antes de cerrar
+            final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+            toolbarProvider.clearActions();
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✓ Relación actualizada exitosamente'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-          // Pequeño delay para que el usuario vea el mensaje antes de cerrar
-          await Future.delayed(const Duration(milliseconds: 500));
-          Navigator.of(context).pop(true);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✓ Relación actualizada exitosamente'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+            // Pequeño delay para que el usuario vea el mensaje antes de cerrar
+            await Future.delayed(const Duration(milliseconds: 500));
+            Navigator.of(context).pop(true);
+          }
+          return; // Salir si el envío fue exitoso
+        } catch (e) {
+          // Si falla el envío online, automáticamente guardar offline
+          print('⚠️ Error al enviar al servidor: $e');
+          print('🔄 Guardando automáticamente en modo offline...');
+          // Continuar con el guardado offline sin mostrar diálogo
         }
       }
+
+      // Modo offline o fallback automático: agregar a la cola de sincronización
+      print('MODO OFFLINE: Guardando en cola de sincronización');
+      final queueItem = SyncQueueItem(
+        id: _generateUuid(),
+        operationType: SyncOperationType.updateRelacion,
+        entityId: widget.relacion.id,
+        data: {
+          'prioridad': _prioridad,
+          'frecuenciaVisitas': _frecuenciaVisitas,
+          'observaciones': _observacionesController.text.isNotEmpty ? _observacionesController.text : null,
+          'estado': _estado,
+          'fechaFin': _fechaFin?.toIso8601String(),
+          'datosDinamicos': _dynamicFieldsValues.isNotEmpty ? _dynamicFieldsValues : null,
+        },
+        createdAt: DateTime.now(),
+      );
+
+      await _syncQueueService.addToQueue(queueItem);
+      print('✅ Relación agregada a cola de sincronización');
+
+      if (mounted) {
+        // Limpiar toolbar antes de cerrar
+        final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+        toolbarProvider.clearActions();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Relación guardada. Se sincronizará cuando haya conexión'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        Navigator.of(context).pop(true);
+      }
     } catch (e, stackTrace) {
-      print('❌ ERROR al guardar relación: $e');
+      print('❌ ERROR CRÍTICO al guardar relación: $e');
       print('Stack trace: $stackTrace');
 
       setState(() {
@@ -228,45 +253,12 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
           }
         }
 
-        // Mostrar diálogo de error con opción de guardar offline
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.red),
-                SizedBox(width: 8),
-                Text('Error al Guardar'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(errorMessage),
-                const SizedBox(height: 16),
-                const Text(
-                  '¿Desea guardar en modo offline para sincronizar después?',
-                  style: TextStyle(fontSize: 14),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    _modoOffline = true;
-                  });
-                  _guardarRelacion();
-                },
-                child: const Text('Guardar Offline'),
-              ),
-            ],
+        // Mostrar error solo si falló incluso el guardado offline
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ $errorMessage'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -327,8 +319,8 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Static fields with schema-based visibility
-                    if (_tipoRelacion?.isStaticFieldVisible('prioridad') ?? true)
+                    // Static fields with schema-based visibility (usar PascalCase para los nombres)
+                    if (_tipoRelacion?.isStaticFieldVisible('Prioridad') ?? true)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: DropdownButtonFormField<String>(
@@ -336,7 +328,7 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
                           decoration: InputDecoration(
                             labelText: 'Prioridad',
                             border: const OutlineInputBorder(),
-                            suffixIcon: _tipoRelacion?.isStaticFieldRequired('prioridad') ?? false
+                            suffixIcon: _tipoRelacion?.isStaticFieldRequired('Prioridad') ?? false
                                 ? const Icon(Icons.star, size: 16, color: Colors.red)
                                 : null,
                           ),
@@ -349,49 +341,55 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
                               );
                             }),
                           ],
-                          validator: (_tipoRelacion?.isStaticFieldRequired('prioridad') ?? false)
+                          validator: (_tipoRelacion?.isStaticFieldRequired('Prioridad') ?? false)
                               ? (value) => value == null ? 'Este campo es requerido' : null
                               : null,
                           onChanged: (value) => setState(() => _prioridad = value),
                         ),
                       ),
 
-                    if (_tipoRelacion?.isStaticFieldVisible('frecuenciaVisitas') ?? true)
+                    if (_tipoRelacion?.isStaticFieldVisible('FrecuenciaVisitas') ?? true)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16),
-                        child: DropdownButtonFormField<String>(
-                          value: _frecuenciaVisitas,
+                        child: TextFormField(
+                          controller: _frecuenciaController,
                           decoration: InputDecoration(
-                            labelText: 'Frecuencia de Visitas',
+                            labelText: 'Frecuencia de Visitas (Cantidad de interacciones en el ciclo)',
                             border: const OutlineInputBorder(),
-                            suffixIcon: _tipoRelacion?.isStaticFieldRequired('frecuenciaVisitas') ?? false
+                            suffixIcon: _tipoRelacion?.isStaticFieldRequired('FrecuenciaVisitas') ?? false
                                 ? const Icon(Icons.star, size: 16, color: Colors.red)
                                 : null,
+                            hintText: 'Ej: 12',
                           ),
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text('Seleccionar...')),
-                            ...[
-                              'Diaria',
-                              'Semanal',
-                              'Quincenal',
-                              'Mensual',
-                              'Bimestral',
-                              'Trimestral',
-                            ].map((freq) {
-                              return DropdownMenuItem(
-                                value: freq,
-                                child: Text(freq),
-                              );
-                            }),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
                           ],
-                          validator: (_tipoRelacion?.isStaticFieldRequired('frecuenciaVisitas') ?? false)
-                              ? (value) => value == null ? 'Este campo es requerido' : null
-                              : null,
-                          onChanged: (value) => setState(() => _frecuenciaVisitas = value),
+                          validator: (_tipoRelacion?.isStaticFieldRequired('FrecuenciaVisitas') ?? false)
+                              ? (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Este campo es requerido';
+                                  }
+                                  final numero = int.tryParse(value);
+                                  if (numero == null || numero <= 0) {
+                                    return 'Debe ser un número mayor a 0';
+                                  }
+                                  return null;
+                                }
+                              : (value) {
+                                  if (value != null && value.isNotEmpty) {
+                                    final numero = int.tryParse(value);
+                                    if (numero == null || numero <= 0) {
+                                      return 'Debe ser un número mayor a 0';
+                                    }
+                                  }
+                                  return null;
+                                },
+                          onChanged: (value) => setState(() => _frecuenciaVisitas = value.isNotEmpty ? value : null),
                         ),
                       ),
 
-                    if (_tipoRelacion?.isStaticFieldVisible('estado') ?? true)
+                    if (_tipoRelacion?.isStaticFieldVisible('Estado') ?? true)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: DropdownButtonFormField<String>(
@@ -399,7 +397,7 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
                           decoration: InputDecoration(
                             labelText: 'Estado',
                             border: const OutlineInputBorder(),
-                            suffixIcon: _tipoRelacion?.isStaticFieldRequired('estado') ?? false
+                            suffixIcon: _tipoRelacion?.isStaticFieldRequired('Estado') ?? false
                                 ? const Icon(Icons.star, size: 16, color: Colors.red)
                                 : null,
                           ),
@@ -412,14 +410,14 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
                               );
                             }),
                           ],
-                          validator: (_tipoRelacion?.isStaticFieldRequired('estado') ?? false)
+                          validator: (_tipoRelacion?.isStaticFieldRequired('Estado') ?? false)
                               ? (value) => value == null ? 'Este campo es requerido' : null
                               : null,
                           onChanged: (value) => setState(() => _estado = value),
                         ),
                       ),
 
-                    if (_tipoRelacion?.isStaticFieldVisible('fechaFin') ?? true)
+                    if (_tipoRelacion?.isStaticFieldVisible('FechaFin') ?? true)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: TextFormField(
@@ -429,7 +427,7 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
                             suffixIcon: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                if (_tipoRelacion?.isStaticFieldRequired('fechaFin') ?? false)
+                                if (_tipoRelacion?.isStaticFieldRequired('FechaFin') ?? false)
                                   const Icon(Icons.star, size: 16, color: Colors.red),
                                 const Icon(Icons.calendar_today),
                               ],
@@ -441,7 +439,7 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
                                 ? _fechaFin!.toString().split(' ')[0]
                                 : '',
                           ),
-                          validator: (_tipoRelacion?.isStaticFieldRequired('fechaFin') ?? false)
+                          validator: (_tipoRelacion?.isStaticFieldRequired('FechaFin') ?? false)
                               ? (value) => value == null || value.isEmpty ? 'Este campo es requerido' : null
                               : null,
                           onTap: () async {
@@ -458,7 +456,7 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
                         ),
                       ),
 
-                    if (_tipoRelacion?.isStaticFieldVisible('observaciones') ?? true)
+                    if (_tipoRelacion?.isStaticFieldVisible('Observaciones') ?? true)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: TextFormField(
@@ -466,12 +464,12 @@ class _RelacionFormScreenState extends State<RelacionFormScreen> {
                           decoration: InputDecoration(
                             labelText: 'Observaciones',
                             border: const OutlineInputBorder(),
-                            suffixIcon: _tipoRelacion?.isStaticFieldRequired('observaciones') ?? false
+                            suffixIcon: _tipoRelacion?.isStaticFieldRequired('Observaciones') ?? false
                                 ? const Icon(Icons.star, size: 16, color: Colors.red)
                                 : null,
                           ),
                           maxLines: 4,
-                          validator: (_tipoRelacion?.isStaticFieldRequired('observaciones') ?? false)
+                          validator: (_tipoRelacion?.isStaticFieldRequired('Observaciones') ?? false)
                               ? (value) => value == null || value.isEmpty ? 'Este campo es requerido' : null
                               : null,
                         ),

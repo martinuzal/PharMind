@@ -1,3 +1,5 @@
+import 'frecuencia_indicador.dart';
+
 class Relacion {
   final String id;
   final String tipoRelacionId;
@@ -38,6 +40,9 @@ class Relacion {
   // Datos dinámicos
   final Map<String, dynamic>? datosDinamicos;
 
+  // Indicador de frecuencia
+  final FrecuenciaIndicador? frecuencia;
+
   // Última interacción
   final DateTime? ultimaInteraccionFecha;
   final String? ultimaInteraccionTipo;
@@ -75,6 +80,7 @@ class Relacion {
     this.prioridadVisita,
     this.observaciones,
     this.datosDinamicos,
+    this.frecuencia,
     this.ultimaInteraccionFecha,
     this.ultimaInteraccionTipo,
     required this.fechaCreacion,
@@ -112,6 +118,9 @@ class Relacion {
       observaciones: json['observaciones'] as String?,
       datosDinamicos: json['datosDinamicos'] != null
           ? Map<String, dynamic>.from(json['datosDinamicos'] as Map)
+          : null,
+      frecuencia: json['frecuencia'] != null
+          ? FrecuenciaIndicador.fromJson(json['frecuencia'] as Map<String, dynamic>)
           : null,
       ultimaInteraccionFecha: json['ultimaInteraccionFecha'] != null
           ? DateTime.parse(json['ultimaInteraccionFecha'] as String)
@@ -154,6 +163,7 @@ class Relacion {
       'prioridadVisita': prioridadVisita,
       'observaciones': observaciones,
       'datosDinamicos': datosDinamicos,
+      'frecuencia': frecuencia?.toJson(),
       'ultimaInteraccionFecha': ultimaInteraccionFecha?.toIso8601String(),
       'ultimaInteraccionTipo': ultimaInteraccionTipo,
       'fechaCreacion': fechaCreacion.toIso8601String(),
@@ -192,6 +202,7 @@ class Relacion {
       'prioridadVisita': prioridadVisita,
       'observaciones': observaciones,
       'datosDinamicos': datosDinamicos != null ? datosDinamicos.toString() : null,
+      'frecuenciaJson': frecuencia != null ? frecuencia!.toMap().toString() : null,
       'ultimaInteraccionFecha': ultimaInteraccionFecha?.toIso8601String(),
       'ultimaInteraccionTipo': ultimaInteraccionTipo,
       'fechaCreacion': fechaCreacion.toIso8601String(),

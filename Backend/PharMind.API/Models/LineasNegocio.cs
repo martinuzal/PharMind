@@ -38,4 +38,6 @@ public partial class LineasNegocio
     public virtual ICollection<Agente> Agentes { get; set; } = new List<Agente>();
 
     public virtual ICollection<ManagerLineasNegocio> ManagerLineasNegocios { get; set; } = new List<ManagerLineasNegocio>();
+
+    public virtual ICollection<Producto> Productos { get; set; } = new List<Producto>();
 }

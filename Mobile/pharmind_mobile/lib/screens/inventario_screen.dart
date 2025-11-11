@@ -57,6 +57,8 @@ class _InventarioScreenState extends State<InventarioScreen> with SingleTickerPr
         _aplicarFiltro();
       });
     } catch (e) {
+      print('⚠️ Error al cargar inventario: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

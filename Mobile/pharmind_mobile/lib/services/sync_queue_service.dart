@@ -268,6 +268,28 @@ class SyncQueueService {
         break;
 
       case SyncOperationType.createInteraccion:
+        // Convertir listas de dynamic a List<Map<String, dynamic>>
+        List<Map<String, dynamic>>? productosPromocionados;
+        if (item.data['productosPromocionados'] != null) {
+          productosPromocionados = (item.data['productosPromocionados'] as List)
+              .map((e) => e as Map<String, dynamic>)
+              .toList();
+        }
+
+        List<Map<String, dynamic>>? muestrasEntregadas;
+        if (item.data['muestrasEntregadas'] != null) {
+          muestrasEntregadas = (item.data['muestrasEntregadas'] as List)
+              .map((e) => e as Map<String, dynamic>)
+              .toList();
+        }
+
+        List<Map<String, dynamic>>? productosSolicitados;
+        if (item.data['productosSolicitados'] != null) {
+          productosSolicitados = (item.data['productosSolicitados'] as List)
+              .map((e) => e as Map<String, dynamic>)
+              .toList();
+        }
+
         await _apiService.createInteraccion(
           tipoInteraccionId: item.data['tipoInteraccionId'] as String,
           relacionId: item.data['relacionId'] as String,
@@ -288,6 +310,9 @@ class SyncQueueService {
           longitud: item.data['longitud'] as double?,
           direccionCapturada: item.data['direccionCapturada'] as String?,
           datosDinamicos: item.data['datosDinamicos'] as Map<String, dynamic>?,
+          productosPromocionados: productosPromocionados,
+          muestrasEntregadas: muestrasEntregadas,
+          productosSolicitados: productosSolicitados,
         );
         break;
 
@@ -313,6 +338,17 @@ class SyncQueueService {
         );
         break;
     }
+  }
+
+  /// Obtiene todos los items pendientes (alias de getPendingItems)
+  Future<List<SyncQueueItem>> getAllPendingItems() async {
+    return await getPendingItems();
+  }
+
+  /// Procesa un item individual de la cola (alias de _processItem)
+  Future<void> processQueueItem(SyncQueueItem item) async {
+    await _processItem(item);
+    await removeFromQueue(item.id);
   }
 
   /// Limpia toda la cola (útil para desarrollo/testing)

@@ -71,6 +71,24 @@ const Sidebar = () => {
 
   const gestionMenuItems: MenuItem[] = [
     {
+      id: 'productos',
+      label: 'Productos',
+      icon: 'shopping_cart',
+      path: '/gestion/productos'
+    },
+    {
+      id: 'inventarios',
+      label: 'Inventarios',
+      icon: 'inventory_2',
+      path: '/gestion/inventarios'
+    },
+    {
+      id: 'citas',
+      label: 'Calendario',
+      icon: 'event',
+      path: '/gestion/citas'
+    },
+    {
       id: 'tiempo-utilizado',
       label: 'Tiempo Utilizado',
       icon: 'schedule',
@@ -186,6 +204,12 @@ const Sidebar = () => {
       label: 'Períodos',
       icon: 'schedule',
       path: '/admin/periodos'
+    },
+    {
+      id: 'esquemas-interacciones',
+      label: 'Configuración de Interacciones',
+      icon: 'settings',
+      path: '/configuracion/esquemas-interacciones'
     }
   ];
 

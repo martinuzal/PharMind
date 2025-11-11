@@ -1,3 +1,5 @@
+import 'producto.dart';
+
 class Interaccion {
   final String id;
   final String tipoInteraccionId;
@@ -35,6 +37,11 @@ class Interaccion {
   // Datos dinámicos
   final Map<String, dynamic>? datosDinamicos;
 
+  // Productos
+  final List<ProductoPromocionado> productosPromocionados;
+  final List<MuestraEntregada> muestrasEntregadas;
+  final List<ProductoSolicitado> productosSolicitados;
+
   // Estado
   final String estado;
   final bool sincronizada;
@@ -70,6 +77,9 @@ class Interaccion {
     this.longitud,
     this.direccionCapturada,
     this.datosDinamicos,
+    this.productosPromocionados = const [],
+    this.muestrasEntregadas = const [],
+    this.productosSolicitados = const [],
     required this.estado,
     this.sincronizada = false,
     required this.fechaCreacion,
@@ -108,6 +118,18 @@ class Interaccion {
       datosDinamicos: json['datosDinamicos'] != null
           ? Map<String, dynamic>.from(json['datosDinamicos'] as Map)
           : null,
+      productosPromocionados: (json['productosPromocionados'] as List?)
+              ?.map((e) => ProductoPromocionado.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      muestrasEntregadas: (json['muestrasEntregadas'] as List?)
+              ?.map((e) => MuestraEntregada.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      productosSolicitados: (json['productosSolicitados'] as List?)
+              ?.map((e) => ProductoSolicitado.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       estado: json['estado'] as String,
       sincronizada: json['sincronizada'] as bool? ?? false,
       fechaCreacion: DateTime.parse(json['fechaCreacion'] as String),
@@ -145,6 +167,9 @@ class Interaccion {
       'longitud': longitud,
       'direccionCapturada': direccionCapturada,
       'datosDinamicos': datosDinamicos,
+      'productosPromocionados': productosPromocionados.map((e) => e.toJson()).toList(),
+      'muestrasEntregadas': muestrasEntregadas.map((e) => e.toJson()).toList(),
+      'productosSolicitados': productosSolicitados.map((e) => e.toJson()).toList(),
       'estado': estado,
       'sincronizada': sincronizada,
       'fechaCreacion': fechaCreacion.toIso8601String(),
@@ -255,6 +280,9 @@ class Interaccion {
     double? longitud,
     String? direccionCapturada,
     Map<String, dynamic>? datosDinamicos,
+    List<ProductoPromocionado>? productosPromocionados,
+    List<MuestraEntregada>? muestrasEntregadas,
+    List<ProductoSolicitado>? productosSolicitados,
     String? estado,
     bool? sincronizada,
     DateTime? fechaCreacion,
@@ -287,6 +315,9 @@ class Interaccion {
       longitud: longitud ?? this.longitud,
       direccionCapturada: direccionCapturada ?? this.direccionCapturada,
       datosDinamicos: datosDinamicos ?? this.datosDinamicos,
+      productosPromocionados: productosPromocionados ?? this.productosPromocionados,
+      muestrasEntregadas: muestrasEntregadas ?? this.muestrasEntregadas,
+      productosSolicitados: productosSolicitados ?? this.productosSolicitados,
       estado: estado ?? this.estado,
       sincronizada: sincronizada ?? this.sincronizada,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,

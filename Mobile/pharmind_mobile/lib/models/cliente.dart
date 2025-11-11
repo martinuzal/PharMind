@@ -4,10 +4,10 @@ class Cliente {
   final String tipoClienteNombre;
   final String? tipoClienteSubTipo;
 
+  final String codigoCliente;
+  final String nombre;
+  final String? apellido;
   final String razonSocial;
-  final String? nombreComercial;
-  final String? ruc;
-  final String? cedula;
 
   final String? especialidad;
   final String? categoria;
@@ -35,10 +35,10 @@ class Cliente {
     required this.tipoClienteId,
     required this.tipoClienteNombre,
     this.tipoClienteSubTipo,
+    required this.codigoCliente,
+    required this.nombre,
+    this.apellido,
     required this.razonSocial,
-    this.nombreComercial,
-    this.ruc,
-    this.cedula,
     this.especialidad,
     this.categoria,
     this.segmento,
@@ -57,12 +57,12 @@ class Cliente {
     return Cliente(
       id: json['id'] as String,
       tipoClienteId: json['tipoClienteId'] as String,
-      tipoClienteNombre: json['tipoClienteNombre'] as String,
+      tipoClienteNombre: json['tipoClienteNombre'] as String? ?? '',
       tipoClienteSubTipo: json['tipoClienteSubTipo'] as String?,
-      razonSocial: json['razonSocial'] as String,
-      nombreComercial: json['nombreComercial'] as String?,
-      ruc: json['ruc'] as String?,
-      cedula: json['cedula'] as String?,
+      codigoCliente: json['codigoCliente'] as String? ?? '',
+      nombre: json['nombre'] as String? ?? '',
+      apellido: json['apellido'] as String?,
+      razonSocial: json['razonSocial'] as String? ?? '',
       especialidad: json['especialidad'] as String?,
       categoria: json['categoria'] as String?,
       segmento: json['segmento'] as String?,
@@ -86,10 +86,10 @@ class Cliente {
       'tipoClienteId': tipoClienteId,
       'tipoClienteNombre': tipoClienteNombre,
       'tipoClienteSubTipo': tipoClienteSubTipo,
+      'codigoCliente': codigoCliente,
+      'nombre': nombre,
+      'apellido': apellido,
       'razonSocial': razonSocial,
-      'nombreComercial': nombreComercial,
-      'ruc': ruc,
-      'cedula': cedula,
       'especialidad': especialidad,
       'categoria': categoria,
       'segmento': segmento,
@@ -112,10 +112,10 @@ class Cliente {
       'tipoClienteId': tipoClienteId,
       'tipoClienteNombre': tipoClienteNombre,
       'tipoClienteSubTipo': tipoClienteSubTipo,
+      'codigoCliente': codigoCliente,
+      'nombre': nombre,
+      'apellido': apellido,
       'razonSocial': razonSocial,
-      'nombreComercial': nombreComercial,
-      'ruc': ruc,
-      'cedula': cedula,
       'especialidad': especialidad,
       'categoria': categoria,
       'segmento': segmento,
@@ -135,12 +135,12 @@ class Cliente {
     return Cliente(
       id: map['id'] as String,
       tipoClienteId: map['tipoClienteId'] as String,
-      tipoClienteNombre: map['tipoClienteNombre'] as String,
+      tipoClienteNombre: map['tipoClienteNombre'] as String? ?? '',
       tipoClienteSubTipo: map['tipoClienteSubTipo'] as String?,
-      razonSocial: map['razonSocial'] as String,
-      nombreComercial: map['nombreComercial'] as String?,
-      ruc: map['ruc'] as String?,
-      cedula: map['cedula'] as String?,
+      codigoCliente: map['codigoCliente'] as String? ?? '',
+      nombre: map['nombre'] as String? ?? '',
+      apellido: map['apellido'] as String?,
+      razonSocial: map['razonSocial'] as String? ?? '',
       especialidad: map['especialidad'] as String?,
       categoria: map['categoria'] as String?,
       segmento: map['segmento'] as String?,

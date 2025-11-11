@@ -81,6 +81,90 @@ public class InventariosController : ControllerBase
     }
 
     /// <summary>
+    /// Crear inventario inicial para un agente
+    /// POST /api/inventarios
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<InventarioAgenteDto>> CrearInventario([FromBody] CreateInventarioDto dto)
+    {
+        try
+        {
+            // Verificar si ya existe inventario para este agente y producto
+            var inventarioExistente = await _context.InventariosAgente
+                .FirstOrDefaultAsync(i => i.AgenteId == dto.AgenteId &&
+                                         i.ProductoId == dto.ProductoId &&
+                                         i.Status == false);
+
+            if (inventarioExistente != null)
+            {
+                return BadRequest(new { error = "Ya existe un inventario para este producto" });
+            }
+
+            // Verificar que el producto existe
+            var producto = await _context.Productos.FindAsync(dto.ProductoId);
+            if (producto == null)
+            {
+                return NotFound(new { error = "Producto no encontrado" });
+            }
+
+            // Verificar que el agente existe
+            var agente = await _context.Agentes.FindAsync(dto.AgenteId);
+            if (agente == null)
+            {
+                return NotFound(new { error = "Agente no encontrado" });
+            }
+
+            // Crear nuevo inventario
+            var nuevoInventario = new InventarioAgente
+            {
+                AgenteId = dto.AgenteId,
+                ProductoId = dto.ProductoId,
+                CantidadInicial = dto.CantidadInicial,
+                CantidadDisponible = dto.CantidadInicial,
+                CantidadEntregada = 0,
+                LoteActual = dto.Lote,
+                FechaVencimiento = dto.FechaVencimiento,
+                FechaUltimaRecarga = DateTime.Now,
+                Observaciones = dto.Observaciones,
+                FechaCreacion = DateTime.Now
+            };
+
+            _context.InventariosAgente.Add(nuevoInventario);
+
+            // Registrar movimiento inicial
+            var movimiento = new MovimientoInventario
+            {
+                InventarioAgenteId = nuevoInventario.Id,
+                TipoMovimiento = "Entrada",
+                Cantidad = dto.CantidadInicial,
+                CantidadAnterior = 0,
+                CantidadNueva = dto.CantidadInicial,
+                Motivo = "Asignación inicial de inventario",
+                Observaciones = dto.Observaciones,
+                FechaMovimiento = DateTime.Now
+            };
+
+            _context.MovimientosInventario.Add(movimiento);
+            await _context.SaveChangesAsync();
+
+            // Recargar con includes para devolver DTO completo
+            var inventarioCreado = await _context.InventariosAgente
+                .Include(i => i.Producto)
+                    .ThenInclude(p => p!.LineaNegocio)
+                .FirstOrDefaultAsync(i => i.Id == nuevoInventario.Id);
+
+            _logger.LogInformation($"Inventario creado: {inventarioCreado!.Id} para agente {dto.AgenteId}");
+
+            return CreatedAtAction(nameof(GetInventario), new { id = inventarioCreado.Id }, MapToDto(inventarioCreado));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear inventario");
+            return StatusCode(500, new { error = "Error al crear inventario", details = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Registrar recarga de inventario
     /// POST /api/inventarios/{id}/recarga
     /// </summary>

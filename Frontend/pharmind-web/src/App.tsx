@@ -40,6 +40,10 @@ import PortfolioBEBPage from './pages/auditoria/PortfolioBEBPage';
 import AnalisisMercadoPage from './pages/auditoria/AnalisisMercadoPage';
 import MapaGeograficoPage from './pages/auditoria/MapaGeograficoPage';
 import TimelinesPage from './pages/admin/TimelinesPage';
+import ProductosPage from './pages/gestion/ProductosPage';
+import InventariosPage from './pages/gestion/InventariosPage';
+import CitasPage from './pages/gestion/CitasPage';
+import EsquemasInteraccionesPage from './pages/configuracion/EsquemasInteraccionesPage';
 import './styles/App.css';
 import './styles/dark-mode.css';
 
@@ -167,6 +171,16 @@ function App() {
           }
         />
         <Route
+          path="/configuracion/esquemas-interacciones"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <EsquemasInteraccionesPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/analytics/actividad-visitas"
           element={
             <ProtectedRoute>
@@ -242,6 +256,36 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <ManagersPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gestion/productos"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <ProductosPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gestion/inventarios"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <InventariosPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gestion/citas"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CitasPage />
               </AppLayout>
             </ProtectedRoute>
           }

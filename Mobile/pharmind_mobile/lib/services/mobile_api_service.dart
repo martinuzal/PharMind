@@ -5,6 +5,7 @@ import '../models/interaccion.dart';
 import '../models/cliente.dart';
 import '../models/tipo_relacion.dart';
 import '../models/tipo_interaccion.dart';
+import '../models/producto.dart';
 
 class MobileSyncResponse {
   final List<Relacion> relaciones;
@@ -168,11 +169,19 @@ class MobileApiService {
   // ==================== RELACIONES ====================
 
   /// Obtiene las relaciones del agente
-  Future<List<Relacion>> getRelaciones(String agenteId) async {
+  Future<List<Relacion>> getRelaciones(
+    String agenteId, {
+    bool incluirFrecuencia = true,
+    bool soloConPendientes = false,
+  }) async {
     try {
       final response = await _dio.get(
         '/mobile/relaciones',
-        queryParameters: {'agenteId': agenteId},
+        queryParameters: {
+          'agenteId': agenteId,
+          'incluirFrecuencia': incluirFrecuencia,
+          'soloConPendientes': soloConPendientes,
+        },
       );
 
       return (response.data as List)
@@ -305,6 +314,9 @@ class MobileApiService {
     double? longitud,
     String? direccionCapturada,
     Map<String, dynamic>? datosDinamicos,
+    List<Map<String, dynamic>>? productosPromocionados,
+    List<Map<String, dynamic>>? muestrasEntregadas,
+    List<Map<String, dynamic>>? productosSolicitados,
   }) async {
     try {
       final data = {
@@ -325,6 +337,12 @@ class MobileApiService {
         if (longitud != null) 'longitud': longitud,
         if (direccionCapturada != null) 'direccionCapturada': direccionCapturada,
         if (datosDinamicos != null) 'datosDinamicos': datosDinamicos,
+        if (productosPromocionados != null && productosPromocionados.isNotEmpty)
+          'productosPromocionados': productosPromocionados,
+        if (muestrasEntregadas != null && muestrasEntregadas.isNotEmpty)
+          'muestrasEntregadas': muestrasEntregadas,
+        if (productosSolicitados != null && productosSolicitados.isNotEmpty)
+          'productosSolicitados': productosSolicitados,
       };
 
       final response = await _dio.post('/mobile/interacciones', data: data);
@@ -411,6 +429,166 @@ class MobileApiService {
       return (response.data as List)
           .map((e) => TipoInteraccion.fromJson(e as Map<String, dynamic>))
           .toList();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ==================== TEST & CONNECTIVITY ====================
+
+  /// Prueba la conexión con el servidor
+  Future<void> testConnection() async {
+    try {
+      final response = await _dio.get('/health');
+      if (response.statusCode != 200) {
+        throw Exception('Servidor no disponible');
+      }
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ==================== CLIENTES ====================
+
+  /// Obtiene los clientes que tienen al menos una relación con el agente
+  Future<List<Cliente>> getClientesPorAgente(String agenteId) async {
+    try {
+      final response = await _dio.get(
+        '/mobile/clientes',
+        queryParameters: {'agenteId': agenteId},
+      );
+
+      return (response.data as List)
+          .map((e) => Cliente.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ==================== PRODUCTOS ====================
+
+  /// Obtiene todos los productos disponibles
+  Future<List<Producto>> getProductos({
+    String? lineaNegocioId,
+    bool? soloActivos,
+    bool? soloMuestras,
+    bool? soloNoMuestras,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        if (lineaNegocioId != null) 'lineaNegocioId': lineaNegocioId,
+        if (soloActivos != null) 'activo': soloActivos,
+      };
+
+      // Si se solicita solo muestras O solo no muestras, agregar filtro esMuestra
+      if (soloMuestras == true) {
+        queryParams['esMuestra'] = true;
+      } else if (soloNoMuestras == true) {
+        queryParams['esMuestra'] = false;
+      }
+
+      final response = await _dio.get(
+        '/productos',
+        queryParameters: queryParams,
+      );
+
+      var productos = (response.data as List)
+          .map((e) => Producto.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+      return productos;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Obtiene un producto específico por ID
+  Future<Producto> getProducto(String id) async {
+    try {
+      final response = await _dio.get('/productos/$id');
+      return Producto.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ==================== INTERACCION - PRODUCTOS Y MUESTRAS ====================
+
+  /// Obtiene las muestras entregadas en las interacciones del agente
+  Future<List<Map<String, dynamic>>> getMuestrasEntregadas(String agenteId) async {
+    try {
+      final response = await _dio.get(
+        '/mobile/muestras-entregadas',
+        queryParameters: {'agenteId': agenteId},
+      );
+      return (response.data as List).cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Obtiene los productos promocionados en las interacciones del agente
+  Future<List<Map<String, dynamic>>> getProductosPromocionados(String agenteId) async {
+    try {
+      final response = await _dio.get(
+        '/mobile/productos-promocionados',
+        queryParameters: {'agenteId': agenteId},
+      );
+      return (response.data as List).cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Obtiene los productos solicitados en las interacciones del agente
+  Future<List<Map<String, dynamic>>> getProductosSolicitados(String agenteId) async {
+    try {
+      final response = await _dio.get(
+        '/mobile/productos-solicitados',
+        queryParameters: {'agenteId': agenteId},
+      );
+      return (response.data as List).cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ==================== INVENTARIO ====================
+
+  /// Obtiene los movimientos de inventario del agente
+  Future<List<Map<String, dynamic>>> getMovimientosInventario(String agenteId) async {
+    try {
+      final response = await _dio.get(
+        '/mobile/movimientos-inventario',
+        queryParameters: {'agenteId': agenteId},
+      );
+      return (response.data as List).cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ==================== TIEMPO UTILIZADO ====================
+
+  /// Obtiene los registros de tiempo utilizado del agente
+  Future<List<Map<String, dynamic>>> getTiempoUtilizado(String agenteId) async {
+    try {
+      final response = await _dio.get(
+        '/mobile/tiempo-utilizado',
+        queryParameters: {'agenteId': agenteId},
+      );
+      return (response.data as List).cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Obtiene todos los tipos de actividad disponibles
+  Future<List<Map<String, dynamic>>> getTiposActividad() async {
+    try {
+      final response = await _dio.get('/mobile/tipos-actividad');
+      return (response.data as List).cast<Map<String, dynamic>>();
     } on DioException catch (e) {
       throw _handleError(e);
     }

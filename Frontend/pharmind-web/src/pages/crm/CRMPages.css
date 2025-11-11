@@ -963,6 +963,8 @@
   border-radius: 0.75rem;
   padding: 1.5rem;
   transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
 }
 
 .entity-card:hover {
@@ -1085,6 +1087,8 @@
   padding: 1.25rem 1.5rem;
   transition: all 0.2s;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
 .entity-list-item:hover {

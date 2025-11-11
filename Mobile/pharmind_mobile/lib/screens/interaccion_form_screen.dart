@@ -6,9 +6,14 @@ import '../services/mobile_api_service.dart';
 import '../services/sync_queue_service.dart';
 import '../models/relacion.dart';
 import '../models/tipo_interaccion.dart';
+import '../models/producto.dart';
 import '../providers/toolbar_provider.dart';
 import '../widgets/bottom_toolbar.dart';
 import '../models/esquema_personalizado.dart';
+import '../widgets/product_selector_widget.dart';
+import '../widgets/productos_promocionados_table.dart';
+import '../widgets/muestras_entregadas_table.dart';
+import '../widgets/productos_solicitados_table.dart';
 
 class InteraccionFormScreen extends StatefulWidget {
   final String relacionId;
@@ -47,6 +52,11 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
 
   // Dynamic fields values
   Map<String, dynamic> _dynamicFieldsValues = {};
+
+  // Productos
+  List<ProductoPromocionado> _productosPromocionados = [];
+  List<MuestraEntregada> _muestrasEntregadas = [];
+  List<ProductoSolicitado> _productosSolicitados = [];
 
   // Geolocation
   Position? _position;
@@ -156,6 +166,116 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
     }
   }
 
+  // ==================== PRODUCTOS ====================
+
+  void _agregarProductosPromocionados() async {
+    final config = _tipoInteraccionSeleccionado?.configuracionUi?['productosPromocionados'];
+    if (config == null || config['habilitado'] != true) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) => ProductSelectorWidget(
+        mode: ProductSelectorMode.multi,
+        title: 'Seleccionar Productos\nPromocionados',
+        esMuestra: false,
+        onProductsSelected: (productos) {
+          setState(() {
+            for (var producto in productos) {
+              if (!_productosPromocionados.any((p) => p.productoId == producto.id)) {
+                _productosPromocionados.add(ProductoPromocionado.fromProducto(producto));
+              }
+            }
+          });
+        },
+      ),
+    );
+  }
+
+  void _agregarMuestra() async {
+    final config = _tipoInteraccionSeleccionado?.configuracionUi?['muestrasEntregadas'];
+    if (config == null || config['habilitado'] != true) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) => ProductSelectorWidget(
+        mode: ProductSelectorMode.single,
+        title: 'Seleccionar Muestra',
+        esMuestra: true,
+        onProductsSelected: (_) {},
+        onProductSelected: (producto, cantidad) {
+          setState(() {
+            _muestrasEntregadas.add(MuestraEntregada.fromProducto(producto, cantidad: cantidad));
+          });
+        },
+      ),
+    );
+  }
+
+  void _agregarPedido() async {
+    final config = _tipoInteraccionSeleccionado?.configuracionUi?['pedidoProductos'];
+    if (config == null || config['habilitado'] != true) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) => ProductSelectorWidget(
+        mode: ProductSelectorMode.single,
+        title: 'Solicitar Producto',
+        esMuestra: false,
+        onProductsSelected: (_) {},
+        onProductSelected: (producto, cantidad) {
+          setState(() {
+            _productosSolicitados.add(ProductoSolicitado.fromProducto(producto, cantidad: cantidad));
+          });
+        },
+      ),
+    );
+  }
+
+  // Handlers para productos promocionados
+  void _onProductoPromocionadoResultadoChanged(int index, String resultado) {
+    setState(() {
+      _productosPromocionados[index] = _productosPromocionados[index].copyWith(
+        observaciones: resultado,
+      );
+    });
+  }
+
+  void _onProductoPromocionadoRemove(int index) {
+    setState(() {
+      _productosPromocionados.removeAt(index);
+    });
+  }
+
+  // Handlers para muestras
+  void _onMuestraCantidadChanged(int index, int cantidad) {
+    setState(() {
+      _muestrasEntregadas[index] = _muestrasEntregadas[index].copyWith(
+        cantidad: cantidad,
+      );
+    });
+  }
+
+  void _onMuestraRemove(int index) {
+    setState(() {
+      _muestrasEntregadas.removeAt(index);
+    });
+  }
+
+  // Handlers para pedidos
+  void _onPedidoCantidadChanged(int index, int cantidad) {
+    setState(() {
+      _productosSolicitados[index] = _productosSolicitados[index].copyWith(
+        cantidad: cantidad,
+      );
+    });
+  }
+
+  void _onPedidoRemove(int index) {
+    setState(() {
+      _productosSolicitados.removeAt(index);
+    });
+  }
+
   Future<void> _guardarInteraccion() async {
     print('=== INICIANDO GUARDADO DE INTERACCIÓN ===');
 
@@ -170,6 +290,72 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
         const SnackBar(content: Text('Por favor seleccione un tipo de interacción')),
       );
       return;
+    }
+
+    // Validar productos según configuracionUi
+    final configUi = _tipoInteraccionSeleccionado!.configuracionUi;
+
+    // Validar Productos Promocionados
+    final prodPromoConfig = configUi?['productosPromocionados'];
+    if (prodPromoConfig != null && prodPromoConfig['habilitado'] == true) {
+      final requerido = prodPromoConfig['requerido'] == true;
+      final minCantidad = prodPromoConfig['minCantidad'] as int?;
+      final maxCantidad = prodPromoConfig['maxCantidad'] as int?;
+
+      if (requerido && _productosPromocionados.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Debe agregar al menos un producto promocionado')),
+        );
+        return;
+      }
+
+      if (minCantidad != null && _productosPromocionados.length < minCantidad) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Debe agregar al menos $minCantidad producto(s) promocionado(s)')),
+        );
+        return;
+      }
+
+      if (maxCantidad != null && _productosPromocionados.length > maxCantidad) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No puede agregar más de $maxCantidad producto(s) promocionado(s)')),
+        );
+        return;
+      }
+
+      // Validar que todos tengan resultado
+      if (_productosPromocionados.any((p) => p.observaciones == null || p.observaciones!.isEmpty)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Todos los productos promocionados deben tener un resultado')),
+        );
+        return;
+      }
+    }
+
+    // Validar Muestras Entregadas
+    final muestrasConfig = configUi?['muestrasEntregadas'];
+    if (muestrasConfig != null && muestrasConfig['habilitado'] == true) {
+      final requerido = muestrasConfig['requerido'] == true;
+
+      if (requerido && _muestrasEntregadas.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Debe agregar al menos una muestra entregada')),
+        );
+        return;
+      }
+    }
+
+    // Validar Productos Solicitados
+    final pedidosConfig = configUi?['pedidoProductos'];
+    if (pedidosConfig != null && pedidosConfig['habilitado'] == true) {
+      final requerido = pedidosConfig['requerido'] == true;
+
+      if (requerido && _productosSolicitados.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Debe solicitar al menos un producto')),
+        );
+        return;
+      }
     }
 
     setState(() {
@@ -209,13 +395,75 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
         'longitud': _position?.longitude,
         'direccionCapturada': _direccionCapturada,
         'datosDinamicos': _dynamicFieldsValues,
+        // Productos
+        'productosPromocionados': _productosPromocionados.map((p) => p.toJson()).toList(),
+        'muestrasEntregadas': _muestrasEntregadas.map((m) => m.toJson()).toList(),
+        'productosSolicitados': _productosSolicitados.map((p) => p.toJson()).toList(),
       };
 
       print('Datos de interacción preparados: ${interaccionData.keys.join(", ")}');
 
-      if (_modoOffline) {
-        print('MODO OFFLINE: Guardando en cola de sincronización');
-        // Modo offline: agregar a la cola de sincronización
+      // Intentar enviar al servidor primero (si no estamos en modo offline forzado)
+      bool guardadoEnServidor = false;
+
+      if (!_modoOffline) {
+        try {
+          print('INTENTANDO ENVIAR AL SERVIDOR...');
+          final result = await _apiService.createInteraccion(
+            tipoInteraccionId: interaccionData['tipoInteraccionId'] as String,
+            relacionId: interaccionData['relacionId'] as String,
+            agenteId: interaccionData['agenteId'] as String,
+            clientePrincipalId: interaccionData['clientePrincipalId'] as String,
+            clienteSecundario1Id: interaccionData['clienteSecundario1Id'] as String?,
+            fecha: DateTime.parse(interaccionData['fecha'] as String),
+            turno: interaccionData['turno'] as String?,
+            duracionMinutos: interaccionData['duracionMinutos'] as int?,
+            objetivoVisita: interaccionData['objetivoVisita'] as String?,
+            resumenVisita: interaccionData['resumenVisita'] as String?,
+            proximaAccion: interaccionData['proximaAccion'] as String?,
+            fechaProximaAccion: interaccionData['fechaProximaAccion'] != null
+                ? DateTime.parse(interaccionData['fechaProximaAccion'] as String)
+                : null,
+            resultadoVisita: interaccionData['resultadoVisita'] as String?,
+            latitud: interaccionData['latitud'] as double?,
+            longitud: interaccionData['longitud'] as double?,
+            direccionCapturada: interaccionData['direccionCapturada'] as String?,
+            datosDinamicos: interaccionData['datosDinamicos'] as Map<String, dynamic>?,
+            productosPromocionados: interaccionData['productosPromocionados'] as List<Map<String, dynamic>>?,
+            muestrasEntregadas: interaccionData['muestrasEntregadas'] as List<Map<String, dynamic>>?,
+            productosSolicitados: interaccionData['productosSolicitados'] as List<Map<String, dynamic>>?,
+          );
+
+          print('✅ Interacción creada exitosamente en el servidor');
+          print('ID de interacción creada: ${result.id}');
+          guardadoEnServidor = true;
+
+          if (mounted) {
+            // Limpiar toolbar antes de cerrar
+            final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
+            toolbarProvider.clearActions();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✓ Interacción creada exitosamente'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+            // Pequeño delay para que el usuario vea el mensaje antes de cerrar
+            await Future.delayed(const Duration(milliseconds: 500));
+            Navigator.of(context).pop(true);
+          }
+        } catch (e) {
+          print('⚠️ Error al enviar al servidor: $e');
+          print('📦 Guardando en cola offline como respaldo...');
+          // No hacer rethrow - continuar con guardado offline
+        }
+      }
+
+      // Si no se guardó en servidor o estamos en modo offline, guardar en cola
+      if (!guardadoEnServidor) {
+        print('GUARDANDO EN COLA DE SINCRONIZACIÓN');
         final queueItem = SyncQueueItem(
           id: _generateUuid(),
           operationType: SyncOperationType.createInteraccion,
@@ -225,7 +473,7 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
         );
 
         await _syncQueueService.addToQueue(queueItem);
-        print('Interacción agregada a cola de sincronización');
+        print('✅ Interacción agregada a cola de sincronización');
 
         if (mounted) {
           // Limpiar toolbar antes de cerrar
@@ -234,55 +482,19 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Interacción guardada en cola para sincronización posterior'),
+              content: Row(
+                children: [
+                  Icon(Icons.offline_pin, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Interacción guardada. Se sincronizará cuando haya conexión'),
+                  ),
+                ],
+              ),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 3),
             ),
           );
-          Navigator.of(context).pop(true);
-        }
-      } else {
-        print('MODO ONLINE: Enviando al servidor');
-        // Modo online: enviar directamente
-        final result = await _apiService.createInteraccion(
-          tipoInteraccionId: interaccionData['tipoInteraccionId'] as String,
-          relacionId: interaccionData['relacionId'] as String,
-          agenteId: interaccionData['agenteId'] as String,
-          clientePrincipalId: interaccionData['clientePrincipalId'] as String,
-          clienteSecundario1Id: interaccionData['clienteSecundario1Id'] as String?,
-          fecha: DateTime.parse(interaccionData['fecha'] as String),
-          turno: interaccionData['turno'] as String?,
-          duracionMinutos: interaccionData['duracionMinutos'] as int?,
-          objetivoVisita: interaccionData['objetivoVisita'] as String?,
-          resumenVisita: interaccionData['resumenVisita'] as String?,
-          proximaAccion: interaccionData['proximaAccion'] as String?,
-          fechaProximaAccion: interaccionData['fechaProximaAccion'] != null
-              ? DateTime.parse(interaccionData['fechaProximaAccion'] as String)
-              : null,
-          resultadoVisita: interaccionData['resultadoVisita'] as String?,
-          latitud: interaccionData['latitud'] as double?,
-          longitud: interaccionData['longitud'] as double?,
-          direccionCapturada: interaccionData['direccionCapturada'] as String?,
-          datosDinamicos: interaccionData['datosDinamicos'] as Map<String, dynamic>?,
-        );
-
-        print('✅ Interacción creada exitosamente en el servidor');
-        print('ID de interacción creada: ${result.id}');
-
-        if (mounted) {
-          // Limpiar toolbar antes de cerrar
-          final toolbarProvider = Provider.of<ToolbarProvider>(context, listen: false);
-          toolbarProvider.clearActions();
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✓ Interacción creada exitosamente'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-          // Pequeño delay para que el usuario vea el mensaje antes de cerrar
-          await Future.delayed(const Duration(milliseconds: 500));
           Navigator.of(context).pop(true);
         }
       }
@@ -839,6 +1051,131 @@ class _InteraccionFormScreenState extends State<InteraccionFormScreen> {
                       child: _buildDynamicField(fieldSchema),
                     );
                   }),
+
+                  // ==================== PRODUCTOS ====================
+
+                  // Productos Promocionados
+                  if (_tipoInteraccionSeleccionado?.configuracionUi?['productosPromocionados']?['habilitado'] == true) ...[
+                    const SizedBox(height: 24),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.shopping_bag, color: Colors.blue),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Productos Promocionados${(_tipoInteraccionSeleccionado?.configuracionUi?['productosPromocionados']?['requerido'] == true) ? ' *' : ''}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                FloatingActionButton.small(
+                                  onPressed: _agregarProductosPromocionados,
+                                  backgroundColor: Colors.blue,
+                                  child: const Icon(Icons.add, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ProductosPromocionadosTable(
+                              productos: _productosPromocionados,
+                              onResultadoChanged: _onProductoPromocionadoResultadoChanged,
+                              onRemove: _onProductoPromocionadoRemove,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // Muestras Entregadas
+                  if (_tipoInteraccionSeleccionado?.configuracionUi?['muestrasEntregadas']?['habilitado'] == true) ...[
+                    const SizedBox(height: 16),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.inventory, color: Colors.orange),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Muestras Entregadas${(_tipoInteraccionSeleccionado?.configuracionUi?['muestrasEntregadas']?['requerido'] == true) ? ' *' : ''}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                FloatingActionButton.small(
+                                  onPressed: _agregarMuestra,
+                                  backgroundColor: Colors.orange,
+                                  child: const Icon(Icons.add, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            MuestrasEntregadasTable(
+                              muestras: _muestrasEntregadas,
+                              onCantidadChanged: _onMuestraCantidadChanged,
+                              onRemove: _onMuestraRemove,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // Productos Solicitados (Pedidos)
+                  if (_tipoInteraccionSeleccionado?.configuracionUi?['pedidoProductos']?['habilitado'] == true) ...[
+                    const SizedBox(height: 16),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.request_quote, color: Colors.green),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Productos Solicitados${(_tipoInteraccionSeleccionado?.configuracionUi?['pedidoProductos']?['requerido'] == true) ? ' *' : ''}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                FloatingActionButton.small(
+                                  onPressed: _agregarPedido,
+                                  backgroundColor: Colors.green,
+                                  child: const Icon(Icons.add, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ProductosSolicitadosTable(
+                              productos: _productosSolicitados,
+                              onCantidadChanged: _onPedidoCantidadChanged,
+                              onRemove: _onPedidoRemove,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 24),
 

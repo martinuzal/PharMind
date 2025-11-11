@@ -136,12 +136,10 @@ public class FrecuenciaVisitasService : IFrecuenciaVisitasService
         {
             var config = JsonDocument.Parse(tipo.ConfiguracionUi);
 
-            if (config.RootElement.TryGetProperty("frecuencia", out var frecuencia))
+            // El campo medirFrecuencia está directamente en ConfiguracionUi
+            if (config.RootElement.TryGetProperty("medirFrecuencia", out var medirFrecuencia))
             {
-                if (frecuencia.TryGetProperty("medirFrecuencia", out var medirFrecuencia))
-                {
-                    return medirFrecuencia.GetBoolean();
-                }
+                return medirFrecuencia.GetBoolean();
             }
 
             return false;
@@ -155,25 +153,23 @@ public class FrecuenciaVisitasService : IFrecuenciaVisitasService
     private string ObtenerPeriodoEvaluacion(EsquemasPersonalizado tipo)
     {
         if (string.IsNullOrEmpty(tipo.ConfiguracionUi))
-            return "mensual"; // default
+            return "ciclo"; // default cambiado a ciclo (año)
 
         try
         {
             var config = JsonDocument.Parse(tipo.ConfiguracionUi);
 
-            if (config.RootElement.TryGetProperty("frecuencia", out var frecuencia))
+            // El campo periodoEvaluacion está directamente en ConfiguracionUi
+            if (config.RootElement.TryGetProperty("periodoEvaluacion", out var periodo))
             {
-                if (frecuencia.TryGetProperty("periodoEvaluacion", out var periodo))
-                {
-                    return periodo.GetString() ?? "mensual";
-                }
+                return periodo.GetString() ?? "ciclo";
             }
 
-            return "mensual";
+            return "ciclo";
         }
         catch
         {
-            return "mensual";
+            return "ciclo";
         }
     }
 

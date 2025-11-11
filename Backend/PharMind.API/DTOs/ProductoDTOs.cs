@@ -154,6 +154,29 @@ public class ActualizarInventarioDto
     public string? Observaciones { get; set; }
 }
 
+public class CreateInventarioDto
+{
+    [Required]
+    public string AgenteId { get; set; } = string.Empty;
+
+    [Required]
+    public string ProductoId { get; set; } = string.Empty;
+
+    [Required]
+    [Range(1, int.MaxValue)]
+    public int CantidadInicial { get; set; }
+
+    [Required]
+    [MaxLength(50)]
+    public string Lote { get; set; } = string.Empty;
+
+    [Required]
+    public DateTime FechaVencimiento { get; set; }
+
+    [MaxLength(500)]
+    public string? Observaciones { get; set; }
+}
+
 // ==================== MUESTRA MÉDICA ====================
 
 public class MuestraMedicaDto

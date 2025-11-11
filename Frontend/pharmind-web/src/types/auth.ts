@@ -19,4 +19,7 @@ export interface Usuario {
   proveedorSSO?: string;
   fechaCreacion: string;
   roles: string[];
+  agenteId?: string;
+  managerId?: string;
+  tipoAgenteId?: string;
 }

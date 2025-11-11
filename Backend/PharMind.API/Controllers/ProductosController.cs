@@ -25,17 +25,46 @@ public class ProductosController : ControllerBase
     }
 
     /// <summary>
-    /// Obtener todos los productos activos
-    /// GET /api/productos
+    /// Obtener todos los productos con filtros opcionales
+    /// GET /api/productos?activo=true&esMuestra=false&lineaNegocioId=xxx
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<List<ProductoDto>>> GetProductos()
+    public async Task<ActionResult<List<ProductoDto>>> GetProductos(
+        [FromQuery] bool? activo = null,
+        [FromQuery] bool? esMuestra = null,
+        [FromQuery] string? lineaNegocioId = null)
     {
         try
         {
-            var productos = await _context.Productos
+            var query = _context.Productos
                 .Include(p => p.LineaNegocio)
-                .Where(p => p.Activo && p.Status == false)
+                .Where(p => p.Status == false)
+                .AsQueryable();
+
+            // Filtrar por activo si se especifica
+            if (activo.HasValue)
+            {
+                query = query.Where(p => p.Activo == activo.Value);
+            }
+            else
+            {
+                // Por defecto solo activos si no se especifica
+                query = query.Where(p => p.Activo);
+            }
+
+            // Filtrar por esMuestra si se especifica
+            if (esMuestra.HasValue)
+            {
+                query = query.Where(p => p.EsMuestra == esMuestra.Value);
+            }
+
+            // Filtrar por línea de negocio si se especifica
+            if (!string.IsNullOrEmpty(lineaNegocioId))
+            {
+                query = query.Where(p => p.LineaNegocioId == lineaNegocioId);
+            }
+
+            var productos = await query
                 .OrderBy(p => p.Categoria)
                 .ThenBy(p => p.Nombre)
                 .ToListAsync();
