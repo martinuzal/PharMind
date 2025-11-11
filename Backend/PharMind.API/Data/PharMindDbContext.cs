@@ -44,6 +44,11 @@ public class PharMindDbContext : DbContext
     public DbSet<Interaccion> Interacciones { get; set; }
     public DbSet<AuditoriaAgente> AuditoriasAgentes { get; set; }
 
+    // Interacción - Productos
+    public DbSet<InteraccionProductoPromocionado> InteraccionProductosPromocionados { get; set; }
+    public DbSet<InteraccionMuestraEntregada> InteraccionMuestrasEntregadas { get; set; }
+    public DbSet<InteraccionProductoSolicitado> InteraccionProductosSolicitados { get; set; }
+
     // Productos y Muestras DbSets
     public DbSet<Producto> Productos { get; set; }
     public DbSet<InventarioAgente> InventariosAgente { get; set; }

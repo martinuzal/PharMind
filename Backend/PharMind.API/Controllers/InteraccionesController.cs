@@ -39,6 +39,12 @@ public class InteraccionesController : ControllerBase
                 .Include(i => i.Relacion)
                 .Include(i => i.Agente)
                 .Include(i => i.Cliente)
+                .Include(i => i.ProductosPromocionados)
+                    .ThenInclude(pp => pp.Producto)
+                .Include(i => i.MuestrasEntregadas)
+                    .ThenInclude(me => me.Producto)
+                .Include(i => i.ProductosSolicitados)
+                    .ThenInclude(ps => ps.Producto)
                 .Where(i => i.Status == false); // Excluir eliminados
 
             // Contar total de items
@@ -87,6 +93,12 @@ public class InteraccionesController : ControllerBase
                 .Include(i => i.Relacion)
                 .Include(i => i.Agente)
                 .Include(i => i.Cliente)
+                .Include(i => i.ProductosPromocionados)
+                    .ThenInclude(pp => pp.Producto)
+                .Include(i => i.MuestrasEntregadas)
+                    .ThenInclude(me => me.Producto)
+                .Include(i => i.ProductosSolicitados)
+                    .ThenInclude(ps => ps.Producto)
                 .FirstOrDefaultAsync(i => i.Id == id && i.Status == false);
 
             if (interaccion == null)
@@ -94,7 +106,19 @@ public class InteraccionesController : ControllerBase
                 return NotFound(new { message = "Interacción no encontrada" });
             }
 
+            // Debug log
+            _logger.LogInformation("Interacción {Id} cargada con {ProductosPromocionados} productos promocionados, {MuestrasEntregadas} muestras, {ProductosSolicitados} pedidos",
+                id,
+                interaccion.ProductosPromocionados?.Count ?? 0,
+                interaccion.MuestrasEntregadas?.Count ?? 0,
+                interaccion.ProductosSolicitados?.Count ?? 0);
+
             var dto = MapToDto(interaccion);
+
+            _logger.LogInformation("DTO mapeado con {ProductosPromocionados} productos promocionados, {MuestrasEntregadas} muestras, {ProductosSolicitados} pedidos",
+                dto.ProductosPromocionados?.Count ?? 0,
+                dto.MuestrasEntregadas?.Count ?? 0,
+                dto.ProductosSolicitados?.Count ?? 0);
 
             return Ok(dto);
         }
@@ -190,12 +214,78 @@ public class InteraccionesController : ControllerBase
             _context.Interacciones.Add(interaccion);
             await _context.SaveChangesAsync();
 
+            // Guardar productos promocionados
+            if (dto.ProductosPromocionados != null && dto.ProductosPromocionados.Count > 0)
+            {
+                foreach (var prod in dto.ProductosPromocionados)
+                {
+                    var productoPromocionado = new InteraccionProductoPromocionado
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        InteraccionId = interaccion.Id,
+                        ProductoId = prod.ProductoId,
+                        Cantidad = prod.Cantidad,
+                        Observaciones = prod.Observaciones,
+                        Status = false,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "System"
+                    };
+                    _context.InteraccionProductosPromocionados.Add(productoPromocionado);
+                }
+            }
+
+            // Guardar muestras entregadas
+            if (dto.MuestrasEntregadas != null && dto.MuestrasEntregadas.Count > 0)
+            {
+                foreach (var muestra in dto.MuestrasEntregadas)
+                {
+                    var muestraEntregada = new InteraccionMuestraEntregada
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        InteraccionId = interaccion.Id,
+                        ProductoId = muestra.ProductoId,
+                        Cantidad = muestra.Cantidad,
+                        Observaciones = muestra.Observaciones,
+                        Status = false,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "System"
+                    };
+                    _context.InteraccionMuestrasEntregadas.Add(muestraEntregada);
+                }
+            }
+
+            // Guardar productos solicitados
+            if (dto.ProductosSolicitados != null && dto.ProductosSolicitados.Count > 0)
+            {
+                foreach (var pedido in dto.ProductosSolicitados)
+                {
+                    var productoSolicitado = new InteraccionProductoSolicitado
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        InteraccionId = interaccion.Id,
+                        ProductoId = pedido.ProductoId,
+                        Cantidad = pedido.Cantidad,
+                        Estado = pedido.Estado ?? "Pendiente",
+                        Observaciones = pedido.Observaciones,
+                        Status = false,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "System"
+                    };
+                    _context.InteraccionProductosSolicitados.Add(productoSolicitado);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
             // Recargar con datos relacionados
             await _context.Entry(interaccion).Reference(i => i.TipoInteraccionEsquema).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.DatosExtendidos).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Relacion).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Agente).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Cliente).LoadAsync();
+            await _context.Entry(interaccion).Collection(i => i.ProductosPromocionados).Query().Include(pp => pp.Producto).LoadAsync();
+            await _context.Entry(interaccion).Collection(i => i.MuestrasEntregadas).Query().Include(me => me.Producto).LoadAsync();
+            await _context.Entry(interaccion).Collection(i => i.ProductosSolicitados).Query().Include(ps => ps.Producto).LoadAsync();
 
             var result = MapToDto(interaccion);
 
@@ -278,6 +368,86 @@ public class InteraccionesController : ControllerBase
             interaccion.FechaModificacion = DateTime.Now;
             interaccion.ModificadoPor = "System";
 
+            // Actualizar productos: Eliminar existentes y agregar nuevos
+            // Eliminar productos promocionados existentes
+            var productosPromocionadosExistentes = await _context.InteraccionProductosPromocionados
+                .Where(pp => pp.InteraccionId == id)
+                .ToListAsync();
+            _context.InteraccionProductosPromocionados.RemoveRange(productosPromocionadosExistentes);
+
+            // Eliminar muestras entregadas existentes
+            var muestrasExistentes = await _context.InteraccionMuestrasEntregadas
+                .Where(me => me.InteraccionId == id)
+                .ToListAsync();
+            _context.InteraccionMuestrasEntregadas.RemoveRange(muestrasExistentes);
+
+            // Eliminar productos solicitados existentes
+            var pedidosExistentes = await _context.InteraccionProductosSolicitados
+                .Where(ps => ps.InteraccionId == id)
+                .ToListAsync();
+            _context.InteraccionProductosSolicitados.RemoveRange(pedidosExistentes);
+
+            // Agregar nuevos productos promocionados
+            if (dto.ProductosPromocionados != null && dto.ProductosPromocionados.Count > 0)
+            {
+                foreach (var prod in dto.ProductosPromocionados)
+                {
+                    var productoPromocionado = new InteraccionProductoPromocionado
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        InteraccionId = id,
+                        ProductoId = prod.ProductoId,
+                        Cantidad = prod.Cantidad,
+                        Observaciones = prod.Observaciones,
+                        Status = false,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "System"
+                    };
+                    _context.InteraccionProductosPromocionados.Add(productoPromocionado);
+                }
+            }
+
+            // Agregar nuevas muestras entregadas
+            if (dto.MuestrasEntregadas != null && dto.MuestrasEntregadas.Count > 0)
+            {
+                foreach (var muestra in dto.MuestrasEntregadas)
+                {
+                    var muestraEntregada = new InteraccionMuestraEntregada
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        InteraccionId = id,
+                        ProductoId = muestra.ProductoId,
+                        Cantidad = muestra.Cantidad,
+                        Observaciones = muestra.Observaciones,
+                        Status = false,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "System"
+                    };
+                    _context.InteraccionMuestrasEntregadas.Add(muestraEntregada);
+                }
+            }
+
+            // Agregar nuevos productos solicitados
+            if (dto.ProductosSolicitados != null && dto.ProductosSolicitados.Count > 0)
+            {
+                foreach (var pedido in dto.ProductosSolicitados)
+                {
+                    var productoSolicitado = new InteraccionProductoSolicitado
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        InteraccionId = id,
+                        ProductoId = pedido.ProductoId,
+                        Cantidad = pedido.Cantidad,
+                        Estado = pedido.Estado ?? "Pendiente",
+                        Observaciones = pedido.Observaciones,
+                        Status = false,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "System"
+                    };
+                    _context.InteraccionProductosSolicitados.Add(productoSolicitado);
+                }
+            }
+
             await _context.SaveChangesAsync();
 
             // Recargar con datos relacionados
@@ -286,6 +456,9 @@ public class InteraccionesController : ControllerBase
             await _context.Entry(interaccion).Reference(i => i.Relacion).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Agente).LoadAsync();
             await _context.Entry(interaccion).Reference(i => i.Cliente).LoadAsync();
+            await _context.Entry(interaccion).Collection(i => i.ProductosPromocionados).Query().Include(pp => pp.Producto).LoadAsync();
+            await _context.Entry(interaccion).Collection(i => i.MuestrasEntregadas).Query().Include(me => me.Producto).LoadAsync();
+            await _context.Entry(interaccion).Collection(i => i.ProductosSolicitados).Query().Include(ps => ps.Producto).LoadAsync();
 
             var result = MapToDto(interaccion);
 
@@ -381,6 +554,43 @@ public class InteraccionesController : ControllerBase
                 _logger.LogWarning(ex, "Error al deserializar datos dinámicos para interacción {Id}", interaccion.Id);
             }
         }
+
+        // Mapear productos promocionados
+        dto.ProductosPromocionados = interaccion.ProductosPromocionados?.Select(pp => new InteraccionProductoDto
+        {
+            Id = pp.Id,
+            ProductoId = pp.ProductoId,
+            ProductoNombre = pp.Producto?.NombreComercial ?? pp.Producto?.Nombre,
+            ProductoCodigoProducto = pp.Producto?.CodigoProducto,
+            ProductoPresentacion = pp.Producto?.Presentacion,
+            Cantidad = pp.Cantidad,
+            Observaciones = pp.Observaciones
+        }).ToList() ?? new List<InteraccionProductoDto>();
+
+        // Mapear muestras entregadas
+        dto.MuestrasEntregadas = interaccion.MuestrasEntregadas?.Select(me => new InteraccionProductoDto
+        {
+            Id = me.Id,
+            ProductoId = me.ProductoId,
+            ProductoNombre = me.Producto?.NombreComercial ?? me.Producto?.Nombre,
+            ProductoCodigoProducto = me.Producto?.CodigoProducto,
+            ProductoPresentacion = me.Producto?.Presentacion,
+            Cantidad = me.Cantidad,
+            Observaciones = me.Observaciones
+        }).ToList() ?? new List<InteraccionProductoDto>();
+
+        // Mapear productos solicitados
+        dto.ProductosSolicitados = interaccion.ProductosSolicitados?.Select(ps => new InteraccionProductoSolicitadoDto
+        {
+            Id = ps.Id,
+            ProductoId = ps.ProductoId,
+            ProductoNombre = ps.Producto?.NombreComercial ?? ps.Producto?.Nombre,
+            ProductoCodigoProducto = ps.Producto?.CodigoProducto,
+            ProductoPresentacion = ps.Producto?.Presentacion,
+            Cantidad = ps.Cantidad,
+            Estado = ps.Estado,
+            Observaciones = ps.Observaciones
+        }).ToList() ?? new List<InteraccionProductoSolicitadoDto>();
 
         return dto;
     }

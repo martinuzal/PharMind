@@ -91,4 +91,9 @@ public class Interaccion : AuditableEntity
 
     [ForeignKey("EntidadDinamicaId")]
     public virtual EntidadesDinamica? DatosExtendidos { get; set; }
+
+    // Relaciones con productos
+    public virtual ICollection<InteraccionProductoPromocionado> ProductosPromocionados { get; set; } = new List<InteraccionProductoPromocionado>();
+    public virtual ICollection<InteraccionMuestraEntregada> MuestrasEntregadas { get; set; } = new List<InteraccionMuestraEntregada>();
+    public virtual ICollection<InteraccionProductoSolicitado> ProductosSolicitados { get; set; } = new List<InteraccionProductoSolicitado>();
 }

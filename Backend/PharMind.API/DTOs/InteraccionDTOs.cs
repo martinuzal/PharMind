@@ -1,5 +1,34 @@
 namespace PharMind.API.DTOs;
 
+// DTOs para productos en interacciones
+public class InteraccionProductoDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string ProductoId { get; set; } = string.Empty;
+    public string? ProductoNombre { get; set; }
+    public string? ProductoCodigoProducto { get; set; }
+    public string? ProductoPresentacion { get; set; }
+    public int Cantidad { get; set; }
+    public string? Observaciones { get; set; }
+}
+
+public class InteraccionProductoSolicitadoDto : InteraccionProductoDto
+{
+    public string? Estado { get; set; }
+}
+
+public class CreateInteraccionProductoDto
+{
+    public string ProductoId { get; set; } = string.Empty;
+    public int Cantidad { get; set; }
+    public string? Observaciones { get; set; }
+}
+
+public class CreateInteraccionProductoSolicitadoDto : CreateInteraccionProductoDto
+{
+    public string? Estado { get; set; }
+}
+
 public class InteraccionDto
 {
     public string Id { get; set; } = string.Empty;
@@ -30,6 +59,11 @@ public class InteraccionDto
     public string? CreadoPor { get; set; }
     public DateTime? FechaModificacion { get; set; }
     public string? ModificadoPor { get; set; }
+
+    // Productos relacionados
+    public List<InteraccionProductoDto> ProductosPromocionados { get; set; } = new();
+    public List<InteraccionProductoDto> MuestrasEntregadas { get; set; } = new();
+    public List<InteraccionProductoSolicitadoDto> ProductosSolicitados { get; set; } = new();
 }
 
 public class CreateInteraccionDto
@@ -52,6 +86,11 @@ public class CreateInteraccionDto
     public decimal? Latitud { get; set; }
     public decimal? Longitud { get; set; }
     public string? Observaciones { get; set; }
+
+    // Productos
+    public List<CreateInteraccionProductoDto>? ProductosPromocionados { get; set; }
+    public List<CreateInteraccionProductoDto>? MuestrasEntregadas { get; set; }
+    public List<CreateInteraccionProductoSolicitadoDto>? ProductosSolicitados { get; set; }
 }
 
 public class UpdateInteraccionDto
@@ -69,6 +108,11 @@ public class UpdateInteraccionDto
     public decimal? Latitud { get; set; }
     public decimal? Longitud { get; set; }
     public string? Observaciones { get; set; }
+
+    // Productos
+    public List<CreateInteraccionProductoDto>? ProductosPromocionados { get; set; }
+    public List<CreateInteraccionProductoDto>? MuestrasEntregadas { get; set; }
+    public List<CreateInteraccionProductoSolicitadoDto>? ProductosSolicitados { get; set; }
 }
 
 public class InteraccionListResponse
